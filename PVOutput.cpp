@@ -1,6 +1,5 @@
 #include "PVOutput.h"
 
-
 // TODO improve and cleanup imports
 
 namespace PVOutput
@@ -120,8 +119,8 @@ namespace PVOutput
         // Format: "d=yyyymmdd&t=hh:mm&v1=xxx&v3=xxx"
         // sprintf(data, "d=%04d%02d%02d&t=%02d:%02d&v1=%.3f&v3=%.3f", currentYear, currentMonth, currentDay,
         // currentHour, currentMinute, energyGeneration, energyConsumption);
-        sprintf(data, "/service/r2/addstatus.jsp?d=%04d%02d%02d&t=%02d:%02d&v2=%d&v4=%d", currentYear, currentMonth,
-            currentDay, currentHour, currentMinute, powerGeneration, powerConsumption);
+        sprintf_P(data, PSTR("/service/r2/addstatus.jsp?d=%04d%02d%02d&t=%02d:%02d&v2=%d&v4=%d"), currentYear,
+            currentMonth, currentDay, currentHour, currentMinute, powerGeneration, powerConsumption);
 
         bool success = httpsGET(data);
         // Serial.println(data);
@@ -146,7 +145,7 @@ namespace PVOutput
             //   Serial.print("remaining: ");
             //   Serial.println(client.parseInt());
             // }
-            if (client.find(F("X-Rate-Limit-Limit: ")))
+            if (client.find("X-Rate-Limit-Limit: "))
             {
                 limit = client.parseInt();
             }
@@ -165,7 +164,7 @@ namespace PVOutput
         if (httpsGET(F("/service/r2/getsystem.jsp")))
         {
             // Remove Header
-            if (client.find(F("\r\n\r\n")))
+            if (client.find("\r\n\r\n"))
             {
                 // Data:
                 // 125Small island,200,,2,100,Protein P-M100-36P,1,1000,
@@ -190,21 +189,21 @@ namespace PVOutput
                 // 17 don't care about the rest
 
                 // skip 15 commas
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
-                client.find(F(','));
+                client.find(',');
+                client.find(',');
+                client.find(',');
+                client.find(',');
+                client.find(',');
+                client.find(',');
+                client.find(',');
+                client.find(',');
+                client.find(',');
+                client.find(',');
+                client.find(',');
+                client.find(',');
+                client.find(',');
+                client.find(',');
+                client.find(',');
                 interval = client.parseInt();
             }
         }
@@ -227,7 +226,7 @@ namespace PVOutput
     WiFiClientSecure client;
     Ticker updateTimer;
     WiFiUDP ntpUDP;
-    NTPClient timeClient(ntpUDP, F("europe.pool.ntp.org"), 3600, 60000);
+    NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
 
     double _powerConsumption = 0;
     double _powerGeneration = 0;
