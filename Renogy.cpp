@@ -1,16 +1,16 @@
 #include "Renogy.h"
 
-#include <ArduinoJson.h>
-
 #include "Constants.h"
 
 #ifdef HAVE_GUI
 #include "GUI.h"
+
+
 #endif
 
 #include "MQTT.h"
-#include "WIFI.h"
 #include "PVOutput.h"
+#include "WIFI.h"
 
 // 0x0100 (2) 00 - Battery capacity SOC (state of charge)
 // 0x0101 (2) 01 - Battery voltage * 0.1
@@ -96,8 +96,8 @@ namespace Renogy
                 int8_t controllerTemperature = ModBus::readInt8Upper(ModBus::modbus, 3);
                 int8_t batteryTemperature = ModBus::readInt8Lower(ModBus::modbus, 3);
 
-                float laodVoltage = 0.1 * ModBus::readInt16BE(ModBus::modbus, 4);
-                float laodCurrent = 0.01 * ModBus::readInt16BE(ModBus::modbus, 5);
+                float loadVoltage = 0.1 * ModBus::readInt16BE(ModBus::modbus, 4);
+                float loadCurrent = 0.01 * ModBus::readInt16BE(ModBus::modbus, 5);
                 int16_t loadPower = ModBus::readInt16BE(ModBus::modbus, 6);
 
                 float panelVoltage = 0.1 * ModBus::readInt16BE(ModBus::modbus, 7);
@@ -108,34 +108,16 @@ namespace Renogy
                 // upper are street light status
                 int32_t errorState = ModBus::readInt32LE(ModBus::modbus, 33);
 
-                DynamicJsonDocument doc(1024);
-
-                doc["device"] = WIFI::mac;
-
-                doc["b"]["charge"] = charge;
-                doc["b"]["voltage"] = batteryVoltage;
-                doc["b"]["current"] = batteryCurrent;
-                doc["b"]["temperature"] = batteryTemperature;
-
-                doc["l"]["voltage"] = laodVoltage;
-                doc["l"]["current"] = laodCurrent;
-                doc["l"]["power"] = loadPower;
-
-                doc["p"]["voltage"] = panelVoltage;
-                doc["p"]["current"] = panelCurrent;
-                doc["p"]["power"] = panelPower;
-
-                doc["s"]["state"] = chargingState;
-                doc["s"]["error"] = errorState;
-                doc["s"]["temperature"] = controllerTemperature;
+                // Max size under assumptions Voltage < 1000, Current < 1000: 261 + null terminator + tolerance
+                //{"device":"0123456789AB","b":{"charge":254,"voltage":999.9,"current":999.99,"temperature":254},"l":{"voltage":999.9,"current":999.99,"power":65534},"p":{"voltage":999.9,"current":999.99,"power":65534},"s":{"state":254,"errorState":4294967295,"temperature":254}}
+                char jsonBuf[280];
+                snprintf_P(jsonBuf, 280, jsonFormat, WIFI::mac.c_str(), charge, batteryVoltage, batteryCurrent,
+                    batteryTemperature, loadVoltage, loadCurrent, loadPower, panelVoltage, panelCurrent, panelPower,
+                    chargingState, errorState, controllerTemperature);
+                MQTT::publish(jsonBuf);
 
                 // TODO make this optional
-                String output;
-                serializeJson(doc, output);
-                MQTT::publish(output);
-
-                // TODO make this optional
-                PVOutput::Callback::updateData(2, panelVoltage * panelCurrent, laodVoltage * laodCurrent);
+                PVOutput::Callback::updateData(2, panelVoltage * panelCurrent, loadVoltage * loadCurrent);
 
 #ifdef HAVE_GUI
                 // update ui
@@ -172,14 +154,13 @@ namespace Renogy
                     }
 
                     GUI::update(charge, batteryVoltage, batteryCurrent, batteryTemperature, controllerTemperature,
-                                laodVoltage, laodCurrent, loadPower, panelVoltage, panelCurrent, panelPower, charginStateString,
-                                errorState);
+                        loadVoltage, loadCurrent, loadPower, panelVoltage, panelCurrent, panelPower, charginStateString,
+                        errorState);
                 }
 #endif
             }
             else
             {
-                // writeException(result);
                 MQTT::publish("{\"device\":\"" + WIFI::mac + "\",\"mbError\":" + result + "}");
             }
 
@@ -189,36 +170,38 @@ namespace Renogy
 
     namespace ModBus
     {
-        int8_t readInt8Lower(ModbusMaster &modbus, const uint8_t startAddress)
+        int8_t readInt8Lower(ModbusMaster& modbus, const uint8_t startAddress)
         {
             return (modbus.getResponseBuffer(startAddress) & 0xFF);
         }
 
-        int8_t readInt8Upper(ModbusMaster &modbus, const uint8_t startAddress)
+        int8_t readInt8Upper(ModbusMaster& modbus, const uint8_t startAddress)
         {
             return ((modbus.getResponseBuffer(startAddress) >> 8) & 0xFF);
         }
 
-        int16_t readInt16BE(ModbusMaster &modbus, const uint8_t startAddress)
+        int16_t readInt16BE(ModbusMaster& modbus, const uint8_t startAddress)
         {
             return modbus.getResponseBuffer(startAddress);
         }
 
-        int16_t readInt16LE(ModbusMaster &modbus, const uint8_t startAddress)
+        int16_t readInt16LE(ModbusMaster& modbus, const uint8_t startAddress)
         {
             const uint16_t reg = readInt16BE(modbus, startAddress);
             return ((reg << 8) & 0xFF00) | ((reg >> 8) & 0x00FF);
         }
 
-        int32_t readInt32BE(ModbusMaster &modbus, const uint8_t startAddress)
+        int32_t readInt32BE(ModbusMaster& modbus, const uint8_t startAddress)
         {
-            return (modbus.getResponseBuffer(startAddress) & 0xFFFF) | ((modbus.getResponseBuffer(3 + startAddress) & 0xFFFF) << 24);
+            return (modbus.getResponseBuffer(startAddress) & 0xFFFF)
+                | ((modbus.getResponseBuffer(3 + startAddress) & 0xFFFF) << 24);
         }
 
-        int32_t readInt32LE(ModbusMaster &modbus, const uint8_t startAddress)
+        int32_t readInt32LE(ModbusMaster& modbus, const uint8_t startAddress)
         {
             uint32_t reg = readInt32BE(modbus, startAddress);
-            return ((reg << 24) & 0xFF000000) | ((reg << 8) & 0x00FF0000) | ((reg >> 8) & 0x0000FF00) | ((reg >> 24) & 0x000000FF);
+            return ((reg << 24) & 0xFF000000) | ((reg << 8) & 0x00FF0000) | ((reg >> 8) & 0x0000FF00)
+                | ((reg >> 24) & 0x000000FF);
         }
 
         ModbusMaster modbus;
@@ -238,42 +221,7 @@ namespace Renogy
         readDataTimer.attach_scheduled(2, Renogy::Callback::readAndProcessData);
     }
 
-    void writeException(const uint8_t code)
-    {
-        String exception;
-        switch (code)
-        {
-        case ModBus::modbus.ku8MBIllegalFunction:
-            exception = "illegal function";
-            break;
-        case ModBus::modbus.ku8MBIllegalDataAddress:
-            exception = "illegal data address";
-            break;
-        case ModBus::modbus.ku8MBIllegalDataValue:
-            exception = "illegal data value";
-            break;
-        case ModBus::modbus.ku8MBSlaveDeviceFailure:
-            exception = "slave device failure";
-            break;
-        case ModBus::modbus.ku8MBInvalidSlaveID:
-            exception = "invalid response slave ID";
-            break;
-        case ModBus::modbus.ku8MBInvalidFunction:
-            exception = "invalid response function";
-            break;
-        case ModBus::modbus.ku8MBResponseTimedOut:
-            exception = "response timed out";
-            break;
-        case ModBus::modbus.ku8MBInvalidCRC:
-            exception = "invalid response CRC";
-            break;
-
-        default:
-            exception = "unknown";
-            break;
-        }
-        MQTT::publish("Exception: " + exception);
-    }
-
+    const char* jsonFormat PROGMEM
+        = R"({"device":"%s","b":{"charge":%hhu,"voltage":%.1f,"current":%.2f,"temperature":%hhu},"l":{"voltage":%.1f,"current":%.2f,"power":%hu},"p":{"voltage":%.1f,"current":%.2f,"power":%hu},"s":{"state":%hhu,"errorState":%u,"temperature":%hhu}})";
     Ticker readDataTimer;
 } // namespace Renogy
