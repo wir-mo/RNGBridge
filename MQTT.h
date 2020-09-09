@@ -23,13 +23,11 @@ namespace MQTT
 
     extern void updateTopic();
 
-    extern void updateIP(const IPAddress ip);
+    extern void updateIP(const IPAddress& ip);
 
     extern void updatePort(const uint16_t port);
 
-    extern void updateIPPort(const IPAddress ip, const uint16_t port);
-
-    extern void updateTopic(const String& topic);
+    extern void updateIPPort(const IPAddress& ip, const uint16_t port);
 
     extern void connect();
 
@@ -39,6 +37,6 @@ namespace MQTT
     extern const char* lastWillFormat PROGMEM;
     extern const char* connectionMsgFormat PROGMEM;
     extern PangolinMQTT mqtt;
-    extern String topic;
     extern Ticker reconnectTimer;
+    extern bool connected;
 } // namespace MQTT

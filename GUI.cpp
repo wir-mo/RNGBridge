@@ -37,7 +37,7 @@ namespace GUI
             if (len > 0 && len <= 32)
             {
                 Settings::updateMQTTTopic(sender->value);
-                MQTT::updateTopic(sender->value);
+                MQTT::updateTopic();
             }
         }
 
@@ -122,12 +122,12 @@ namespace GUI
         wifiStatusLabel
             = ESPUI.addControl(ControlType::Label, "Status", F("unknown"), ControlColor::Wetasphalt, wifiTab);
 
-        // ESPUI.begin("RNG Bridge"); // Change with ui_title
-        ESPUI.beginSPIFFS("RNG Bridge"); // If stored in spiffs
+        ESPUI.begin("RNG Bridge"); // Change with ui_title
+        // ESPUI.beginSPIFFS("RNG Bridge"); // If stored in spiffs
 
         const String mqttPortString(Settings::settings.mqttPort);
         ESPUI.updateText(mqttPortNumber, mqttPortString);
-        ESPUI.updateText(mqttTopic, MQTT::topic);
+        ESPUI.updateText(mqttTopic, Settings::settings.topic);
         if (!Settings::firstStart)
         {
             const String ssidString(Settings::settings.ssid);
@@ -153,7 +153,7 @@ namespace GUI
     void update(const uint8_t charge, const float batteryVoltage, const float batteryCurrent,
         const int8_t batteryTemperature, const int8_t controllerTemperature, const float laodVoltage,
         const float laodCurrent, const int16_t loadPower, const float panelVoltage, const float panelCurrent,
-        const int16_t panelPower, const String& charginStateString, const int32_t errorState)
+        const int16_t panelPower, const int8_t chargingState, const int32_t errorState)
     {
         ESPUI.print(chargeLabel, String(charge) + " %");
         ESPUI.print(BVLabel, String(batteryVoltage) + " V");
@@ -162,6 +162,36 @@ namespace GUI
         ESPUI.print(CTLabel, String(controllerTemperature) + " °C");
         ESPUI.print(LVLabel, String(laodVoltage) + " V");
         ESPUI.print(LCLabel, String(laodCurrent) + " A");
+
+        String charginStateString;
+        switch (chargingState)
+        {
+        case 0x00:
+            charginStateString = F("inactive");
+            break;
+        case 0x01:
+            charginStateString = F("active");
+            break;
+        case 0x02:
+            charginStateString = F("mppt");
+            break;
+        case 0x03:
+            charginStateString = F("equalize");
+            break;
+        case 0x04:
+            charginStateString = F("boost");
+            break;
+        case 0x05:
+            charginStateString = F("float");
+            break;
+        case 0x06:
+            charginStateString = F("current limiting");
+            break;
+
+        default:
+            charginStateString = F("unknown");
+            break;
+        }
 
         delayedUpdate.once_ms(
             100, [loadPower, panelVoltage, panelCurrent, panelPower, charginStateString, errorState]() {

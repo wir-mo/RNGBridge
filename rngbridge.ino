@@ -7,9 +7,9 @@
 #endif
 
 #include "MQTT.h"
+#include "PVOutput.h"
 #include "Renogy.h"
 #include "Settings.h"
-#include "PVOutput.h"
 
 // 60 requests per hour.
 // 300 requests per hour in donation mode.
@@ -28,15 +28,13 @@ void setup()
 
         // Load default settings
         Settings::settings.mqttPort = 1883;
-        MQTT::topic = "/rng";
-        MQTT::topic.toCharArray(Settings::settings.topic, 32);
+        Settings::updateMQTTTopic(F("/rng"));
     }
     else
     {
         // Try to connect or else create AP
         const String ssid = String(Settings::settings.ssid);
         const String password = String(Settings::settings.password);
-        MQTT::topic = String(Settings::settings.topic);
         WIFI::connect(ssid, password);
     }
 

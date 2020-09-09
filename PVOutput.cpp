@@ -72,7 +72,7 @@ namespace PVOutput
     bool httpsGET(
         WiFiClientSecure& client, const char* url, const char* apiKey, const char* sysID, const bool rateLimit)
     {
-        const bool connected = client.connect(host, 443);
+        const bool connected = client.connect(HOST, 443);
         if (connected)
         {
             client.print(F("GET "));
@@ -80,7 +80,7 @@ namespace PVOutput
             client.println(F(" HTTP/1.1"));
 
             client.print(F("Host: "));
-            client.println(host);
+            client.println(HOST);
 
             client.println(F("User-Agent: ESP8266/1.0"));
             client.println(F("Connection: close"));
@@ -210,6 +210,8 @@ namespace PVOutput
         client.flush();
         return interval;
     }
+
+    const char* HOST PROGMEM = "pvoutput.org";
 
     WiFiClientSecure client;
     Ticker updateTimer;

@@ -2,15 +2,16 @@
 
 #include "Constants.h"
 
+
 #ifdef HAVE_GUI
 #include "GUI.h"
-
 
 #endif
 
 #include "MQTT.h"
 #include "PVOutput.h"
 #include "WIFI.h"
+
 
 // 0x0100 (2) 00 - Battery capacity SOC (state of charge)
 // 0x0101 (2) 01 - Battery voltage * 0.1
@@ -123,38 +124,8 @@ namespace Renogy
                 // update ui
                 if (GUI::clients() > 0)
                 {
-                    String charginStateString;
-                    switch (chargingState)
-                    {
-                    case 0x00:
-                        charginStateString = "inactive";
-                        break;
-                    case 0x01:
-                        charginStateString = "active";
-                        break;
-                    case 0x02:
-                        charginStateString = "mppt";
-                        break;
-                    case 0x03:
-                        charginStateString = "equalize";
-                        break;
-                    case 0x04:
-                        charginStateString = "boost";
-                        break;
-                    case 0x05:
-                        charginStateString = "float";
-                        break;
-                    case 0x06:
-                        charginStateString = "current limiting";
-                        break;
-
-                    default:
-                        charginStateString = "unknown";
-                        break;
-                    }
-
                     GUI::update(charge, batteryVoltage, batteryCurrent, batteryTemperature, controllerTemperature,
-                        loadVoltage, loadCurrent, loadPower, panelVoltage, panelCurrent, panelPower, charginStateString,
+                        loadVoltage, loadCurrent, loadPower, panelVoltage, panelCurrent, panelPower, chargingState,
                         errorState);
                 }
 #endif
