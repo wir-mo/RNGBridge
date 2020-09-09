@@ -25,7 +25,7 @@ namespace GUI
     extern void update(const uint8_t charge, const float batteryVoltage, const float batteryCurrent,
         const int8_t batteryTemperature, const int8_t controllerTemperature, const float laodVoltage,
         const float laodCurrent, const int16_t loadPower, const float panelVoltage, const float panelCurrent,
-        const int16_t panelPower, const String& charginStateString, const int32_t errorState);
+        const int16_t panelPower, const int8_t chargingState, const int32_t errorState);
 
     extern void updateWiFiStatus(const String& status);
 

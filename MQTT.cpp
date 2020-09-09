@@ -17,10 +17,10 @@ namespace MQTT
     {
         void onConnect(bool sessionPresent)
         {
+            connected = true;
 #ifdef HAVE_GUI
             GUI::updateMQTTStatus(FPSTR(CONNECTED));
 #endif
-
             char connectionMsq[43];
             snprintf_P(connectionMsq, 43, connectionMsgFormat, WIFI::mac.c_str());
             MQTT::publish(connectionMsq, 2, true);
@@ -28,6 +28,7 @@ namespace MQTT
 
         void onDisconnect(int8_t reason)
         {
+            connected = false;
 #ifdef HAVE_GUI
             GUI::updateMQTTStatus(FPSTR(DISCONNECTED));
 #endif
@@ -58,10 +59,10 @@ namespace MQTT
     {
         char will[44];
         snprintf_P(will, 44, lastWillFormat, WIFI::mac.c_str());
-        mqtt.setWill(topic.c_str(), 2, true, will);
+        mqtt.setWill(Settings::settings.topic, 2, true, will);
     }
 
-    void updateIP(const IPAddress ip) { updateIPPort(ip, Settings::settings.mqttPort); }
+    void updateIP(const IPAddress& ip) { updateIPPort(ip, Settings::settings.mqttPort); }
 
     void updatePort(const uint16_t port)
     {
@@ -69,15 +70,15 @@ namespace MQTT
         updateIPPort(ip, port);
     }
 
-    void updateIPPort(const IPAddress ip, const uint16_t port)
+    void updateIPPort(const IPAddress& ip, const uint16_t port)
     {
         if (ip.isSet() && port > 0)
         {
             mqtt.setServer(ip, port);
+            mqtt.disconnect(true);
+            // TODO maybe need call to connect here
         }
     }
-
-    void updateTopic(const String& topic) { MQTT::topic = topic; }
 
     void connect() { mqtt.connect(); }
 
@@ -86,7 +87,10 @@ namespace MQTT
         // At most once (0)
         // At least once (1)
         // Exactly once (2)
-        mqtt.publish(topic.c_str(), 0, retain, payload);
+        if (connected)
+        {
+            mqtt.publish(Settings::settings.topic, 0, retain, payload);
+        }
     }
 
     void publish(const char* payload, uint8_t qos, bool retain)
@@ -94,12 +98,15 @@ namespace MQTT
         // At most once (0)
         // At least once (1)
         // Exactly once (2)
-        mqtt.publish(topic.c_str(), 0, retain, (uint8_t*)payload, strlen(payload), false);
+        if (connected)
+        {
+            mqtt.publish(Settings::settings.topic, 0, retain, (uint8_t*)payload, strlen(payload), false);
+        }
     }
 
     const char* lastWillFormat PROGMEM = R"({"device":"%s","connected":false})";
     const char* connectionMsgFormat PROGMEM = R"({"device":"%s","connected":true})";
     PangolinMQTT mqtt;
-    String topic;
     Ticker reconnectTimer;
+    bool connected = false;
 } // namespace MQTT

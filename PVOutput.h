@@ -6,7 +6,6 @@
 #include <WiFiClientSecure.h>
 #include <WiFiUdp.h>
 
-
 namespace PVOutput
 {
     namespace Callback
@@ -53,7 +52,7 @@ namespace PVOutput
      */
     extern uint8_t getStatusInterval();
 
-    constexpr const char* host = "pvoutput.org";
+    extern const char* HOST PROGMEM;
     // constexpr const char* PVApiKey = "08124bfa21591165ca948b67ddd87152c4e8eabb";
     constexpr const char* PVApiKey = "";
     // constexpr const char* PVSysID = "72583";
