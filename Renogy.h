@@ -3,6 +3,7 @@
 #include <ModbusMaster.h>
 #include <Ticker.h>
 
+
 extern void blinkLED();
 
 namespace Renogy
@@ -34,6 +35,8 @@ namespace Renogy
     extern void setup();
 
     extern void writeException(const uint8_t code);
+
+    extern const char* jsonFormat PROGMEM;
 
     extern Ticker readDataTimer;
 

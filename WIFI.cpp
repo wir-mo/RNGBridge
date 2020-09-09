@@ -2,18 +2,21 @@
 
 #include "Constants.h"
 
+
 #ifdef HAVE_GUI
 #include "GUI.h"
+
 #endif
 
 #include "MQTT.h"
 #include "Settings.h"
 
+
 namespace WIFI
 {
     namespace Callback
     {
-        void onConnect(const WiFiEventStationModeGotIP &event)
+        void onConnect(const WiFiEventStationModeGotIP& event)
         {
 #ifdef HAVE_GUI
             GUI::updateWiFiStatus(FPSTR(CONNECTED));
@@ -21,7 +24,7 @@ namespace WIFI
             MQTT::connect();
         }
 
-        void onDisconnect(const WiFiEventStationModeDisconnected &event)
+        void onDisconnect(const WiFiEventStationModeDisconnected& event)
         {
 #ifdef HAVE_GUI
             GUI::updateWiFiStatus(FPSTR(DISCONNECTED));
@@ -48,11 +51,11 @@ namespace WIFI
         uint8_t macAr[6];
         WiFi.macAddress(macAr);
         char macStr[13] = {0};
-        sprintf(macStr, "%02X%02X%02X%02X%02X%02X", macAr[0], macAr[1], macAr[2], macAr[3], macAr[4], macAr[5]);
+        sprintf_P(macStr, PSTR("%02X%02X%02X%02X%02X%02X"), macAr[0], macAr[1], macAr[2], macAr[3], macAr[4], macAr[5]);
         return String(macStr);
     }
 
-    bool connectToAP(const String &ssid, const String &password)
+    bool connectToAP(const String& ssid, const String& password)
     {
         if (WiFi.isConnected())
         {
@@ -117,7 +120,7 @@ namespace WIFI
         } while (--timeout);
     }
 
-    void connect(const String &ssid, const String &password)
+    void connect(const String& ssid, const String& password)
     {
         // if not connected -> create hotspot
         if (!connectToAP(ssid, password))

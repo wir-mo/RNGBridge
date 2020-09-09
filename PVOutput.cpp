@@ -9,7 +9,8 @@ namespace PVOutput
         void sendData()
         {
             // Serial.println("Free heap: " + String(ESP.getFreeHeap()));
-            sendPowerData(_powerGeneration, _powerConsumption, now());
+            // TODO make selectable if either panel or system voltage should be sent
+            sendPowerData(_powerGeneration, _powerConsumption, 0.0, timeClient.getEpochTime());
             _powerGeneration = 0.0;
             _powerConsumption = 0.0;
         }
@@ -22,8 +23,6 @@ namespace PVOutput
                 _powerConsumption += ((double)interval / _updateInterval) * powerConsumption;
             }
         }
-
-        time_t getNTPTime() { return timeClient.getEpochTime(); }
     } // namespace Callback
 
     void setup()
@@ -32,11 +31,11 @@ namespace PVOutput
 
         // Setup time client and force time sync
         timeClient.begin();
-        setSyncProvider(Callback::getNTPTime);
         bool synced = false;
         while (!synced)
         {
-            synced = forceTimeSync();
+            timeClient.forceUpdate();
+            synced = year(timeClient.getEpochTime()) > 2019;
             delay(500);
         }
         // Serial.println("PVOutput Setup done");
@@ -105,7 +104,8 @@ namespace PVOutput
         return connected;
     };
 
-    bool sendPowerData(const int powerGeneration, const int powerConsumption, const time_t dataTime)
+    bool sendPowerData(
+        const int powerGeneration, const int powerConsumption, const double voltage, const time_t dataTime)
     {
         // TODO need to add a configurable amount of hours AKA new SETTING
         // USE adjustTime(hours * 60 * 60) for that;
@@ -119,8 +119,8 @@ namespace PVOutput
         // Format: "d=yyyymmdd&t=hh:mm&v1=xxx&v3=xxx"
         // sprintf(data, "d=%04d%02d%02d&t=%02d:%02d&v1=%.3f&v3=%.3f", currentYear, currentMonth, currentDay,
         // currentHour, currentMinute, energyGeneration, energyConsumption);
-        sprintf_P(data, PSTR("/service/r2/addstatus.jsp?d=%04d%02d%02d&t=%02d:%02d&v2=%d&v4=%d"), currentYear,
-            currentMonth, currentDay, currentHour, currentMinute, powerGeneration, powerConsumption);
+        sprintf_P(data, PSTR("/service/r2/addstatus.jsp?d=%04d%02d%02d&t=%02d:%02d&v2=%d&v4=%d&v6=%.1f"), currentYear,
+            currentMonth, currentDay, currentHour, currentMinute, powerGeneration, powerConsumption, voltage);
 
         bool success = httpsGET(data);
         // Serial.println(data);
@@ -209,18 +209,6 @@ namespace PVOutput
         }
         client.flush();
         return interval;
-    }
-
-    bool forceTimeSync()
-    {
-        // Serial.print("Forcing time sync! ");
-        timeClient.forceUpdate();
-        setSyncInterval(0);
-        time_t time = now();
-        setSyncInterval(300);
-        const bool success = year(time) > 2019;
-        // Serial.println(success ? "Successful" : "Failed");
-        return success;
     }
 
     WiFiClientSecure client;

@@ -8,9 +8,9 @@ namespace GUI
 {
     namespace Callback
     {
-        void updateMQTTIP(Control *sender, int type)
+        void updateMQTTIP(Control* sender, int type)
         {
-            IPAddress ip{};
+            IPAddress ip {};
             if (ip.fromString(sender->value))
             {
                 Settings::updateMQTTIP(ip);
@@ -18,7 +18,7 @@ namespace GUI
             }
         }
 
-        void updateMQTTPort(Control *sender, int type)
+        void updateMQTTPort(Control* sender, int type)
         {
             const int32_t port = sender->value.toInt();
             // Only accept positive values
@@ -30,7 +30,7 @@ namespace GUI
             }
         }
 
-        void updateMQTTTopic(Control *sender, int type)
+        void updateMQTTTopic(Control* sender, int type)
         {
             const uint8_t len = sender->value.length();
             // Only accept string which are 32 characters max
@@ -41,7 +41,7 @@ namespace GUI
             }
         }
 
-        void updateWifiSSID(Control *sender, int type)
+        void updateWifiSSID(Control* sender, int type)
         {
             const uint8_t len = sender->value.length();
             if (len > 0 && len <= 32)
@@ -52,7 +52,7 @@ namespace GUI
             }
         }
 
-        void updateWifiPassword(Control *sender, int type)
+        void updateWifiPassword(Control* sender, int type)
         {
             const uint8_t len = sender->value.length();
             if (len > 0 && len <= 32)
@@ -63,7 +63,7 @@ namespace GUI
             }
         }
 
-        void connectWifiButton(Control *sender, int type)
+        void connectWifiButton(Control* sender, int type)
         {
             if (type == B_DOWN)
             {
@@ -74,29 +74,35 @@ namespace GUI
 
     void setup()
     {
-        const uint16_t overviewTab = ESPUI.addControl(ControlType::Tab, "Overview", "Overview");
-        const uint16_t mqttTab = ESPUI.addControl(ControlType::Tab, "MQTT", "MQTT");
-        const uint16_t wifiTab = ESPUI.addControl(ControlType::Tab, "WiFi", "WiFi");
+        const uint16_t overviewTab = ESPUI.addControl(ControlType::Tab, "Overview", F("Overview"));
+        const uint16_t mqttTab = ESPUI.addControl(ControlType::Tab, "MQTT", F("MQTT"));
+        const uint16_t wifiTab = ESPUI.addControl(ControlType::Tab, "WiFi", F("WiFi"));
 
-        chargeLabel = ESPUI.addControl(ControlType::Label, "Battery capacity", "unknown", ControlColor::Emerald, overviewTab);
-        BVLabel = ESPUI.addControl(ControlType::Label, "Battery voltage", "unknown", ControlColor::Emerald, overviewTab);
-        BCLabel = ESPUI.addControl(ControlType::Label, "Battery current", "unknown", ControlColor::Emerald, overviewTab);
+        chargeLabel = ESPUI.addControl(
+            ControlType::Label, "Battery capacity", F("unknown"), ControlColor::Emerald, overviewTab);
+        BVLabel
+            = ESPUI.addControl(ControlType::Label, "Battery voltage", F("unknown"), ControlColor::Emerald, overviewTab);
+        BCLabel
+            = ESPUI.addControl(ControlType::Label, "Battery current", F("unknown"), ControlColor::Emerald, overviewTab);
         BTLabel = ESPUI.addControl(
-            ControlType::Label, "Battery temperature", "unknown", ControlColor::Emerald, overviewTab);
+            ControlType::Label, "Battery temperature", F("unknown"), ControlColor::Emerald, overviewTab);
 
-        LVLabel = ESPUI.addControl(ControlType::Label, "Load voltage", "unknown", ControlColor::Carrot, overviewTab);
-        LCLabel = ESPUI.addControl(ControlType::Label, "Load current", "unknown", ControlColor::Carrot, overviewTab);
-        LWLabel = ESPUI.addControl(ControlType::Label, "Load power", "unknown", ControlColor::Carrot, overviewTab);
+        LVLabel = ESPUI.addControl(ControlType::Label, "Load voltage", F("unknown"), ControlColor::Carrot, overviewTab);
+        LCLabel = ESPUI.addControl(ControlType::Label, "Load current", F("unknown"), ControlColor::Carrot, overviewTab);
+        LWLabel = ESPUI.addControl(ControlType::Label, "Load power", F("unknown"), ControlColor::Carrot, overviewTab);
 
-        PVLabel = ESPUI.addControl(ControlType::Label, "Panel voltage", "unknown", ControlColor::Peterriver, overviewTab);
-        PCLabel = ESPUI.addControl(ControlType::Label, "Panel current", "unknown", ControlColor::Peterriver, overviewTab);
-        PWLabel = ESPUI.addControl(ControlType::Label, "Panel power", "unknown", ControlColor::Peterriver, overviewTab);
+        PVLabel = ESPUI.addControl(
+            ControlType::Label, "Panel voltage", F("unknown"), ControlColor::Peterriver, overviewTab);
+        PCLabel = ESPUI.addControl(
+            ControlType::Label, "Panel current", F("unknown"), ControlColor::Peterriver, overviewTab);
+        PWLabel
+            = ESPUI.addControl(ControlType::Label, "Panel power", F("unknown"), ControlColor::Peterriver, overviewTab);
 
         CTLabel = ESPUI.addControl(
-            ControlType::Label, "Controller temperature", "unknown", ControlColor::Wetasphalt, overviewTab);
+            ControlType::Label, "Controller temperature", F("unknown"), ControlColor::Wetasphalt, overviewTab);
         CSLabel = ESPUI.addControl(
-            ControlType::Label, "Controller state", "unknown", ControlColor::Wetasphalt, overviewTab);
-        ELabel = ESPUI.addControl(ControlType::Label, "Error", "unknown", ControlColor::Wetasphalt, overviewTab);
+            ControlType::Label, "Controller state", F("unknown"), ControlColor::Wetasphalt, overviewTab);
+        ELabel = ESPUI.addControl(ControlType::Label, "Error", F("unknown"), ControlColor::Wetasphalt, overviewTab);
 
         const uint16_t mqttIPText = ESPUI.addControl(
             ControlType::Text, "Broker IP", "", ControlColor::Sunflower, mqttTab, &GUI::Callback::updateMQTTIP);
@@ -104,15 +110,17 @@ namespace GUI
             ControlType::Number, "Broker port", "", ControlColor::Sunflower, mqttTab, &GUI::Callback::updateMQTTPort);
         const uint16_t mqttTopic = ESPUI.addControl(
             ControlType::Text, "Topic", "", ControlColor::Sunflower, mqttTab, &GUI::Callback::updateMQTTTopic);
-        mqttStatusLabel = ESPUI.addControl(ControlType::Label, "Status", "unknown", ControlColor::Wetasphalt, mqttTab);
+        mqttStatusLabel
+            = ESPUI.addControl(ControlType::Label, "Status", F("unknown"), ControlColor::Wetasphalt, mqttTab);
 
         const uint16_t wifiSSID = ESPUI.addControl(
             ControlType::Text, "SSID", "", ControlColor::Sunflower, wifiTab, &GUI::Callback::updateWifiSSID);
         const uint16_t wifiPassword = ESPUI.addControl(
             ControlType::Text, "Password", "", ControlColor::Sunflower, wifiTab, &GUI::Callback::updateWifiPassword);
-        ESPUI.addControl(ControlType::Button, "Connect to WiFi", "Connect", ControlColor::Sunflower, wifiTab,
-                         &GUI::Callback::connectWifiButton);
-        wifiStatusLabel = ESPUI.addControl(ControlType::Label, "Status", "unknown", ControlColor::Wetasphalt, wifiTab);
+        ESPUI.addControl(ControlType::Button, "Connect to WiFi", F("Connect"), ControlColor::Sunflower, wifiTab,
+            &GUI::Callback::connectWifiButton);
+        wifiStatusLabel
+            = ESPUI.addControl(ControlType::Label, "Status", F("unknown"), ControlColor::Wetasphalt, wifiTab);
 
         // ESPUI.begin("RNG Bridge"); // Change with ui_title
         ESPUI.beginSPIFFS("RNG Bridge"); // If stored in spiffs
@@ -143,9 +151,9 @@ namespace GUI
     }
 
     void update(const uint8_t charge, const float batteryVoltage, const float batteryCurrent,
-                const int8_t batteryTemperature, const int8_t controllerTemperature, const float laodVoltage,
-                const float laodCurrent, const int16_t loadPower, const float panelVoltage, const float panelCurrent,
-                const int16_t panelPower, const String &charginStateString, const int32_t errorState)
+        const int8_t batteryTemperature, const int8_t controllerTemperature, const float laodVoltage,
+        const float laodCurrent, const int16_t loadPower, const float panelVoltage, const float panelCurrent,
+        const int16_t panelPower, const String& charginStateString, const int32_t errorState)
     {
         ESPUI.print(chargeLabel, String(charge) + " %");
         ESPUI.print(BVLabel, String(batteryVoltage) + " V");
@@ -166,9 +174,9 @@ namespace GUI
             });
     }
 
-    void updateWiFiStatus(const String &status) { ESPUI.updateLabel(wifiStatusLabel, status); }
+    void updateWiFiStatus(const String& status) { ESPUI.updateLabel(wifiStatusLabel, status); }
 
-    void updateMQTTStatus(const String &status) { ESPUI.updateLabel(mqttStatusLabel, status); }
+    void updateMQTTStatus(const String& status) { ESPUI.updateLabel(mqttStatusLabel, status); }
 
     size_t clients() { return ESPUI.ws->count(); }
 

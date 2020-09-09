@@ -5,6 +5,7 @@
 
 #include "WIFI.h"
 
+
 namespace MQTT
 {
     namespace Callback
@@ -32,9 +33,11 @@ namespace MQTT
 
     extern void connect();
 
-    extern void publish(const String& payload, bool retain = false);
+    extern void publish(const String& payload, uint8_t qos = 0, bool retain = false);
+    extern void publish(const char* payload, uint8_t qos = 0, bool retain = false);
 
-    extern const String lastWillMsg;
+    extern const char* lastWillFormat PROGMEM;
+    extern const char* connectionMsgFormat PROGMEM;
     extern PangolinMQTT mqtt;
     extern String topic;
     extern Ticker reconnectTimer;

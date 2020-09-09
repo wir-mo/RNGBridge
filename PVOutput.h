@@ -13,8 +13,6 @@ namespace PVOutput
     {
         extern void sendData();
         extern void updateData(const uint8_t interval, const int powerGeneration, const int powerConsumption);
-
-        extern time_t getNTPTime();
     } // namespace Callback
 
     extern void setup();
@@ -38,7 +36,8 @@ namespace PVOutput
      * @return true On success
      * @return false On error
      */
-    extern bool sendPowerData(const int powerGeneration, const int powerConsumption, const time_t dataTime);
+    extern bool sendPowerData(
+        const int powerGeneration, const int powerConsumption, const double voltage, const time_t dataTime);
 
     /**
      * @brief Get rate limit
@@ -54,11 +53,11 @@ namespace PVOutput
      */
     extern uint8_t getStatusInterval();
 
-    extern bool forceTimeSync();
-
     constexpr const char* host = "pvoutput.org";
-    constexpr const char* PVApiKey = "08124bfa21591165ca948b67ddd87152c4e8eabb";
-    constexpr const char* PVSysID = "72583";
+    // constexpr const char* PVApiKey = "08124bfa21591165ca948b67ddd87152c4e8eabb";
+    constexpr const char* PVApiKey = "";
+    // constexpr const char* PVSysID = "72583";
+    constexpr const char* PVSysID = "";
 
     extern WiFiClientSecure client;
     extern Ticker updateTimer;

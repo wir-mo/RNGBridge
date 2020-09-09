@@ -4,6 +4,8 @@
 
 #ifdef HAVE_GUI
 #include "GUI.h"
+
+
 #endif
 
 #include "Settings.h"
@@ -19,7 +21,9 @@ namespace MQTT
             GUI::updateMQTTStatus(FPSTR(CONNECTED));
 #endif
 
-            MQTT::publish("{\"device\":\"" + WIFI::mac + "\",\"connected\":true}", true);
+            char connectionMsq[43];
+            snprintf_P(connectionMsq, 43, connectionMsgFormat, WIFI::mac.c_str());
+            MQTT::publish(connectionMsq, 2, true);
         }
 
         void onDisconnect(int8_t reason)
@@ -50,7 +54,12 @@ namespace MQTT
         mqtt.onDisconnect(MQTT::Callback::onDisconnect);
     }
 
-    void updateTopic() { mqtt.setWill(topic.c_str(), 2, true, lastWillMsg.c_str()); }
+    void updateTopic()
+    {
+        char will[44];
+        snprintf_P(will, 44, lastWillFormat, WIFI::mac.c_str());
+        mqtt.setWill(topic.c_str(), 2, true, will);
+    }
 
     void updateIP(const IPAddress ip) { updateIPPort(ip, Settings::settings.mqttPort); }
 
@@ -68,11 +77,11 @@ namespace MQTT
         }
     }
 
-    void updateTopic(const String &topic) { MQTT::topic = topic; }
+    void updateTopic(const String& topic) { MQTT::topic = topic; }
 
     void connect() { mqtt.connect(); }
 
-    void publish(const String &payload, bool retain)
+    void publish(const String& payload, uint8_t qos, bool retain)
     {
         // At most once (0)
         // At least once (1)
@@ -80,7 +89,16 @@ namespace MQTT
         mqtt.publish(topic.c_str(), 0, retain, payload);
     }
 
-    const String lastWillMsg = "{\"device\":\"" + WIFI::mac + "\",\"connected\":false}";
+    void publish(const char* payload, uint8_t qos, bool retain)
+    {
+        // At most once (0)
+        // At least once (1)
+        // Exactly once (2)
+        mqtt.publish(topic.c_str(), 0, retain, (uint8_t*)payload, strlen(payload), false);
+    }
+
+    const char* lastWillFormat PROGMEM = R"({"device":"%s","connected":false})";
+    const char* connectionMsgFormat PROGMEM = R"({"device":"%s","connected":true})";
     PangolinMQTT mqtt;
     String topic;
     Ticker reconnectTimer;
