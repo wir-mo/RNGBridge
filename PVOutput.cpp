@@ -48,7 +48,6 @@ namespace PVOutput
 
     void start()
     {
-        // Serial.println("PVOutput starting");
         const uint8_t interval = getStatusInterval();
         if (interval > 0)
         {
@@ -171,16 +170,14 @@ namespace PVOutput
         if (httpsGET(F("/service/r2/getstatus.jsp"), true))
         {
             // if (client.find("X-Rate-Limit-Remaining: ")) {
-            //   Serial.print("remaining: ");
-            //   Serial.println(client.parseInt());
+            //   client.parseInt()
             // }
             if (client.find("X-Rate-Limit-Limit: "))
             {
                 limit = client.parseInt();
             }
             // if (client.find("X-Rate-Limit-Reset: ")) {
-            //   Serial.print("reset: ");
-            //   Serial.println(client.parseInt());
+            //   client.parseInt()
             // }
         }
         client.stop();
