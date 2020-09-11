@@ -3,6 +3,7 @@
 #include <Arduino.h> // Needed for memcpy
 #include <ESP_EEPROM.h>
 
+
 namespace Settings
 {
     void begin()
@@ -14,7 +15,11 @@ namespace Settings
 
         firstStart = EEPROM.percentUsed() < 0;
 
-        if (!firstStart)
+        if (firstStart)
+        {
+            initSettings();
+        }
+        else
         {
             load();
         }
@@ -45,6 +50,45 @@ namespace Settings
     bool updateMQTTTopic(const String& topic)
     {
         topic.toCharArray(settings.topic, 32);
+        return store();
+    }
+
+    bool updateSystemID(const uint32_t systemID)
+    {
+        settings.systemID = systemID;
+        return store();
+    }
+
+    bool updateApiKey(const String& apiKey)
+    {
+        apiKey.toCharArray(settings.apiKey, 50);
+        return store();
+    }
+
+    bool updateWifiPassword(const String& password)
+    {
+        password.toCharArray(settings.password, 32);
+        return store();
+    }
+
+    bool updateWifiSsid(const String& ssid)
+    {
+        ssid.toCharArray(settings.ssid, 32);
+        return store();
+    }
+
+    bool initSettings()
+    {
+        strlcpy(settings.ssid, "", 32);
+        strlcpy(settings.password, "", 32);
+        strlcpy(settings.topic, "/rng", 32);
+        strlcpy(settings.apiKey, "", 50);
+        settings.systemID = 0;
+        settings.mqttIP = 0;
+        settings.mqttPort = 1883;
+        settings.wifi = false;
+        settings.mqtt = false;
+        settings.pvOutput = false;
         return store();
     }
 

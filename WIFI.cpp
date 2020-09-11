@@ -1,16 +1,11 @@
 #include "WIFI.h"
 
+#include <ESP8266mDNS.h>
+
 #include "Constants.h"
-
-
-#ifdef HAVE_GUI
 #include "GUI.h"
-
-#endif
-
 #include "MQTT.h"
 #include "Settings.h"
-
 
 namespace WIFI
 {
@@ -18,29 +13,21 @@ namespace WIFI
     {
         void onConnect(const WiFiEventStationModeGotIP& event)
         {
-#ifdef HAVE_GUI
             GUI::updateWiFiStatus(FPSTR(CONNECTED));
-#endif
-            MQTT::connect();
+            Serial.println(F("MQTT::update"));
+            MQTT::update();
         }
 
         void onDisconnect(const WiFiEventStationModeDisconnected& event)
         {
-#ifdef HAVE_GUI
             GUI::updateWiFiStatus(FPSTR(DISCONNECTED));
-#endif
             MQTT::reconnectTimer.detach(); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
-            reconnectTimer.once(RECONNECT_DELAY, connectToWifi);
+            reconnectTimer.once_scheduled(RECONNECT_DELAY, WIFI::connect);
         }
     } // namespace Callback
 
     void setup()
     {
-#if defined(ESP32)
-        WiFi.setHostname(FPSTR(hostname));
-#else
-        WiFi.hostname(FPSTR(hostname));
-#endif
         // WiFi.onStationModeConnected();
         WiFi.onStationModeGotIP(WIFI::Callback::onConnect);
         WiFi.onStationModeDisconnected(WIFI::Callback::onDisconnect);
@@ -55,41 +42,53 @@ namespace WIFI
         return String(macStr);
     }
 
-    bool connectToAP(const String& ssid, const String& password)
+    bool connectToAP(const char* ssid, const char* password)
     {
-        if (WiFi.isConnected())
-        {
-            WiFi.disconnect();
-        }
-        else
-        {
-            WiFi.softAPdisconnect();
-        }
-        /* Explicitly set the ESP8266 to be a WiFi-client, otherwise, it by default,
-              would try to act as both a client and an access-point and could cause
-              network-issues with your other WiFi-devices on your WiFi-network. */
+        // if (WiFi.isConnected())
+        // {
+        Serial.println(F("Disconnect"));
+        WiFi.disconnect();
+        // }
+        // else
+        // {
+        // Serial.println(F("soft disconnect"));
+        WiFi.softAPdisconnect();
+        // }
+        // Explicitly set the ESP8266 to be a WiFi-client, otherwise, it by default,
+        // would try to act as both a client and an access-point and could cause
+        // network-issues with your other WiFi-devices on your WiFi-network.
         WiFi.mode(WIFI_STA);
-        // try to connect to existing network
-        WiFi.begin(ssid.c_str(), password.c_str());
 
+        // Set hostname
+#if defined(ESP32)
+        WiFi.setHostname(FPSTR(hostname));
+#else
+        WiFi.hostname(FPSTR(hostname));
+#endif
+
+        // try to connect to existing network
+        WiFi.begin(ssid, password);
+
+        Serial.println(F("Wait"));
         // Wait until we connected or failed to connect
-        uint8_t state = WiFi.status();
-        while (true)
+        wl_status_t state = WiFi.status();
+        while (state != WL_CONNECTED && state != WL_CONNECT_FAILED && state != WL_NO_SSID_AVAIL)
         {
-            if (state == WL_CONNECTED || state == WL_CONNECT_FAILED || state == WL_NO_SSID_AVAIL)
-            {
-                break;
-            }
-            delay(500);
+            // delay(500);
+            optimistic_yield(500);
             state = WiFi.status();
         }
+
+        // Setup DNS so we don't have to find and type the ip address
+        MDNS.begin(FPSTR(hostname));
+
+        Serial.println(F("Done"));
         const bool connected = state == WL_CONNECTED;
         if (connected)
         {
             WiFi.setAutoReconnect(true);
         }
 
-#ifdef HAVE_GUI
         switch (state)
         {
         case WL_CONNECT_FAILED:
@@ -102,7 +101,6 @@ namespace WIFI
         default:
             break;
         }
-#endif
 
         return connected;
     }
@@ -120,29 +118,36 @@ namespace WIFI
         } while (--timeout);
     }
 
-    void connect(const String& ssid, const String& password)
-    {
-        // if not connected -> create hotspot
-        if (!connectToAP(ssid, password))
-        {
-            createAP();
-        }
-    }
+    // void connect(const char* ssid, const char* password)
+    // {
+    //     // if not connected -> create hotspot
+    //     if (!connectToAP(ssid, password))
+    //     {
+    //         createAP();
+    //     }
+    // }
 
-    void connectToWifi()
+    void connect()
     {
         const int scanResult = WiFi.scanComplete();
-        if (scanResult == WIFI_SCAN_RUNNING)
+        Serial.print(F("Scan result "));
+        Serial.println(scanResult);
+        if (scanResult == WIFI_SCAN_RUNNING || !Settings::settings.wifi)
         {
+            Serial.println(F("Scan running"));
             // If the wifi scan is still running just wait a little longer
-            reconnectTimer.once(RECONNECT_DELAY, connectToWifi);
+            reconnectTimer.once_scheduled(RECONNECT_DELAY, WIFI::connect);
         }
         else if (scanResult == WIFI_SCAN_FAILED)
         {
+            Serial.println(F("Starting scan"));
             WiFi.scanNetworks(true);
+            reconnectTimer.once_scheduled(RECONNECT_DELAY, WIFI::connect);
         }
         else
         {
+            Serial.println(F("Scan complete"));
+            bool connected = false;
             for (int item = 0; item < scanResult; item++)
             {
                 const String foundSSID = WiFi.SSID(item);
@@ -150,12 +155,22 @@ namespace WIFI
                 // Make sure we only try to connect if we found the correct SSID
                 if (foundSSID.equals(Settings::settings.ssid))
                 {
-                    connect(String(Settings::settings.ssid), String(Settings::settings.password));
+                    Serial.println(F("Conecting"));
+                    GUI::updateWiFiStatus("Connecting");
+                    connected = connectToAP(Settings::settings.ssid, Settings::settings.password);
                     break;
                 }
             }
             // This will clear ram and make sure that next call of scanComplete will return WIFI_SCAN_FAILED
             WiFi.scanDelete();
+
+            if (!connected)
+            {
+                if (WiFi.getMode() != WIFI_AP)
+                {
+                    createAP();
+                }
+            }
         }
     }
 
