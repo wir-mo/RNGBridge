@@ -1,10 +1,8 @@
 #include "GUI.h"
 
-#include "Constants.h"
 #include "MQTT.h"
 #include "PVOutput.h"
 #include "Settings.h"
-
 
 namespace GUI
 {
@@ -196,16 +194,6 @@ namespace GUI
 
             ESPUI.updateText(pvoutputAPIKey, Settings::settings.apiKey);
             ESPUI.updateNumber(pvoutputSysId, Settings::settings.systemID);
-        }
-
-        // TODO is this needed?
-        if (WiFi.status() == WL_CONNECTED)
-        {
-            updateWiFiStatus(FPSTR(CONNECTED)); // needs #include "Constants.h"
-        }
-        else
-        {
-            updateWiFiStatus(FPSTR(DISCONNECTED)); // needs #include "Constants.h"
         }
     }
 

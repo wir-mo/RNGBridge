@@ -12,8 +12,6 @@
 
 void setup()
 {
-    Serial.begin(9600);
-    delay(4000);
     // Signal startup
     pinMode(LED_BUILTIN, OUTPUT); // Initialize the LED_BUILTIN pin as an output
     digitalWrite(LED_BUILTIN, LOW);
@@ -21,37 +19,30 @@ void setup()
     // Setup eeprom and check if this is the first start
     Settings::begin();
 
-    // ui setup
-    Serial.println(F("GUI"));
+    // UI setup
     GUI::setup();
 
-    Serial.println(F("WIFI"));
+    // WiFi setup
     WIFI::setup();
     if (Settings::settings.wifi)
     {
         // Try to connect or else create AP
-        Serial.println(F("Client"));
-        Serial.println(Settings::settings.ssid);
-        Serial.println(Settings::settings.password);
         WIFI::connectToAP(Settings::settings.ssid, Settings::settings.password);
     }
     else
     {
-        Serial.println(F("AP"));
         WIFI::createAP();
     }
 
-    Serial.println(F("MQTT"));
+    // MQTT setup
     MQTT::setup();
-    Serial.println(F("Update"));
     MQTT::update();
 
-    Serial.println(F("PV"));
+    // PVOutput setup
     PVOutput::setup();
-    Serial.println(F("Update"));
     PVOutput::update();
 
-    Serial.println(F("Renogy"));
+    // Final modbus/renogy setup
     Renogy::setup();
 
     // Signal setup done

@@ -14,7 +14,6 @@ namespace WIFI
         void onConnect(const WiFiEventStationModeGotIP& event)
         {
             GUI::updateWiFiStatus(FPSTR(CONNECTED));
-            Serial.println(F("MQTT::update"));
             MQTT::update();
         }
 
@@ -44,16 +43,10 @@ namespace WIFI
 
     bool connectToAP(const char* ssid, const char* password)
     {
-        // if (WiFi.isConnected())
-        // {
-        Serial.println(F("Disconnect"));
+        // Disconnect everything we can, this fixes an issue where the wifi just does not connect
         WiFi.disconnect();
-        // }
-        // else
-        // {
-        // Serial.println(F("soft disconnect"));
         WiFi.softAPdisconnect();
-        // }
+
         // Explicitly set the ESP8266 to be a WiFi-client, otherwise, it by default,
         // would try to act as both a client and an access-point and could cause
         // network-issues with your other WiFi-devices on your WiFi-network.
@@ -69,7 +62,6 @@ namespace WIFI
         // try to connect to existing network
         WiFi.begin(ssid, password);
 
-        Serial.println(F("Wait"));
         // Wait until we connected or failed to connect
         wl_status_t state = WiFi.status();
         while (state != WL_CONNECTED && state != WL_CONNECT_FAILED && state != WL_NO_SSID_AVAIL)
@@ -82,7 +74,6 @@ namespace WIFI
         // Setup DNS so we don't have to find and type the ip address
         MDNS.begin(FPSTR(hostname));
 
-        Serial.println(F("Done"));
         const bool connected = state == WL_CONNECTED;
         if (connected)
         {
@@ -130,23 +121,18 @@ namespace WIFI
     void connect()
     {
         const int scanResult = WiFi.scanComplete();
-        Serial.print(F("Scan result "));
-        Serial.println(scanResult);
         if (scanResult == WIFI_SCAN_RUNNING || !Settings::settings.wifi)
         {
-            Serial.println(F("Scan running"));
             // If the wifi scan is still running just wait a little longer
             reconnectTimer.once_scheduled(RECONNECT_DELAY, WIFI::connect);
         }
         else if (scanResult == WIFI_SCAN_FAILED)
         {
-            Serial.println(F("Starting scan"));
             WiFi.scanNetworks(true);
             reconnectTimer.once_scheduled(RECONNECT_DELAY, WIFI::connect);
         }
         else
         {
-            Serial.println(F("Scan complete"));
             bool connected = false;
             for (int item = 0; item < scanResult; item++)
             {
@@ -155,7 +141,6 @@ namespace WIFI
                 // Make sure we only try to connect if we found the correct SSID
                 if (foundSSID.equals(Settings::settings.ssid))
                 {
-                    Serial.println(F("Conecting"));
                     GUI::updateWiFiStatus("Connecting");
                     connected = connectToAP(Settings::settings.ssid, Settings::settings.password);
                     break;
