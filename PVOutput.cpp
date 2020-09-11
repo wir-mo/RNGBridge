@@ -1,6 +1,7 @@
 #include "PVOutput.h"
 
-// TODO improve and cleanup imports
+#include "GUI.h"
+#include "Settings.h"
 
 namespace PVOutput
 {
@@ -8,37 +9,41 @@ namespace PVOutput
     {
         void sendData()
         {
-            // Serial.println("Free heap: " + String(ESP.getFreeHeap()));
-            // TODO make selectable if either panel or system voltage should be sent
-            sendPowerData(_powerGeneration, _powerConsumption, 0.0, timeClient.getEpochTime());
+            const bool success = sendPowerData(_powerGeneration, _powerConsumption, 0.0, timeClient.getEpochTime());
             _powerGeneration = 0.0;
             _powerConsumption = 0.0;
+            if (success)
+            {
+                GUI::updatePVOutputStatus(F("Sent power data"));
+            }
+            else
+            {
+                GUI::updatePVOutputStatus(F("Could not send power data"));
+            }
+
+            // Update NTP time
+            timeClient.update();
         }
 
-        void updateData(const uint8_t interval, const int powerGeneration, const int powerConsumption)
+        void updateData(const uint8_t interval, const double powerGeneration, const double powerConsumption,
+            const double panelVoltage)
         {
             if (_updateInterval > 0)
             {
                 _powerGeneration += ((double)interval / _updateInterval) * powerGeneration;
                 _powerConsumption += ((double)interval / _updateInterval) * powerConsumption;
+                _panelVoltage += ((double)interval / _updateInterval) * panelVoltage;
             }
         }
     } // namespace Callback
 
     void setup()
     {
+        client.setBufferSizes(4096, 512);
         client.setInsecure();
 
         // Setup time client and force time sync
         timeClient.begin();
-        bool synced = false;
-        while (!synced)
-        {
-            timeClient.forceUpdate();
-            synced = year(timeClient.getEpochTime()) > 2019;
-            delay(500);
-        }
-        // Serial.println("PVOutput Setup done");
     }
 
     void start()
@@ -47,30 +52,63 @@ namespace PVOutput
         const uint8_t interval = getStatusInterval();
         if (interval > 0)
         {
-            // set status success
             // Send data every interval minutes
             _updateInterval = interval * 60;
-            // Serial.println("PVOutput started timer at " + String(_updateInterval) + "s interval");
+            syncTime();
             updateTimer.attach_scheduled(_updateInterval, PVOutput::Callback::sendData);
+            GUI::updatePVOutputStatus(F("Running"));
         }
         else
         {
             // Set status error
-            // Serial.println("PVOutput did not get interval");
+            GUI::updatePVOutputStatus(F("Could not get update interval"));
         }
     }
 
-    void stop() {}
+    void stop() { updateTimer.detach(); }
+
+    void update()
+    {
+        if (Settings::settings.pvOutput)
+        {
+            start();
+        }
+        else
+        {
+            stop();
+            GUI::updatePVOutputStatus(F("Stopped"));
+        }
+    }
+
+    bool syncTime()
+    {
+        bool synced = false;
+        if (WiFi.isConnected())
+        {
+            GUI::updatePVOutputStatus(F("Syncing time"));
+            while (!synced)
+            {
+                timeClient.forceUpdate();
+                synced = year(timeClient.getEpochTime()) > 2019;
+                delay(500);
+            }
+        }
+        else
+        {
+            GUI::updatePVOutputStatus(F("No WiFi for time sync"));
+        }
+        return synced;
+    }
 
     bool httpsGET(const String& url, const bool rateLimit) { return httpsGET(url.c_str(), rateLimit); };
 
     bool httpsGET(const char* url, const bool rateLimit)
     {
-        return httpsGET(client, url, PVApiKey, PVSysID, rateLimit);
+        return httpsGET(client, url, Settings::settings.apiKey, Settings::settings.systemID, rateLimit);
     };
 
     bool httpsGET(
-        WiFiClientSecure& client, const char* url, const char* apiKey, const char* sysID, const bool rateLimit)
+        WiFiClientSecure& client, const char* url, const char* apiKey, const uint32_t sysID, const bool rateLimit)
     {
         const bool connected = client.connect(HOST, 443);
         if (connected)
@@ -108,7 +146,6 @@ namespace PVOutput
         const int powerGeneration, const int powerConsumption, const double voltage, const time_t dataTime)
     {
         // TODO need to add a configurable amount of hours AKA new SETTING
-        // USE adjustTime(hours * 60 * 60) for that;
         const int currentYear = year(dataTime);
         const uint8_t currentMonth = month(dataTime);
         const uint8_t currentDay = day(dataTime);
@@ -123,16 +160,8 @@ namespace PVOutput
             currentMonth, currentDay, currentHour, currentMinute, powerGeneration, powerConsumption, voltage);
 
         bool success = httpsGET(data);
-        // Serial.println(data);
-        // if (success)
-        // {
-        //     Serial.println("Success");
-        // }
-        // else
-        // {
-        //     Serial.println("Failed");
-        // }
-        client.flush();
+
+        client.stop();
         return success;
     };
 
@@ -154,7 +183,7 @@ namespace PVOutput
             //   Serial.println(client.parseInt());
             // }
         }
-        client.flush();
+        client.stop();
         return limit;
     }
 
@@ -207,7 +236,7 @@ namespace PVOutput
                 interval = client.parseInt();
             }
         }
-        client.flush();
+        client.stop();
         return interval;
     }
 
@@ -220,5 +249,6 @@ namespace PVOutput
 
     double _powerConsumption = 0;
     double _powerGeneration = 0;
+    double _panelVoltage = 0;
     int _updateInterval = 0;
 } // namespace PVOutput

@@ -11,7 +11,8 @@ namespace PVOutput
     namespace Callback
     {
         extern void sendData();
-        extern void updateData(const uint8_t interval, const int powerGeneration, const int powerConsumption);
+        extern void updateData(const uint8_t interval, const double powerGeneration, const double powerConsumption,
+            const double panelVoltage);
     } // namespace Callback
 
     extern void setup();
@@ -20,12 +21,16 @@ namespace PVOutput
 
     extern void stop();
 
+    extern void update();
+
+    extern bool syncTime();
+
     extern bool httpsGET(const String& url, const bool rateLimit = false);
 
     extern bool httpsGET(const char* url, const bool rateLimit = false);
 
-    extern bool httpsGET(
-        WiFiClientSecure& client, const char* url, const char* apiKey, const char* sysID, const bool rateLimit = false);
+    extern bool httpsGET(WiFiClientSecure& client, const char* url, const char* apiKey, const uint32_t sysID,
+        const bool rateLimit = false);
 
     /**
      * @brief s
@@ -53,10 +58,6 @@ namespace PVOutput
     extern uint8_t getStatusInterval();
 
     extern const char* HOST PROGMEM;
-    // constexpr const char* PVApiKey = "08124bfa21591165ca948b67ddd87152c4e8eabb";
-    constexpr const char* PVApiKey = "";
-    // constexpr const char* PVSysID = "72583";
-    constexpr const char* PVSysID = "";
 
     extern WiFiClientSecure client;
     extern Ticker updateTimer;
@@ -65,5 +66,6 @@ namespace PVOutput
 
     extern double _powerConsumption;
     extern double _powerGeneration;
+    extern double _panelVoltage;
     extern int _updateInterval;
 } // namespace PVOutput

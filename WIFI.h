@@ -10,9 +10,9 @@ namespace WIFI
 {
     namespace Callback
     {
-        extern void onConnect(const WiFiEventStationModeGotIP &event);
+        extern void onConnect(const WiFiEventStationModeGotIP& event);
 
-        extern void onDisconnect(const WiFiEventStationModeDisconnected &event);
+        extern void onDisconnect(const WiFiEventStationModeDisconnected& event);
     } // namespace Callback
 
     extern void setup();
@@ -32,7 +32,7 @@ namespace WIFI
      * @return true If the connection was successfull
      * @return false If the connection failed
      */
-    extern bool connectToAP(const String &ssid, const String &password);
+    extern bool connectToAP(const char* ssid, const char* password);
 
     /**
      * @brief Create an access point
@@ -40,17 +40,21 @@ namespace WIFI
      */
     extern void createAP();
 
-    /**
-     * @brief Connect to an access point or fallback to own access point
-     *
-     * If no connection can be established to the given acces point ssid a new access point is created/hosted
-     *
-     * @param ssid The ssid of the AP to connect to
-     * @param password The password of the AP to connect to
-     */
-    extern void connect(const String &ssid, const String &password);
+    // /**
+    //  * @brief Connect to an access point or fallback to own access point
+    //  *
+    //  * If no connection can be established to the given acces point ssid a new access point is created/hosted
+    //  *
+    //  * @param ssid The ssid of the AP to connect to
+    //  * @param password The password of the AP to connect to
+    //  */
+    // extern void connect(const char* ssid, const char* password);
 
-    extern void connectToWifi();
+    /**
+     * @brief Connect to a known network or switch to AP mode
+     *
+     */
+    extern void connect();
 
     constexpr uint8_t RECONNECT_DELAY = 5;
     extern const String mac;

@@ -2,7 +2,9 @@
 
 #include "Constants.h"
 #include "MQTT.h"
+#include "PVOutput.h"
 #include "Settings.h"
+
 
 namespace GUI
 {
@@ -41,14 +43,20 @@ namespace GUI
             }
         }
 
+        void updateMQTTEnable(Control* sender, int type)
+        {
+            const bool enabled = type == S_ACTIVE;
+            Settings::settings.mqtt = enabled;
+            Settings::store();
+            MQTT::update();
+        }
+
         void updateWifiSSID(Control* sender, int type)
         {
             const uint8_t len = sender->value.length();
             if (len > 0 && len <= 32)
             {
-                // TODO have specific function in settings namespace
-                sender->value.toCharArray(Settings::settings.ssid, 32, 0);
-                Settings::store();
+                Settings::updateWifiSsid(sender->value);
             }
         }
 
@@ -57,18 +65,43 @@ namespace GUI
             const uint8_t len = sender->value.length();
             if (len > 0 && len <= 32)
             {
-                // TODO have specific function in settings namespace
-                sender->value.toCharArray(Settings::settings.password, 32, 0);
-                Settings::store();
+                Settings::updateWifiPassword(sender->value);
             }
         }
 
-        void connectWifiButton(Control* sender, int type)
+        void updateWifiEnable(Control* sender, int type)
         {
-            if (type == B_DOWN)
+            const bool enabled = type == S_ACTIVE;
+
+            Settings::settings.wifi = enabled;
+            Settings::store();
+            if (enabled)
             {
-                WIFI::connect(String(Settings::settings.ssid), String(Settings::settings.password));
+                WIFI::connect();
             }
+            else
+            {
+                WIFI::createAP();
+            }
+        }
+
+        void updateSystemID(Control* sender, int type) { Settings::updateSystemID(sender->value.toInt()); }
+
+        void updateAPIKey(Control* sender, int type)
+        {
+            const uint8_t len = sender->value.length();
+            if (len > 0 && len <= 50)
+            {
+                Settings::updateApiKey(sender->value);
+            }
+        }
+
+        void updatePVOutputEnable(Control* sender, int type)
+        {
+            const bool enabled = type == S_ACTIVE;
+            Settings::settings.pvOutput = enabled;
+            Settings::store();
+            PVOutput::update();
         }
     } // namespace Callback
 
@@ -76,8 +109,10 @@ namespace GUI
     {
         const uint16_t overviewTab = ESPUI.addControl(ControlType::Tab, "Overview", F("Overview"));
         const uint16_t mqttTab = ESPUI.addControl(ControlType::Tab, "MQTT", F("MQTT"));
+        const uint16_t pvoutputTab = ESPUI.addControl(ControlType::Tab, "PVOutput", F("PVOutput"));
         const uint16_t wifiTab = ESPUI.addControl(ControlType::Tab, "WiFi", F("WiFi"));
 
+        // Overview
         chargeLabel = ESPUI.addControl(
             ControlType::Label, "Battery capacity", F("unknown"), ControlColor::Emerald, overviewTab);
         BVLabel
@@ -104,39 +139,63 @@ namespace GUI
             ControlType::Label, "Controller state", F("unknown"), ControlColor::Wetasphalt, overviewTab);
         ELabel = ESPUI.addControl(ControlType::Label, "Error", F("unknown"), ControlColor::Wetasphalt, overviewTab);
 
+        // MQTT
         const uint16_t mqttIPText = ESPUI.addControl(
             ControlType::Text, "Broker IP", "", ControlColor::Sunflower, mqttTab, &GUI::Callback::updateMQTTIP);
         const uint16_t mqttPortNumber = ESPUI.addControl(
             ControlType::Number, "Broker port", "", ControlColor::Sunflower, mqttTab, &GUI::Callback::updateMQTTPort);
         const uint16_t mqttTopic = ESPUI.addControl(
             ControlType::Text, "Topic", "", ControlColor::Sunflower, mqttTab, &GUI::Callback::updateMQTTTopic);
+        const uint16_t mqttEnabled = ESPUI.addControl(
+            ControlType::Switcher, "Enable", "", ControlColor::Sunflower, mqttTab, &GUI::Callback::updateMQTTEnable);
         mqttStatusLabel
             = ESPUI.addControl(ControlType::Label, "Status", F("unknown"), ControlColor::Wetasphalt, mqttTab);
 
+        // PVOutput
+        const uint16_t pvoutputSysId = ESPUI.addControl(ControlType::Number, "System ID", "0", ControlColor::Sunflower,
+            pvoutputTab, &GUI::Callback::updateSystemID);
+        const uint16_t pvoutputAPIKey = ESPUI.addControl(ControlType::Text, "API Key", F("unknown"),
+            ControlColor::Sunflower, pvoutputTab, &GUI::Callback::updateAPIKey);
+        const uint16_t pvoutputEnabled = ESPUI.addControl(ControlType::Switcher, "Enable", "", ControlColor::Sunflower,
+            pvoutputTab, &GUI::Callback::updatePVOutputEnable);
+        pvOutputStatusLabel
+            = ESPUI.addControl(ControlType::Label, "Status", F("unknown"), ControlColor::Wetasphalt, pvoutputTab);
+
+        // WiFi
         const uint16_t wifiSSID = ESPUI.addControl(
             ControlType::Text, "SSID", "", ControlColor::Sunflower, wifiTab, &GUI::Callback::updateWifiSSID);
         const uint16_t wifiPassword = ESPUI.addControl(
             ControlType::Text, "Password", "", ControlColor::Sunflower, wifiTab, &GUI::Callback::updateWifiPassword);
-        ESPUI.addControl(ControlType::Button, "Connect to WiFi", F("Connect"), ControlColor::Sunflower, wifiTab,
-            &GUI::Callback::connectWifiButton);
+        const uint16_t wifiEnabled = ESPUI.addControl(
+            ControlType::Switcher, "Enable", "", ControlColor::Sunflower, wifiTab, &GUI::Callback::updateWifiEnable);
         wifiStatusLabel
             = ESPUI.addControl(ControlType::Label, "Status", F("unknown"), ControlColor::Wetasphalt, wifiTab);
 
         ESPUI.begin("RNG Bridge"); // Change with ui_title
-        // ESPUI.beginSPIFFS("RNG Bridge"); // If stored in spiffs
 
-        const String mqttPortString(Settings::settings.mqttPort);
-        ESPUI.updateText(mqttPortNumber, mqttPortString);
+        ESPUI.updateNumber(mqttPortNumber, Settings::settings.mqttPort);
         ESPUI.updateText(mqttTopic, Settings::settings.topic);
+        ESPUI.updateSwitcher(mqttEnabled, Settings::settings.mqtt);
+
+        ESPUI.updateSwitcher(wifiEnabled, Settings::settings.wifi);
+
+        ESPUI.updateSwitcher(pvoutputEnabled, Settings::settings.pvOutput);
         if (!Settings::firstStart)
         {
-            const String ssidString(Settings::settings.ssid);
-            const String wifipwString(Settings::settings.password);
-            const String mqttIPString(IPAddress(Settings::settings.mqttIP).toString());
+            // const String ssidString(Settings::settings.ssid);
+            // const String wifipwString(Settings::settings.password);
+            // const String mqttIPString(IPAddress(Settings::settings.mqttIP).toString());
 
-            ESPUI.updateText(wifiSSID, ssidString);
-            ESPUI.updateText(wifiPassword, wifipwString);
-            ESPUI.updateText(mqttIPText, mqttIPString);
+            // ESPUI.updateText(wifiSSID, ssidString);
+            // ESPUI.updateText(wifiPassword, wifipwString);
+            // ESPUI.updateText(mqttIPText, mqttIPString);
+
+            ESPUI.updateText(wifiSSID, Settings::settings.ssid);
+            ESPUI.updateText(wifiPassword, Settings::settings.password);
+            ESPUI.updateText(mqttIPText, IPAddress(Settings::settings.mqttIP).toString());
+
+            ESPUI.updateText(pvoutputAPIKey, Settings::settings.apiKey);
+            ESPUI.updateNumber(pvoutputSysId, Settings::settings.systemID);
         }
 
         // TODO is this needed?
@@ -208,6 +267,8 @@ namespace GUI
 
     void updateMQTTStatus(const String& status) { ESPUI.updateLabel(mqttStatusLabel, status); }
 
+    void updatePVOutputStatus(const String& status) { ESPUI.updateLabel(pvOutputStatusLabel, status); }
+
     size_t clients() { return ESPUI.ws->count(); }
 
     int chargeLabel;
@@ -225,5 +286,7 @@ namespace GUI
     int ELabel;
     int mqttStatusLabel;
     int wifiStatusLabel;
+    int pvOutputStatusLabel;
+
     Ticker delayedUpdate;
 } // namespace GUI

@@ -4,21 +4,22 @@
 #include <String.h>
 #include <stdint.h>
 
+
 namespace Settings
 {
     // Settings stored in eeprom
     struct Settings
     {
-        // bool pvOutput;
-        // bool mqtt;
-        // bool autoReconnect;
-        // char apiKey[32];   // 08124bfa21591165ca948b67ddd87152c4e8eabb
-        // char systemID[32]; // 72583
-        uint32_t mqttIP;
-        uint16_t mqttPort;
         char ssid[32];
         char password[32];
         char topic[32];
+        char apiKey[50];
+        uint32_t systemID;
+        uint32_t mqttIP;
+        uint16_t mqttPort;
+        bool wifi;
+        bool mqtt;
+        bool pvOutput;
     };
 
     /**
@@ -47,6 +48,16 @@ namespace Settings
     extern bool updateMQTTIP(const IPAddress ip);
 
     extern bool updateMQTTTopic(const String& topic);
+
+    extern bool updateSystemID(const uint32_t systemID);
+
+    extern bool updateApiKey(const String& apiKey);
+
+    extern bool updateWifiPassword(const String& password);
+
+    extern bool updateWifiSsid(const String& ssid);
+
+    extern bool initSettings();
 
     /**
      * @brief Indicates whether this is a start without configuration

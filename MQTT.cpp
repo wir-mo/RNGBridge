@@ -1,14 +1,9 @@
 #include "MQTT.h"
 
 #include "Constants.h"
-
-#ifdef HAVE_GUI
 #include "GUI.h"
-
-
-#endif
-
 #include "Settings.h"
+
 
 namespace MQTT
 {
@@ -17,10 +12,13 @@ namespace MQTT
     {
         void onConnect(bool sessionPresent)
         {
+            // Indicate we are connected
             connected = true;
-#ifdef HAVE_GUI
+
+            // Update GUI
             GUI::updateMQTTStatus(FPSTR(CONNECTED));
-#endif
+
+            // Send connected message
             char connectionMsq[43];
             snprintf_P(connectionMsq, 43, connectionMsgFormat, WIFI::mac.c_str());
             MQTT::publish(connectionMsq, 2, true);
@@ -28,31 +26,69 @@ namespace MQTT
 
         void onDisconnect(int8_t reason)
         {
+            // Indicate we are disconnected
             connected = false;
-#ifdef HAVE_GUI
-            GUI::updateMQTTStatus(FPSTR(DISCONNECTED));
-#endif
 
-            if (WiFi.isConnected())
+            // Update GUI
+            GUI::updateMQTTStatus(FPSTR(DISCONNECTED));
+
+            // If WiFi is connected and mqtt is enabled try to reconnect
+            if (WiFi.isConnected() && Settings::settings.mqtt)
             {
-                reconnectTimer.once(2, connect);
+                reconnectTimer.once_scheduled(2, connect);
             }
         }
     } // namespace Callback
 
     void setup()
     {
-#ifdef HAVE_GUI
         GUI::updateMQTTStatus(FPSTR(DISCONNECTED));
-#endif
-
         const IPAddress ip = Settings::settings.mqttIP;
-        const uint16_t port = Settings::settings.mqttPort;
-        updateIPPort(ip, port);
+        updateIPPort(ip, Settings::settings.mqttPort);
         updateTopic();
         mqtt.setClientId(FPSTR(hostname));
         mqtt.onConnect(MQTT::Callback::onConnect);
         mqtt.onDisconnect(MQTT::Callback::onDisconnect);
+
+        _setup = true;
+    }
+
+    void update()
+    {
+        if (_setup)
+        {
+            if (Settings::settings.mqtt)
+            {
+                GUI::updateMQTTStatus(F("Started"));
+                if (!connected)
+                {
+                    const IPAddress ip = Settings::settings.mqttIP;
+                    const bool ipSet = ip.isSet();
+                    const bool portSet = Settings::settings.mqttPort > 0;
+                    if (!ipSet && !portSet)
+                    {
+                        GUI::updateMQTTStatus(F("IP and Port wrong"));
+                    }
+                    else if (!ipSet)
+                    {
+                        GUI::updateMQTTStatus(F("IP wrong"));
+                    }
+                    else
+                    {
+                        GUI::updateMQTTStatus(F("Port wrong"));
+                    }
+                    connect();
+                }
+            }
+            else
+            {
+                if (connected)
+                {
+                    disconnect();
+                }
+                GUI::updateMQTTStatus(F("Stopped"));
+            }
+        }
     }
 
     void updateTopic()
@@ -82,6 +118,8 @@ namespace MQTT
 
     void connect() { mqtt.connect(); }
 
+    void disconnect() { mqtt.disconnect(true); }
+
     void publish(const String& payload, uint8_t qos, bool retain)
     {
         // At most once (0)
@@ -109,4 +147,5 @@ namespace MQTT
     PangolinMQTT mqtt;
     Ticker reconnectTimer;
     bool connected = false;
+    bool _setup = false;
 } // namespace MQTT

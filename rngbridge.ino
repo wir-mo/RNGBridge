@@ -1,11 +1,7 @@
 #include <ESP8266mDNS.h>
 
 #include "Constants.h"
-
-#ifdef HAVE_GUI
 #include "GUI.h"
-#endif
-
 #include "MQTT.h"
 #include "PVOutput.h"
 #include "Renogy.h"
@@ -16,56 +12,50 @@
 
 void setup()
 {
-    WIFI::setup();
+    Serial.begin(9600);
+    delay(4000);
+    // Signal startup
+    pinMode(LED_BUILTIN, OUTPUT); // Initialize the LED_BUILTIN pin as an output
+    digitalWrite(LED_BUILTIN, LOW);
 
-    // setup eeprom and check if this is the first start
+    // Setup eeprom and check if this is the first start
     Settings::begin();
 
-    if (Settings::firstStart)
-    {
-        // We can directly start the AP since we don't have a configuration
-        WIFI::createAP();
+    // ui setup
+    Serial.println(F("GUI"));
+    GUI::setup();
 
-        // Load default settings
-        Settings::settings.mqttPort = 1883;
-        Settings::updateMQTTTopic(F("/rng"));
+    Serial.println(F("WIFI"));
+    WIFI::setup();
+    if (Settings::settings.wifi)
+    {
+        // Try to connect or else create AP
+        Serial.println(F("Client"));
+        Serial.println(Settings::settings.ssid);
+        Serial.println(Settings::settings.password);
+        WIFI::connectToAP(Settings::settings.ssid, Settings::settings.password);
     }
     else
     {
-        // Try to connect or else create AP
-        const String ssid = String(Settings::settings.ssid);
-        const String password = String(Settings::settings.password);
-        WIFI::connect(ssid, password);
+        Serial.println(F("AP"));
+        WIFI::createAP();
     }
 
-#ifdef HAVE_GUI
-    // ui setup
-    GUI::setup();
-#endif
+    Serial.println(F("MQTT"));
+    MQTT::setup();
+    Serial.println(F("Update"));
+    MQTT::update();
 
-    // Setup DNS so we don't have to find and type the ip address
-    MDNS.begin(FPSTR(hostname));
+    Serial.println(F("PV"));
+    PVOutput::setup();
+    Serial.println(F("Update"));
+    PVOutput::update();
 
-    if (!Settings::firstStart)
-    {
-        MQTT::setup();
-        MQTT::connect();
-
-        PVOutput::setup();
-        PVOutput::start();
-    }
-
+    Serial.println(F("Renogy"));
     Renogy::setup();
 
-    // Signal setup complete
-    // TODO Make usage of external LED, that is not connected to the TX line
-    pinMode(LED_BUILTIN, OUTPUT); // Initialize the LED_BUILTIN pin as an output
+    // Signal setup done
     digitalWrite(LED_BUILTIN, HIGH);
-    blinkLED();
-    delay(100);
-    blinkLED();
-    delay(100);
-    blinkLED();
 }
 
 void loop()

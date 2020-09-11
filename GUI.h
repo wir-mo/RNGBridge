@@ -3,6 +3,7 @@
 #include <ESPUI.h>
 #include <Ticker.h>
 
+
 namespace GUI
 {
     namespace Callback
@@ -13,11 +14,19 @@ namespace GUI
 
         extern void updateMQTTTopic(Control* sender, int type);
 
+        extern void updateMQTTEnable(Control* sender, int type);
+
         extern void updateWifiSSID(Control* sender, int type);
 
         extern void updateWifiPassword(Control* sender, int type);
 
-        extern void connectWifiButton(Control* sender, int type);
+        extern void updateWifiEnable(Control* sender, int type);
+
+        extern void updateSystemID(Control* sender, int type);
+
+        extern void updateAPIKey(Control* sender, int type);
+
+        extern void updatePVOutputEnable(Control* sender, int type);
     } // namespace Callback
 
     extern void setup();
@@ -30,6 +39,8 @@ namespace GUI
     extern void updateWiFiStatus(const String& status);
 
     extern void updateMQTTStatus(const String& status);
+
+    extern void updatePVOutputStatus(const String& status);
 
     extern size_t clients();
 
@@ -48,5 +59,7 @@ namespace GUI
     extern int ELabel;
     extern int mqttStatusLabel;
     extern int wifiStatusLabel;
+    extern int pvOutputStatusLabel;
+
     extern Ticker delayedUpdate;
 } // namespace GUI

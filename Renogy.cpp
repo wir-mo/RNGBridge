@@ -1,15 +1,10 @@
 #include "Renogy.h"
 
 #include "Constants.h"
-
-
-#ifdef HAVE_GUI
 #include "GUI.h"
-
-#endif
-
 #include "MQTT.h"
 #include "PVOutput.h"
+#include "Settings.h"
 #include "WIFI.h"
 
 
@@ -74,9 +69,9 @@
 
 void blinkLED()
 {
-    // digitalWrite(LED_BUILTIN, LOW);
-    // delay(100);
-    // digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(100);
+    digitalWrite(LED_BUILTIN, HIGH);
 }
 
 namespace Renogy
@@ -109,18 +104,25 @@ namespace Renogy
                 // upper are street light status
                 int32_t errorState = ModBus::readInt32LE(ModBus::modbus, 33);
 
-                // Max size under assumptions Voltage < 1000, Current < 1000: 261 + null terminator + tolerance
-                //{"device":"0123456789AB","b":{"charge":254,"voltage":999.9,"current":999.99,"temperature":254},"l":{"voltage":999.9,"current":999.99,"power":65534},"p":{"voltage":999.9,"current":999.99,"power":65534},"s":{"state":254,"errorState":4294967295,"temperature":254}}
-                char jsonBuf[280];
-                snprintf_P(jsonBuf, 280, jsonFormat, WIFI::mac.c_str(), charge, batteryVoltage, batteryCurrent,
-                    batteryTemperature, loadVoltage, loadCurrent, loadPower, panelVoltage, panelCurrent, panelPower,
-                    chargingState, errorState, controllerTemperature);
-                MQTT::publish(jsonBuf);
+                // Send MQTT data if it is enabled
+                if (Settings::settings.mqtt)
+                {
+                    // Max size under assumptions Voltage < 1000, Current < 1000: 261 + null terminator + tolerance
+                    //{"device":"0123456789AB","b":{"charge":254,"voltage":999.9,"current":999.99,"temperature":254},"l":{"voltage":999.9,"current":999.99,"power":65534},"p":{"voltage":999.9,"current":999.99,"power":65534},"s":{"state":254,"errorState":4294967295,"temperature":254}}
+                    char jsonBuf[280];
+                    snprintf_P(jsonBuf, 280, jsonFormat, WIFI::mac.c_str(), charge, batteryVoltage, batteryCurrent,
+                        batteryTemperature, loadVoltage, loadCurrent, loadPower, panelVoltage, panelCurrent, panelPower,
+                        chargingState, errorState, controllerTemperature);
+                    MQTT::publish(jsonBuf);
+                }
 
-                // TODO make this optional
-                PVOutput::Callback::updateData(2, panelVoltage * panelCurrent, loadVoltage * loadCurrent);
+                // Update PVOutput data if it is enabled
+                if (Settings::settings.pvOutput)
+                {
+                    PVOutput::Callback::updateData(
+                        2, panelVoltage * panelCurrent, loadVoltage * loadCurrent, panelVoltage);
+                }
 
-#ifdef HAVE_GUI
                 // update ui
                 if (GUI::clients() > 0)
                 {
@@ -128,11 +130,13 @@ namespace Renogy
                         loadVoltage, loadCurrent, loadPower, panelVoltage, panelCurrent, panelPower, chargingState,
                         errorState);
                 }
-#endif
             }
             else
             {
-                MQTT::publish("{\"device\":\"" + WIFI::mac + "\",\"mbError\":" + result + "}");
+                if (Settings::settings.mqtt)
+                {
+                    MQTT::publish("{\"device\":\"" + WIFI::mac + "\",\"mbError\":" + String(result) + "}");
+                }
             }
 
             blinkLED();
