@@ -27,7 +27,10 @@ void setup()
     if (Settings::settings.wifi)
     {
         // Try to connect or else create AP
-        WIFI::connectToAP(Settings::settings.ssid, Settings::settings.password);
+        if (!WIFI::connectToAP(Settings::settings.ssid, Settings::settings.password))
+        {
+            WIFI::createAP();
+        }
     }
     else
     {

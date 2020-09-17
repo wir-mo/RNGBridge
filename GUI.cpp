@@ -1,5 +1,4 @@
 #include "GUI.h"
-
 #include "MQTT.h"
 #include "PVOutput.h"
 #include "Settings.h"

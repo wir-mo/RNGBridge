@@ -1,6 +1,5 @@
-#include "PVOutput.h"
-
 #include "GUI.h"
+#include "PVOutput.h"
 #include "Settings.h"
 
 namespace PVOutput
@@ -9,9 +8,16 @@ namespace PVOutput
     {
         void sendData()
         {
-            const bool success = sendPowerData(_powerGeneration, _powerConsumption, 0.0, timeClient.getEpochTime());
+            // Send power data
+            const bool success
+                = sendPowerData(_powerGeneration, _powerConsumption, _panelVoltage, timeClient.getEpochTime());
+
+            // Reset counters
             _powerGeneration = 0.0;
             _powerConsumption = 0.0;
+            _panelVoltage = 0.0;
+
+            // Update GUI
             if (success)
             {
                 GUI::updatePVOutputStatus(F("Sent power data"));
@@ -28,46 +34,64 @@ namespace PVOutput
         void updateData(const uint8_t interval, const double powerGeneration, const double powerConsumption,
             const double panelVoltage)
         {
+            // Only update if updateInterval is greater than zero, so we don't accidentally send wrong data and the data
+            // does not overflow
             if (_updateInterval > 0)
             {
-                _powerGeneration += ((double)interval / _updateInterval) * powerGeneration;
-                _powerConsumption += ((double)interval / _updateInterval) * powerConsumption;
-                _panelVoltage += ((double)interval / _updateInterval) * panelVoltage;
+                const double factor = ((double)interval / _updateInterval);
+                _powerGeneration += factor * powerGeneration;
+                _powerConsumption += factor * powerConsumption;
+                _panelVoltage += factor * panelVoltage;
             }
         }
     } // namespace Callback
 
     void setup()
     {
+        // We need to reduce the buffer sizes or we get issues with HEAP
         client.setBufferSizes(4096, 512);
+        // Don't want to use Cert Store or Fingerprint cause they need to be updated
         client.setInsecure();
-
-        // Setup time client and force time sync
+        // Setup time client
         timeClient.begin();
     }
 
     void start()
     {
+        GUI::updatePVOutputStatus(F("Starting"));
+        // Try to get the status interval which can't be 0
         const uint8_t interval = getStatusInterval();
         if (interval > 0)
         {
-            // Send data every interval minutes
+            // Convert minutes to seconds
             _updateInterval = interval * 60;
+            // Do time sync now
             syncTime();
+            // Attach timer
             updateTimer.attach_scheduled(_updateInterval, PVOutput::Callback::sendData);
+            // Detach timer
+            startTimer.detach();
             GUI::updatePVOutputStatus(F("Running"));
         }
         else
         {
             // Set status error
-            GUI::updatePVOutputStatus(F("Could not get update interval"));
+            GUI::updatePVOutputStatus(F("Could not get update interval, retrying in 5s"));
+            startTimer.once_scheduled(5, start);
         }
     }
 
-    void stop() { updateTimer.detach(); }
+    void stop()
+    {
+        // Detach the timer and reset update interval
+        _updateInterval = 0;
+        startTimer.detach();
+        updateTimer.detach();
+    }
 
     void update()
     {
+        // If PVOutput is enabled by settings start the "service" or else stop it
         if (Settings::settings.pvOutput)
         {
             start();
@@ -82,11 +106,13 @@ namespace PVOutput
     bool syncTime()
     {
         bool synced = false;
+        // Only attempt sync if the WiFi is connected or we will never get out of the while loop
         if (WiFi.isConnected())
         {
             GUI::updatePVOutputStatus(F("Syncing time"));
             while (!synced)
             {
+                // Force update until we have a correct time
                 timeClient.forceUpdate();
                 synced = year(timeClient.getEpochTime()) > 2019;
                 delay(500);
@@ -99,19 +125,26 @@ namespace PVOutput
         return synced;
     }
 
-    bool httpsGET(const String& url, const bool rateLimit) { return httpsGET(url.c_str(), rateLimit); };
+    bool httpsGET(const String& url, const bool rateLimit)
+    {
+        // Delegate
+        return httpsGET(url.c_str(), rateLimit);
+    };
 
     bool httpsGET(const char* url, const bool rateLimit)
     {
+        // Delegate
         return httpsGET(client, url, Settings::settings.apiKey, Settings::settings.systemID, rateLimit);
     };
 
     bool httpsGET(
         WiFiClientSecure& client, const char* url, const char* apiKey, const uint32_t sysID, const bool rateLimit)
     {
+        // Try to connect to server
         const bool connected = client.connect(HOST, 443);
         if (connected)
         {
+            // Do GET request
             client.print(F("GET "));
             client.print(url);
             client.println(F(" HTTP/1.1"));
@@ -128,11 +161,13 @@ namespace PVOutput
                 client.println(F("X-Rate-Limit: 1"));
             }
 
+            // Append API Key and System ID to Header
             client.print(F("X-Pvoutput-Apikey: "));
             client.println(apiKey);
             client.print(F("X-Pvoutput-SystemId: "));
             client.println(sysID);
 
+            // No content needed for all requests to PVOutput
             client.println(F("Content-Length: 0"));
             client.println();
             client.println();
@@ -144,22 +179,22 @@ namespace PVOutput
     bool sendPowerData(
         const int powerGeneration, const int powerConsumption, const double voltage, const time_t dataTime)
     {
-        // TODO need to add a configurable amount of hours AKA new SETTING
+        // TODO Maybe need to have a Setting for the timezone (+-hours from GMT)
         const int currentYear = year(dataTime);
         const uint8_t currentMonth = month(dataTime);
         const uint8_t currentDay = day(dataTime);
         const uint8_t currentHour = hour(dataTime);
         const uint8_t currentMinute = minute(dataTime);
 
-        char data[86];
-        // Format: "d=yyyymmdd&t=hh:mm&v1=xxx&v3=xxx"
-        // sprintf(data, "d=%04d%02d%02d&t=%02d:%02d&v1=%.3f&v3=%.3f", currentYear, currentMonth, currentDay,
-        // currentHour, currentMinute, energyGeneration, energyConsumption);
+        // Generate URL with data
+        char data[80]; // 44 static + 8 + 4 + 18
         sprintf_P(data, PSTR("/service/r2/addstatus.jsp?d=%04d%02d%02d&t=%02d:%02d&v2=%d&v4=%d&v6=%.1f"), currentYear,
             currentMonth, currentDay, currentHour, currentMinute, powerGeneration, powerConsumption, voltage);
 
+        // Make request
         bool success = httpsGET(data);
 
+        // Release HEAP
         client.stop();
         return success;
     };
@@ -167,19 +202,23 @@ namespace PVOutput
     uint16_t getRateLimit()
     {
         uint16_t limit = 0;
+        // Make request
         if (httpsGET(F("/service/r2/getstatus.jsp"), true))
         {
             // if (client.find("X-Rate-Limit-Remaining: ")) {
             //   client.parseInt()
             // }
+            // Find rate limit
             if (client.find("X-Rate-Limit-Limit: "))
             {
+                // Parse rate limit
                 limit = client.parseInt();
             }
             // if (client.find("X-Rate-Limit-Reset: ")) {
             //   client.parseInt()
             // }
         }
+        // Release HEAP
         client.stop();
         return limit;
     }
@@ -187,9 +226,10 @@ namespace PVOutput
     uint8_t getStatusInterval()
     {
         uint8_t interval = 0;
+        // Make request
         if (httpsGET(F("/service/r2/getsystem.jsp")))
         {
-            // Remove Header
+            // Remove Header and find Body
             if (client.find("\r\n\r\n"))
             {
                 // Data:
@@ -212,7 +252,7 @@ namespace PVOutput
                 // 14 latitude, decimal
                 // 15 longitude, decimal
                 // 16 status interval, number in minutes
-                // 17 don't care about the rest
+                // 17... don't care about the rest
 
                 // skip 15 commas
                 client.find(',');
@@ -233,6 +273,7 @@ namespace PVOutput
                 interval = client.parseInt();
             }
         }
+        // Release HEAP
         client.stop();
         return interval;
     }
@@ -241,6 +282,7 @@ namespace PVOutput
 
     WiFiClientSecure client;
     Ticker updateTimer;
+    Ticker startTimer;
     WiFiUDP ntpUDP;
     NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
 

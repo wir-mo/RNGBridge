@@ -1,12 +1,10 @@
-#include "Renogy.h"
-
 #include "Constants.h"
 #include "GUI.h"
 #include "MQTT.h"
 #include "PVOutput.h"
+#include "Renogy.h"
 #include "Settings.h"
 #include "WIFI.h"
-
 
 // 0x0100 (2) 00 - Battery capacity SOC (state of charge)
 // 0x0101 (2) 01 - Battery voltage * 0.1

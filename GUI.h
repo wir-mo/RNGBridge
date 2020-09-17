@@ -3,7 +3,6 @@
 #include <ESPUI.h>
 #include <Ticker.h>
 
-
 namespace GUI
 {
     namespace Callback
