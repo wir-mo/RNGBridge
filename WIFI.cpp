@@ -1,11 +1,11 @@
-#include "WIFI.h"
-
 #include <ESP8266mDNS.h>
 
 #include "Constants.h"
 #include "GUI.h"
 #include "MQTT.h"
 #include "Settings.h"
+#include "WIFI.h"
+
 
 namespace WIFI
 {
@@ -101,6 +101,8 @@ namespace WIFI
         WiFi.mode(WIFI_AP);
         WiFi.softAPConfig(accessPointIP, accessPointIP, netmask);
         WiFi.softAP(hostname);
+
+        GUI::updateWiFiStatus("AP mode");
 
         uint8_t timeout = 5;
         do
