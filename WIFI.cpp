@@ -6,7 +6,6 @@
 #include "Settings.h"
 #include "WIFI.h"
 
-
 namespace WIFI
 {
     namespace Callback
@@ -157,6 +156,7 @@ namespace WIFI
                 {
                     createAP();
                 }
+                reconnectTimer.once_scheduled(RECONNECT_DELAY, WIFI::connect);
             }
         }
     }
