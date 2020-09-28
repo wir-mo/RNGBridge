@@ -52,6 +52,8 @@ namespace PVOutput
         client.setBufferSizes(4096, 512);
         // Don't want to use Cert Store or Fingerprint cause they need to be updated
         client.setInsecure();
+        // Set time offset, convert hours to seconds
+        timeClient.setTimeOffset(Settings::settings.timeOffset * 3600);
         // Setup time client
         timeClient.begin();
     }
@@ -284,7 +286,7 @@ namespace PVOutput
     Ticker updateTimer;
     Ticker startTimer;
     WiFiUDP ntpUDP;
-    NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 3600, 60000);
+    NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 0, 60000);
 
     double _powerConsumption = 0;
     double _powerGeneration = 0;

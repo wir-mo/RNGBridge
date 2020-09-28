@@ -3,6 +3,7 @@
 #include <ESPUI.h>
 #include <Ticker.h>
 
+
 namespace GUI
 {
     namespace Callback
@@ -24,6 +25,8 @@ namespace GUI
         extern void updateSystemID(Control* sender, int type);
 
         extern void updateAPIKey(Control* sender, int type);
+
+        extern void updateTimeOffset(Control* sender, int type);
 
         extern void updatePVOutputEnable(Control* sender, int type);
     } // namespace Callback
