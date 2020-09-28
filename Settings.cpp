@@ -1,7 +1,7 @@
-#include "Settings.h"
-
 #include <Arduino.h> // Needed for memcpy
 #include <ESP_EEPROM.h>
+
+#include "Settings.h"
 
 
 namespace Settings
@@ -65,6 +65,12 @@ namespace Settings
         return store();
     }
 
+    bool updateTimeOffset(const int8_t timeOffset)
+    {
+        settings.timeOffset = timeOffset;
+        return store();
+    }
+
     bool updateWifiPassword(const String& password)
     {
         password.toCharArray(settings.password, 32);
@@ -89,6 +95,7 @@ namespace Settings
         settings.wifi = false;
         settings.mqtt = false;
         settings.pvOutput = false;
+        settings.timeOffset = 0;
         return store();
     }
 

@@ -4,7 +4,6 @@
 #include <String.h>
 #include <stdint.h>
 
-
 namespace Settings
 {
     // Settings stored in eeprom
@@ -17,6 +16,7 @@ namespace Settings
         uint32_t systemID;
         uint32_t mqttIP;
         uint16_t mqttPort;
+        int8_t timeOffset;
         bool wifi;
         bool mqtt;
         bool pvOutput;
@@ -52,6 +52,8 @@ namespace Settings
     extern bool updateSystemID(const uint32_t systemID);
 
     extern bool updateApiKey(const String& apiKey);
+
+    extern bool updateTimeOffset(const int8_t timeOffset);
 
     extern bool updateWifiPassword(const String& password);
 

@@ -3,6 +3,7 @@
 #include "PVOutput.h"
 #include "Settings.h"
 
+
 namespace GUI
 {
     namespace Callback
@@ -93,6 +94,17 @@ namespace GUI
             }
         }
 
+        void updateTimeOffset(Control* sender, int type)
+        {
+            const long value = sender->value.toInt();
+            // Offsets can only range from -12 to +14 hours
+            if (value >= -12 && value <= 14)
+            {
+                Settings::updateTimeOffset(value);
+                PVOutput::timeClient.setTimeOffset(value * 3600);
+            }
+        }
+
         void updatePVOutputEnable(Control* sender, int type)
         {
             const bool enabled = type == S_ACTIVE;
@@ -153,6 +165,8 @@ namespace GUI
             pvoutputTab, &GUI::Callback::updateSystemID);
         const uint16_t pvoutputAPIKey = ESPUI.addControl(ControlType::Text, "API Key", F("unknown"),
             ControlColor::Sunflower, pvoutputTab, &GUI::Callback::updateAPIKey);
+        const uint16_t pvoutputTimeOffset = ESPUI.addControl(ControlType::Number, "Time offset from UTC", "0",
+            ControlColor::Sunflower, pvoutputTab, &GUI::Callback::updateTimeOffset);
         const uint16_t pvoutputEnabled = ESPUI.addControl(ControlType::Switcher, "Enable", "", ControlColor::Sunflower,
             pvoutputTab, &GUI::Callback::updatePVOutputEnable);
         pvOutputStatusLabel
@@ -176,6 +190,7 @@ namespace GUI
 
         ESPUI.updateSwitcher(wifiEnabled, Settings::settings.wifi);
 
+        ESPUI.updateSwitcher(pvoutputTimeOffset, Settings::settings.timeOffset);
         ESPUI.updateSwitcher(pvoutputEnabled, Settings::settings.pvOutput);
         if (!Settings::firstStart)
         {
