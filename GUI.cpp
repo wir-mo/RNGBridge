@@ -3,7 +3,6 @@
 #include "PVOutput.h"
 #include "Settings.h"
 
-
 namespace GUI
 {
     namespace Callback
@@ -254,14 +253,80 @@ namespace GUI
             break;
         }
 
+        // See Renogy.cpp for more info on this
+        uint8_t controllerError = 0;
+        if (errorState & 0xFFFF0000)
+        {
+            if (errorState & 0x40000000)
+            {
+                controllerError = 15;
+            }
+            else if (errorState & 0x20000000)
+            {
+                controllerError = 14;
+            }
+            else if (errorState & 0x10000000)
+            {
+                controllerError = 13;
+            }
+            else if (errorState & 0x8000000)
+            {
+                controllerError = 12;
+            }
+            else if (errorState & 0x4000000)
+            {
+                controllerError = 11;
+            }
+            else if (errorState & 0x2000000)
+            {
+                controllerError = 10;
+            }
+            else if (errorState & 0x1000000)
+            {
+                controllerError = 9;
+            }
+            else if (errorState & 0x800000)
+            {
+                controllerError = 8;
+            }
+            else if (errorState & 0x400000)
+            {
+                controllerError = 7;
+            }
+            else if (errorState & 0x200000)
+            {
+                controllerError = 6;
+            }
+            else if (errorState & 0x100000)
+            {
+                controllerError = 5;
+            }
+            else if (errorState & 0x80000)
+            {
+                controllerError = 4;
+            }
+            else if (errorState & 0x40000)
+            {
+                controllerError = 3;
+            }
+            else if (errorState & 0x20000)
+            {
+                controllerError = 2;
+            }
+            else if (errorState & 0x10000)
+            {
+                controllerError = 1;
+            }
+        }
+
         delayedUpdate.once_ms(
-            100, [loadPower, panelVoltage, panelCurrent, panelPower, charginStateString, errorState]() {
+            500, [loadPower, panelVoltage, panelCurrent, panelPower, charginStateString, controllerError]() {
                 ESPUI.print(LWLabel, String(loadPower) + " W");
                 ESPUI.print(PVLabel, String(panelVoltage) + " V");
                 ESPUI.print(PCLabel, String(panelCurrent) + " A");
                 ESPUI.print(PWLabel, String(panelPower) + " W");
                 ESPUI.print(CSLabel, charginStateString);
-                ESPUI.print(ELabel, "E" + String(errorState));
+                ESPUI.print(ELabel, "E" + String(controllerError));
             });
     }
 
