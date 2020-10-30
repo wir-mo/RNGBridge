@@ -6,6 +6,7 @@
 #include "Settings.h"
 #include "WIFI.h"
 
+
 // 0x0100 (2) 00 - Battery capacity SOC (state of charge)
 // 0x0101 (2) 01 - Battery voltage * 0.1
 // 0x0102 (2) 02 - Charging current to battery * 0.01
@@ -53,17 +54,23 @@
 // 0x0121 (4) 33 - controller fault and warning information
 //            - 32 bit value of flags
 //
-//            B24: photovoltaic input side short circuit
-//            B23: photovoltaic input overpower
-//            B22: ambient temperature too high
-//            B21: controller temperature too high
-//            "B20: load overpower
-//               or load over-current"
-//            B19: load short circuit
-//            B18: battery under-voltage warning
-//            B17: battery over-voltage
-//            B16: battery over-discharge
-//            B0-B15 reserved
+//                B31: Reserved
+//            E15 B30: Charge MOS short circuit
+//            E14 B29: Anti-reverse MOS short circuit
+//            E13 B28: Solar panel reversly connected
+//            E12 B27: Solar panel working point over-voltage
+//            E11 B26: Solar panel counter current
+//            E10 B25: Photovoltaic input side over voltage
+//            E09 B24: Photovoltaic input side short circuit
+//            E08 B23: Photovoltaic input overpower
+//            E07 B22: Ambient temperature too high
+//            E06 B21: Controller temperature too high
+//            E05 B20: Load overpower or load over-current
+//            E04 B19: Load short circuit
+//            E03 B18: Battery under-voltage warning
+//            E02 B17: Battery over-voltage
+//            E01 B16: battery over-discharge
+//                B0-B15: Reserved
 
 void blinkLED()
 {
@@ -100,7 +107,7 @@ namespace Renogy
 
                 int8_t chargingState = ModBus::readInt8Lower(ModBus::modbus, 32);
                 // upper are street light status
-                int32_t errorState = ModBus::readInt32LE(ModBus::modbus, 33);
+                int32_t errorState = ModBus::readInt32BE(ModBus::modbus, 33);
 
                 // Send MQTT data if it is enabled
                 if (Settings::settings.mqtt)
@@ -166,15 +173,14 @@ namespace Renogy
 
         int32_t readInt32BE(ModbusMaster& modbus, const uint8_t startAddress)
         {
-            return (modbus.getResponseBuffer(startAddress) & 0xFFFF)
-                | ((modbus.getResponseBuffer(3 + startAddress) & 0xFFFF) << 24);
+            return (modbus.getResponseBuffer(2 + startAddress) & 0xFFFF)
+                | ((modbus.getResponseBuffer(startAddress) & 0xFFFF) << 16);
         }
 
         int32_t readInt32LE(ModbusMaster& modbus, const uint8_t startAddress)
         {
             uint32_t reg = readInt32BE(modbus, startAddress);
-            return ((reg << 24) & 0xFF000000) | ((reg << 8) & 0x00FF0000) | ((reg >> 8) & 0x0000FF00)
-                | ((reg >> 24) & 0x000000FF);
+            return ((reg << 8) & 0xFF00FF00) | ((reg >> 8) & 0x00FF00FF);
         }
 
         ModbusMaster modbus;
