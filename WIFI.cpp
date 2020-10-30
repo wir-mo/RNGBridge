@@ -27,8 +27,8 @@ namespace WIFI
     void setup()
     {
         // WiFi.onStationModeConnected();
-        WiFi.onStationModeGotIP(WIFI::Callback::onConnect);
-        WiFi.onStationModeDisconnected(WIFI::Callback::onDisconnect);
+        onConnectHandler = WiFi.onStationModeGotIP(WIFI::Callback::onConnect);
+        onDisconnectHandler = WiFi.onStationModeDisconnected(WIFI::Callback::onDisconnect);
     }
 
     String macAddress()
@@ -82,10 +82,10 @@ namespace WIFI
         switch (state)
         {
         case WL_CONNECT_FAILED:
-            GUI::updateWiFiStatus("Connection failed");
+            GUI::updateWiFiStatus(F("Connection failed"));
             break;
         case WL_NO_SSID_AVAIL:
-            GUI::updateWiFiStatus("SSID unavailable");
+            GUI::updateWiFiStatus(F("SSID unavailable"));
             break;
 
         default:
@@ -101,7 +101,7 @@ namespace WIFI
         WiFi.softAPConfig(accessPointIP, accessPointIP, netmask);
         WiFi.softAP(hostname);
 
-        GUI::updateWiFiStatus("AP mode");
+        GUI::updateWiFiStatus(F("AP mode"));
 
         uint8_t timeout = 5;
         do
@@ -132,7 +132,7 @@ namespace WIFI
             WiFi.scanNetworks(true);
             reconnectTimer.once_scheduled(RECONNECT_DELAY, WIFI::connect);
         }
-        else
+        else if (WiFi.status() != WL_CONNECTED)
         {
             bool connected = false;
             for (int item = 0; item < scanResult; item++)
@@ -142,7 +142,7 @@ namespace WIFI
                 // Make sure we only try to connect if we found the correct SSID
                 if (foundSSID.equals(Settings::settings.ssid))
                 {
-                    GUI::updateWiFiStatus("Connecting");
+                    GUI::updateWiFiStatus(F("Connecting"));
                     connected = connectToAP(Settings::settings.ssid, Settings::settings.password);
                     break;
                 }
@@ -167,5 +167,8 @@ namespace WIFI
     const IPAddress netmask(255, 255, 255, 0);
 
     Ticker reconnectTimer;
+
+    WiFiEventHandler onConnectHandler;
+    WiFiEventHandler onDisconnectHandler;
 
 } // namespace WIFI

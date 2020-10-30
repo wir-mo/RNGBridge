@@ -6,6 +6,7 @@
 #include <Ticker.h>
 #include <WString.h>
 
+
 namespace WIFI
 {
     namespace Callback
@@ -63,4 +64,7 @@ namespace WIFI
     extern const IPAddress netmask;
 
     extern Ticker reconnectTimer;
+
+    extern WiFiEventHandler onConnectHandler;
+    extern WiFiEventHandler onDisconnectHandler;
 } // namespace WIFI
