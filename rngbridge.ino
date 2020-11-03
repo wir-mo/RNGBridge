@@ -10,6 +10,9 @@
 // 60 requests per hour.
 // 300 requests per hour in donation mode.
 
+const uint32_t RENOGY_INTERVAL = 2 * 1000; /// The interval in ms at which the renogy data should be read
+uint32_t lastRenogy = 0; /// The last time the renogy data was read
+
 void setup()
 {
     // Signal startup
@@ -54,6 +57,25 @@ void setup()
 
 void loop()
 {
+    const uint32_t time = millis();
+    // handle renogy modbus
+    // accomodate for overflow
+    uint32_t delta;
+    if (time < lastRenogy)
+    {
+        delta = std::numeric_limits<uint32_t>::max() - lastRenogy + time;
+    }
+    else
+    {
+        delta = time - lastRenogy;
+    }
+    if (delta >= RENOGY_INTERVAL)
+    {
+        lastRenogy = time;
+        // Read and process data every 2 seconds
+        Renogy::Callback::readAndProcessData(delta);
+    }
+
     // handle dns
     MDNS.update();
     // handle wifi or whatever the esp is doing

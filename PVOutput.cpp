@@ -31,14 +31,14 @@ namespace PVOutput
             timeClient.update();
         }
 
-        void updateData(const uint8_t interval, const double powerGeneration, const double powerConsumption,
+        void updateData(const double interval, const double powerGeneration, const double powerConsumption,
             const double panelVoltage)
         {
             // Only update if updateInterval is greater than zero, so we don't accidentally send wrong data and the data
             // does not overflow
             if (_updateInterval > 0)
             {
-                const double factor = ((double)interval / _updateInterval);
+                const double factor = interval / _updateInterval;
                 _powerGeneration += factor * powerGeneration;
                 _powerConsumption += factor * powerConsumption;
                 _panelVoltage += factor * panelVoltage;

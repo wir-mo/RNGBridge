@@ -19,14 +19,14 @@ namespace PVOutput
         /**
          * @brief Update the current solar data
          *
-         * @param interval Interval of the update (how long ago was this data read)
+         * @param interval Interval of the update in seconds (how long ago was this data read)
          * @param powerGeneration Current power generation in Watts
          * @param powerConsumption  Current power consumption in Watts
          * @param panelVoltage Curret panel voltage in Volts
          *
          * Should be called after data was read from the chargecontroller
          */
-        extern void updateData(const uint8_t interval, const double powerGeneration, const double powerConsumption,
+        extern void updateData(const double interval, const double powerGeneration, const double powerConsumption,
             const double panelVoltage);
     } // namespace Callback
 
@@ -142,5 +142,5 @@ namespace PVOutput
     extern double _powerConsumption; //< Internal counter for power consumption
     extern double _powerGeneration; //< Internal counter for power generation
     extern double _panelVoltage; //< Internal counter for panel voltage
-    extern int _updateInterval; //< Internal interval for PVOutput updates
+    extern int _updateInterval; //< Internal interval for PVOutput updates in seconds
 } // namespace PVOutput
