@@ -83,7 +83,7 @@ namespace Renogy
 {
     namespace Callback
     {
-        void readAndProcessData()
+        void readAndProcessData(const uint32_t delta)
         {
             // Read 30 registers starting at 0x0100)
             ModBus::modbus.clearResponseBuffer();
@@ -125,7 +125,7 @@ namespace Renogy
                 if (Settings::settings.pvOutput)
                 {
                     PVOutput::Callback::updateData(
-                        2, panelVoltage * panelCurrent, loadVoltage * loadCurrent, panelVoltage);
+                        delta / 1000.0, panelVoltage * panelCurrent, loadVoltage * loadCurrent, panelVoltage);
                 }
 
                 // update ui
@@ -195,12 +195,8 @@ namespace Renogy
         // Renogy Device ID = 1
         ModBus::modbus.begin(1, Serial);
         // Maybe make configurable with begin(x, Serial);
-
-        // Read and process data every 2 seconds
-        readDataTimer.attach_scheduled(2, Renogy::Callback::readAndProcessData);
     }
 
     const char* jsonFormat PROGMEM
         = R"({"device":"%s","b":{"charge":%hhu,"voltage":%.1f,"current":%.2f,"temperature":%hhu},"l":{"voltage":%.1f,"current":%.2f,"power":%hu},"p":{"voltage":%.1f,"current":%.2f,"power":%hu},"s":{"state":%hhu,"errorState":%u,"temperature":%hhu}})";
-    Ticker readDataTimer;
 } // namespace Renogy

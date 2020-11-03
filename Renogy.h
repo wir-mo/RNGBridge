@@ -1,8 +1,6 @@
 #pragma once
 
 #include <ModbusMaster.h>
-#include <Ticker.h>
-
 
 extern void blinkLED();
 
@@ -10,8 +8,12 @@ namespace Renogy
 {
     namespace Callback
     {
-
-        extern void readAndProcessData();
+        /**
+         * @brief Read and process the modbus data
+         *
+         * @param delta The time since the last time this function was called in ms
+         */
+        extern void readAndProcessData(const uint32_t delta);
 
     } // namespace Callback
 
@@ -37,7 +39,5 @@ namespace Renogy
     extern void writeException(const uint8_t code);
 
     extern const char* jsonFormat PROGMEM;
-
-    extern Ticker readDataTimer;
 
 } // namespace Renogy
