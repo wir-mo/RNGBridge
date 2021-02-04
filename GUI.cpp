@@ -53,16 +53,30 @@ namespace GUI
             const uint8_t len = sender->value.length();
             if (len > 0 && len <= 32)
             {
-                Settings::updateWifiSsid(sender->value);
+                if (!Settings::updateWifiSsid(sender->value))
+                {
+                    updateWiFiStatus(F("Could not store SSID"));
+                }
+            }
+            else
+            {
+                updateWiFiStatus(F("SSID length wrong (1-32 chars)"));
             }
         }
 
         void updateWifiPassword(Control* sender, int type)
         {
             const uint8_t len = sender->value.length();
-            if (len > 0 && len <= 32)
+            if (len >= 0 && len <= 32)
             {
-                Settings::updateWifiPassword(sender->value);
+                if (!Settings::updateWifiPassword(sender->value))
+                {
+                    updateWiFiStatus(F("Could not store password"));
+                }
+            }
+            else
+            {
+                updateWiFiStatus(F("Password length wrong (0-32 chars)"));
             }
         }
 
