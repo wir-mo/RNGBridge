@@ -13,6 +13,8 @@ namespace Settings
         char password[32];
         char topic[32];
         char apiKey[50];
+        char mqttUser[32];
+        char mqttPass[32];
         uint32_t systemID;
         uint32_t mqttIP;
         uint16_t mqttPort;
@@ -48,6 +50,10 @@ namespace Settings
     extern bool updateMQTTIP(const IPAddress ip);
 
     extern bool updateMQTTTopic(const String& topic);
+
+    extern bool updateMQTTUsername(const String& username);
+
+    extern bool updateMQTTPassword(const String& password);
 
     extern bool updateSystemID(const uint32_t systemID);
 
