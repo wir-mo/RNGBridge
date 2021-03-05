@@ -33,10 +33,32 @@ namespace GUI
         {
             const uint8_t len = sender->value.length();
             // Only accept string which are 32 characters max
-            if (len > 0 && len <= 32)
+            if (len > 0 && len < 32)
             {
                 Settings::updateMQTTTopic(sender->value);
                 MQTT::updateTopic();
+            }
+        }
+
+        void updateMQTTUsername(Control* sender, int type)
+        {
+            const uint8_t len = sender->value.length();
+            // Only accept string which are 32 characters max
+            if (len < 32)
+            {
+                Settings::updateMQTTUsername(sender->value);
+                MQTT::updateCredentials();
+            }
+        }
+
+        void updateMQTTPassword(Control* sender, int type)
+        {
+            const uint8_t len = sender->value.length();
+            // Only accept string which are 32 characters max
+            if (len < 32)
+            {
+                Settings::updateMQTTPassword(sender->value);
+                MQTT::updateCredentials();
             }
         }
 
@@ -51,11 +73,15 @@ namespace GUI
         void updateWifiSSID(Control* sender, int type)
         {
             const uint8_t len = sender->value.length();
-            if (len > 0 && len <= 32)
+            if (len > 0 && len < 32)
             {
                 if (!Settings::updateWifiSsid(sender->value))
                 {
                     updateWiFiStatus(F("Could not store SSID"));
+                }
+                else
+                {
+                    updateWiFiStatus(F("Stored SSID"));
                 }
             }
             else
@@ -67,11 +93,15 @@ namespace GUI
         void updateWifiPassword(Control* sender, int type)
         {
             const uint8_t len = sender->value.length();
-            if (len >= 0 && len <= 32)
+            if (len >= 0 && len < 32)
             {
                 if (!Settings::updateWifiPassword(sender->value))
                 {
                     updateWiFiStatus(F("Could not store password"));
+                }
+                else
+                {
+                    updateWiFiStatus(F("Stored password"));
                 }
             }
             else
@@ -101,7 +131,7 @@ namespace GUI
         void updateAPIKey(Control* sender, int type)
         {
             const uint8_t len = sender->value.length();
-            if (len > 0 && len <= 50)
+            if (len > 0 && len < 50)
             {
                 Settings::updateApiKey(sender->value);
             }
@@ -168,6 +198,10 @@ namespace GUI
             ControlType::Number, "Broker port", "", ControlColor::Sunflower, mqttTab, &GUI::Callback::updateMQTTPort);
         const uint16_t mqttTopic = ESPUI.addControl(
             ControlType::Text, "Topic", "", ControlColor::Sunflower, mqttTab, &GUI::Callback::updateMQTTTopic);
+        const uint16_t mqttUsername = ESPUI.addControl(
+            ControlType::Text, "Username", "", ControlColor::Sunflower, mqttTab, &GUI::Callback::updateMQTTUsername);
+        const uint16_t mqttPassword = ESPUI.addControl(
+            ControlType::Text, "Password", "", ControlColor::Sunflower, mqttTab, &GUI::Callback::updateMQTTPassword);
         const uint16_t mqttEnabled = ESPUI.addControl(
             ControlType::Switcher, "Enable", "", ControlColor::Sunflower, mqttTab, &GUI::Callback::updateMQTTEnable);
         mqttStatusLabel
@@ -199,6 +233,8 @@ namespace GUI
 
         ESPUI.updateNumber(mqttPortNumber, Settings::settings.mqttPort);
         ESPUI.updateText(mqttTopic, Settings::settings.topic);
+        ESPUI.updateText(mqttUsername, Settings::settings.mqttUser);
+        ESPUI.updateText(mqttPassword, Settings::settings.mqttPass);
         ESPUI.updateSwitcher(mqttEnabled, Settings::settings.mqtt);
 
         ESPUI.updateSwitcher(wifiEnabled, Settings::settings.wifi);

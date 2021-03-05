@@ -1,8 +1,7 @@
-#include <Arduino.h> // Needed for memcpy
+#include <Arduino.h> // Needed for memcpy inside ESP_EEPROM
 #include <ESP_EEPROM.h>
 
 #include "Settings.h"
-
 
 namespace Settings
 {
@@ -50,6 +49,18 @@ namespace Settings
     bool updateMQTTTopic(const String& topic)
     {
         topic.toCharArray(settings.topic, 32);
+        return store();
+    }
+
+    bool updateMQTTUsername(const String& username)
+    {
+        username.toCharArray(settings.mqttUser, 32);
+        return store();
+    }
+
+    bool updateMQTTPassword(const String& password)
+    {
+        password.toCharArray(settings.mqttPass, 32);
         return store();
     }
 

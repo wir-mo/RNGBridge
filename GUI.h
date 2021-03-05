@@ -3,7 +3,6 @@
 #include <ESPUI.h>
 #include <Ticker.h>
 
-
 namespace GUI
 {
     namespace Callback
@@ -13,6 +12,10 @@ namespace GUI
         extern void updateMQTTPort(Control* sender, int type);
 
         extern void updateMQTTTopic(Control* sender, int type);
+
+        extern void updateMQTTUsername(Control* sender, int type);
+
+        extern void updateMQTTPassword(Control* sender, int type);
 
         extern void updateMQTTEnable(Control* sender, int type);
 

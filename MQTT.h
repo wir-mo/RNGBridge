@@ -30,6 +30,8 @@ namespace MQTT
 
     extern void updateIPPort(const IPAddress& ip, const uint16_t port);
 
+    extern void updateCredentials();
+
     extern void connect();
 
     extern void disconnect();

@@ -1,9 +1,7 @@
-#include "MQTT.h"
-
 #include "Constants.h"
 #include "GUI.h"
+#include "MQTT.h"
 #include "Settings.h"
-
 
 namespace MQTT
 {
@@ -46,6 +44,7 @@ namespace MQTT
         const IPAddress ip = Settings::settings.mqttIP;
         updateIPPort(ip, Settings::settings.mqttPort);
         updateTopic();
+        updateCredentials();
         mqtt.setClientId(FPSTR(hostname));
         mqtt.onConnect(MQTT::Callback::onConnect);
         mqtt.onDisconnect(MQTT::Callback::onDisconnect);
@@ -115,6 +114,8 @@ namespace MQTT
             // TODO maybe need call to connect here
         }
     }
+
+    void updateCredentials() { mqtt.setCredentials(Settings::settings.mqttUser, Settings::settings.mqttPass); }
 
     void connect() { mqtt.connect(); }
 
