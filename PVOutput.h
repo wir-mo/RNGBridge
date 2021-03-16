@@ -1,7 +1,6 @@
 #pragma once
 
 #include <NTPClient.h>
-#include <Ticker.h>
 #include <TimeLib.h>
 #include <WiFiClientSecure.h>
 #include <WiFiUdp.h>
@@ -40,15 +39,15 @@ namespace PVOutput
     /**
      * @brief Tries to start automatic PVOutput data upload
      *
-     * Tries to get the status interval from PVOutput and if it is valid syncs the time and starts
-     * \ref PVOutput::updateTimer for automatic data upload
+     * Tries to get the status interval from PVOutput and if it is valid syncs the time and set
+     * \ref PVOutput::started true
      */
     extern void start();
 
     /**
      * @brief Stops the automatic PVOutput data upload
      *
-     * Detaches the \ref PVOutput::updateTimer
+     * Sets \ref PVOutput::started false
      */
     extern void stop();
 
@@ -134,8 +133,6 @@ namespace PVOutput
     extern const char* HOST PROGMEM; //< Host to make rrequests to aka pvoutput.org
 
     extern WiFiClientSecure client; //< Client to make requests with
-    extern Ticker updateTimer; //< Timer to send data to PVOutput
-    extern Ticker startTimer; //< Timer to rettry start
     extern WiFiUDP ntpUDP; //< UDP for \ref PVOutput::timeClient
     extern NTPClient timeClient; //< NTP client for current time
 
@@ -143,4 +140,6 @@ namespace PVOutput
     extern double _powerGeneration; //< Internal counter for power generation
     extern double _panelVoltage; //< Internal counter for panel voltage
     extern int _updateInterval; //< Internal interval for PVOutput updates in seconds
+
+    extern bool started; //< Did we start
 } // namespace PVOutput

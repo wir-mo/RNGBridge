@@ -29,12 +29,6 @@ namespace MQTT
 
             // Update GUI
             GUI::updateMQTTStatus(FPSTR(DISCONNECTED));
-
-            // If WiFi is connected and mqtt is enabled try to reconnect
-            if (WiFi.isConnected() && Settings::settings.mqtt)
-            {
-                reconnectTimer.once_scheduled(2, connect);
-            }
         }
     } // namespace Callback
 
@@ -146,7 +140,6 @@ namespace MQTT
     const char* lastWillFormat PROGMEM = R"({"device":"%s","connected":false})";
     const char* connectionMsgFormat PROGMEM = R"({"device":"%s","connected":true})";
     PangolinMQTT mqtt;
-    Ticker reconnectTimer;
     bool connected = false;
     bool _setup = false;
 } // namespace MQTT

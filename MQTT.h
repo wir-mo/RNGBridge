@@ -1,7 +1,6 @@
 #pragma once
 
 #include <PangolinMQTT.h>
-#include <Ticker.h>
 
 #include "WIFI.h"
 
@@ -42,7 +41,6 @@ namespace MQTT
     extern const char* lastWillFormat PROGMEM;
     extern const char* connectionMsgFormat PROGMEM;
     extern PangolinMQTT mqtt;
-    extern Ticker reconnectTimer;
     extern bool connected;
     extern bool _setup;
 } // namespace MQTT

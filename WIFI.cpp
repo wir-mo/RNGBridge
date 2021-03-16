@@ -12,15 +12,17 @@ namespace WIFI
     {
         void onConnect(const WiFiEventStationModeGotIP& event)
         {
+            connected = true;
+
             GUI::updateWiFiStatus(FPSTR(CONNECTED));
             MQTT::update();
         }
 
         void onDisconnect(const WiFiEventStationModeDisconnected& event)
         {
+            connected = false;
+
             GUI::updateWiFiStatus(FPSTR(DISCONNECTED));
-            MQTT::reconnectTimer.detach(); // ensure we don't reconnect to MQTT while reconnecting to Wi-Fi
-            reconnectTimer.once_scheduled(RECONNECT_DELAY, WIFI::connect);
         }
     } // namespace Callback
 
@@ -125,12 +127,12 @@ namespace WIFI
         if (scanResult == WIFI_SCAN_RUNNING || !Settings::settings.wifi)
         {
             // If the wifi scan is still running just wait a little longer
-            reconnectTimer.once_scheduled(RECONNECT_DELAY, WIFI::connect);
+            return;
         }
         else if (scanResult == WIFI_SCAN_FAILED)
         {
             WiFi.scanNetworks(true);
-            reconnectTimer.once_scheduled(RECONNECT_DELAY, WIFI::connect);
+            return;
         }
         else if (WiFi.status() != WL_CONNECTED)
         {
@@ -156,7 +158,7 @@ namespace WIFI
                 {
                     createAP();
                 }
-                reconnectTimer.once_scheduled(RECONNECT_DELAY, WIFI::connect);
+                return;
             }
         }
     }
@@ -166,9 +168,9 @@ namespace WIFI
     const IPAddress accessPointIP(192, 168, 1, 1);
     const IPAddress netmask(255, 255, 255, 0);
 
-    Ticker reconnectTimer;
-
     WiFiEventHandler onConnectHandler;
     WiFiEventHandler onDisconnectHandler;
+
+    bool connected = false;
 
 } // namespace WIFI

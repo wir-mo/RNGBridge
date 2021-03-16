@@ -69,26 +69,24 @@ namespace PVOutput
             _updateInterval = interval * 60;
             // Do time sync now
             syncTime();
-            // Attach timer
-            updateTimer.attach_scheduled(_updateInterval, PVOutput::Callback::sendData);
-            // Detach timer
-            startTimer.detach();
+
             GUI::updatePVOutputStatus(F("Running"));
+
+            started = true;
         }
         else
         {
+            started = false;
+
             // Set status error
             GUI::updatePVOutputStatus(F("Could not get update interval, retrying in 5s"));
-            startTimer.once_scheduled(5, start);
         }
     }
 
     void stop()
     {
-        // Detach the timer and reset update interval
+        started = false;
         _updateInterval = 0;
-        startTimer.detach();
-        updateTimer.detach();
     }
 
     void update()
@@ -283,8 +281,6 @@ namespace PVOutput
     const char* HOST PROGMEM = "pvoutput.org";
 
     WiFiClientSecure client;
-    Ticker updateTimer;
-    Ticker startTimer;
     WiFiUDP ntpUDP;
     NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 0, 60000);
 
@@ -292,4 +288,6 @@ namespace PVOutput
     double _powerGeneration = 0;
     double _panelVoltage = 0;
     int _updateInterval = 0;
+
+    bool started = false;
 } // namespace PVOutput

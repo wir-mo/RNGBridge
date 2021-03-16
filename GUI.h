@@ -1,7 +1,6 @@
 #pragma once
 
 #include <ESPUI.h>
-#include <Ticker.h>
 
 namespace GUI
 {
@@ -65,6 +64,4 @@ namespace GUI
     extern int mqttStatusLabel;
     extern int wifiStatusLabel;
     extern int pvOutputStatusLabel;
-
-    extern Ticker delayedUpdate;
 } // namespace GUI

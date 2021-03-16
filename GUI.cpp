@@ -369,15 +369,13 @@ namespace GUI
             }
         }
 
-        delayedUpdate.once_ms(
-            500, [loadPower, panelVoltage, panelCurrent, panelPower, charginStateString, controllerError]() {
-                ESPUI.print(LWLabel, String(loadPower) + " W");
-                ESPUI.print(PVLabel, String(panelVoltage) + " V");
-                ESPUI.print(PCLabel, String(panelCurrent) + " A");
-                ESPUI.print(PWLabel, String(panelPower) + " W");
-                ESPUI.print(CSLabel, charginStateString);
-                ESPUI.print(ELabel, "E" + String(controllerError));
-            });
+        delay(250); // Try delaying to send data (maybe increase to 500)
+        ESPUI.print(LWLabel, String(loadPower) + " W");
+        ESPUI.print(PVLabel, String(panelVoltage) + " V");
+        ESPUI.print(PCLabel, String(panelCurrent) + " A");
+        ESPUI.print(PWLabel, String(panelPower) + " W");
+        ESPUI.print(CSLabel, charginStateString);
+        ESPUI.print(ELabel, "E" + String(controllerError));
     }
 
     void updateWiFiStatus(const String& status) { ESPUI.updateLabel(wifiStatusLabel, status); }
@@ -404,6 +402,4 @@ namespace GUI
     int mqttStatusLabel;
     int wifiStatusLabel;
     int pvOutputStatusLabel;
-
-    Ticker delayedUpdate;
 } // namespace GUI
