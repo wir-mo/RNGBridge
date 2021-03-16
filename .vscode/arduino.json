@@ -1,6 +1,6 @@
 {
     "board": "esp8266:esp8266:generic",
-    "configuration": "xtal=160,vt=flash,exception=legacy,ssl=all,ResetMethod=nodemcu,CrystalFreq=26,FlashFreq=40,FlashMode=dout,eesz=1M,led=2,sdk=nonosdk_190703,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=460800",
+    "configuration": "xtal=160,vt=flash,exception=legacy,ssl=all,ResetMethod=nodemcu,CrystalFreq=26,FlashFreq=80,FlashMode=dout,eesz=1M,led=2,sdk=nonosdk3v0,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=460800",
     "sketch": "rngbridge.ino",
-    "port": "/dev/tty.usbserial-14340"
+    "port": "/dev/tty.usbserial-14430"
 }

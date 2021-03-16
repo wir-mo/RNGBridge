@@ -3,9 +3,7 @@
 #include <ESP8266WiFi.h>
 #include <IPAddress.h>
 #include <String.h>
-#include <Ticker.h>
 #include <WString.h>
-
 
 namespace WIFI
 {
@@ -57,14 +55,13 @@ namespace WIFI
      */
     extern void connect();
 
-    constexpr uint8_t RECONNECT_DELAY = 5;
     extern const String mac;
     // Access point settings
     extern const IPAddress accessPointIP;
     extern const IPAddress netmask;
 
-    extern Ticker reconnectTimer;
-
     extern WiFiEventHandler onConnectHandler;
     extern WiFiEventHandler onDisconnectHandler;
+
+    extern bool connected; /// Indicates if WIFI is connected
 } // namespace WIFI
