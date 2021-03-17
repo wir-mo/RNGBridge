@@ -10,7 +10,7 @@ namespace WIFI
 {
     namespace Callback
     {
-        void onConnect(const WiFiEventStationModeGotIP& event)
+        void onConnect(const WiFiEventStationModeGotIP&)
         {
             connected = true;
 
@@ -18,7 +18,7 @@ namespace WIFI
             MQTT::update();
         }
 
-        void onDisconnect(const WiFiEventStationModeDisconnected& event)
+        void onDisconnect(const WiFiEventStationModeDisconnected&)
         {
             connected = false;
 
@@ -55,9 +55,9 @@ namespace WIFI
 
         // Set hostname
 #if defined(ESP32)
-        WiFi.setHostname(FPSTR(hostname));
+        WiFi.setHostname(FPSTR(HOSTNAME));
 #else
-        WiFi.hostname(FPSTR(hostname));
+        WiFi.hostname(FPSTR(HOSTNAME));
 #endif
 
         // try to connect to existing network
@@ -73,7 +73,7 @@ namespace WIFI
         }
 
         // Setup DNS so we don't have to find and type the ip address
-        MDNS.begin(FPSTR(hostname));
+        MDNS.begin(FPSTR(HOSTNAME));
 
         const bool connected = state == WL_CONNECTED;
         if (connected)
@@ -101,7 +101,7 @@ namespace WIFI
     {
         WiFi.mode(WIFI_AP);
         WiFi.softAPConfig(accessPointIP, accessPointIP, netmask);
-        WiFi.softAP(hostname);
+        WiFi.softAP(HOSTNAME);
 
         GUI::updateWiFiStatus(F("AP mode"));
 

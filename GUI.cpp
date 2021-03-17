@@ -10,7 +10,7 @@ namespace GUI
 {
     namespace Callback
     {
-        void updateMQTTIP(Control* sender, int type)
+        void updateMQTTIP(Control* sender, int)
         {
             IPAddress ip {};
             if (ip.fromString(sender->value))
@@ -20,7 +20,7 @@ namespace GUI
             }
         }
 
-        void updateMQTTPort(Control* sender, int type)
+        void updateMQTTPort(Control* sender, int)
         {
             const int32_t port = sender->value.toInt();
             // Only accept positive values
@@ -32,7 +32,7 @@ namespace GUI
             }
         }
 
-        void updateMQTTTopic(Control* sender, int type)
+        void updateMQTTTopic(Control* sender, int)
         {
             const uint8_t len = sender->value.length();
             // Only accept string which are 32 characters max
@@ -43,7 +43,7 @@ namespace GUI
             }
         }
 
-        void updateMQTTUsername(Control* sender, int type)
+        void updateMQTTUsername(Control* sender, int)
         {
             const uint8_t len = sender->value.length();
             // Only accept string which are 32 characters max
@@ -54,7 +54,7 @@ namespace GUI
             }
         }
 
-        void updateMQTTPassword(Control* sender, int type)
+        void updateMQTTPassword(Control* sender, int)
         {
             const uint8_t len = sender->value.length();
             // Only accept string which are 32 characters max
@@ -65,7 +65,7 @@ namespace GUI
             }
         }
 
-        void updateMQTTEnable(Control* sender, int type)
+        void updateMQTTEnable(Control*, int type)
         {
             const bool enabled = type == S_ACTIVE;
             Settings::settings.mqtt = enabled;
@@ -73,7 +73,7 @@ namespace GUI
             MQTT::update();
         }
 
-        void updateWifiSSID(Control* sender, int type)
+        void updateWifiSSID(Control* sender, int)
         {
             const uint8_t len = sender->value.length();
             if (len > 0 && len < 32)
@@ -93,10 +93,10 @@ namespace GUI
             }
         }
 
-        void updateWifiPassword(Control* sender, int type)
+        void updateWifiPassword(Control* sender, int)
         {
             const uint8_t len = sender->value.length();
-            if (len >= 0 && len < 32)
+            if (len < 32)
             {
                 if (!Settings::updateWifiPassword(sender->value))
                 {
@@ -113,7 +113,7 @@ namespace GUI
             }
         }
 
-        void updateWifiEnable(Control* sender, int type)
+        void updateWifiEnable(Control*, int type)
         {
             const bool enabled = type == S_ACTIVE;
 
@@ -129,9 +129,9 @@ namespace GUI
             }
         }
 
-        void updateSystemID(Control* sender, int type) { Settings::updateSystemID(sender->value.toInt()); }
+        void updateSystemID(Control* sender, int) { Settings::updateSystemID(sender->value.toInt()); }
 
-        void updateAPIKey(Control* sender, int type)
+        void updateAPIKey(Control* sender, int)
         {
             const uint8_t len = sender->value.length();
             if (len > 0 && len < 50)
@@ -140,7 +140,7 @@ namespace GUI
             }
         }
 
-        void updateTimeOffset(Control* sender, int type)
+        void updateTimeOffset(Control* sender, int)
         {
             const long value = sender->value.toInt();
             // Offsets can only range from -12 to +14 hours
@@ -151,7 +151,7 @@ namespace GUI
             }
         }
 
-        void updatePVOutputEnable(Control* sender, int type)
+        void updatePVOutputEnable(Control*, int type)
         {
             const bool enabled = type == S_ACTIVE;
             Settings::settings.pvOutput = enabled;

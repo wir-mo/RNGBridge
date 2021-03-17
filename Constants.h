@@ -1,6 +1,10 @@
 #pragma once
 
-#include <avr/pgmspace.h>
+#if (defined(__AVR__))
+#include <avr\pgmspace.h>
+#else
+#include <pgmspace.h>
+#endif
 
 // Enable OTA support (only useful if Flash is >1MB)
 // #define OTA
@@ -11,5 +15,5 @@
 extern const char* CONNECTED PROGMEM;
 extern const char* DISCONNECTED PROGMEM;
 
-extern const char* hostname PROGMEM;
+extern const char* HOSTNAME PROGMEM;
 extern const char* OTA_INDEX PROGMEM;
