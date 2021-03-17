@@ -1,3 +1,4 @@
+#include <DNSServer.h>
 #include <ESP8266mDNS.h>
 
 #include "Constants.h"
@@ -6,15 +7,86 @@
 #include "PVOutput.h"
 #include "Renogy.h"
 #include "Settings.h"
-
 // 60 requests per hour.
 // 300 requests per hour in donation mode.
+
+// DNS server for captive portal
+DNSServer dnsServer;
+bool captiveDNS = false; /// Is the captive portal enabled?
 
 const uint32_t RENOGY_INTERVAL = 2; /// The interval in s at which the renogy data should be read
 
 uint8_t lastSecond = 0; /// The last seconds value
 uint8_t secondsPassedRenogy = 0; /// amount of seconds passed
 uint16_t secondsPassedPVOutput = 0; /// amount of seconds passed
+
+/**
+ * @brief Check if the given string is an ip address
+ *
+ * @param str String to check
+ * @return true If the string is an ip
+ * @return false If the string is not an ip
+ */
+bool isIp(const String& str)
+{
+    for (size_t i = 0; i < str.length(); i++)
+    {
+        int c = str.charAt(i);
+        if (c != '.' && (c < '0' || c > '9'))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * @brief Callback used for captive portal webserver
+ *
+ * @param request
+ * @return true
+ * @return false
+ */
+bool captivePortal(AsyncWebServerRequest* request)
+{
+    if (ON_STA_FILTER(request))
+    {
+        return false; // only serve captive in AP mode
+    }
+    String hostH;
+    if (!request->hasHeader("Host"))
+    {
+        return false;
+    }
+    hostH = request->getHeader("Host")->value();
+
+    if (!isIp(hostH) && hostH.indexOf(FPSTR(HOSTNAME)) < 0)
+    {
+        // Serial.println(F("Captive portal"));
+        AsyncWebServerResponse* response = request->beginResponse(302);
+        response->addHeader(F("Location"), F("http://192.168.1.1"));
+        request->send(response);
+        return true;
+    }
+    return false;
+}
+
+/**
+ * @brief Initialize the captive portal, which opens up the 'login to this network' site, whenever a WiFi client
+ * connects
+ */
+void initCaptivePortal()
+{
+    // auto handleCaptivePortal = [](AsyncWebServerRequest* request) { captivePortal(request); };
+    // Android captive portal. Maybe not needed. Might be handled by notFound handler.
+    // ESPUI.server->on("/generate_204", HTTP_GET, handleCaptivePortal);
+    // Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
+    // ESPUI.server->on("/fwlink", HTTP_GET, handleCaptivePortal);
+    ESPUI.server->onNotFound(captivePortal);
+
+    // ESPUI.server->begin();
+    dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
+}
 
 void setup()
 {
@@ -27,6 +99,9 @@ void setup()
 
     // UI setup
     GUI::setup();
+
+    // Captive portal so that noone has to enter the IP
+    initCaptivePortal();
 
     // WiFi setup
     WIFI::setup();
@@ -107,12 +182,28 @@ void loop()
             {
                 MQTT::connect();
             }
+
+            if (captiveDNS)
+            {
+                captiveDNS = false;
+                dnsServer.stop();
+            }
         }
         else
         {
             if (Settings::settings.wifi)
             {
                 WIFI::connect();
+            }
+            else
+            {
+                if (!captiveDNS)
+                {
+                    captiveDNS = true;
+                    dnsServer.start(53, "*", WiFi.softAPIP());
+                }
+                // handle DNS
+                dnsServer.processNextRequest();
             }
         }
 

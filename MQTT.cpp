@@ -8,7 +8,7 @@ namespace MQTT
 
     namespace Callback
     {
-        void onConnect(bool sessionPresent)
+        void onConnect(bool)
         {
             // Indicate we are connected
             connected = true;
@@ -22,7 +22,7 @@ namespace MQTT
             MQTT::publish(connectionMsq, 2, true);
         }
 
-        void onDisconnect(int8_t reason)
+        void onDisconnect(int8_t)
         {
             // Indicate we are disconnected
             connected = false;
@@ -39,7 +39,7 @@ namespace MQTT
         updateIPPort(ip, Settings::settings.mqttPort);
         updateTopic();
         updateCredentials();
-        mqtt.setClientId(FPSTR(hostname));
+        mqtt.setClientId(FPSTR(HOSTNAME));
         mqtt.onConnect(MQTT::Callback::onConnect);
         mqtt.onDisconnect(MQTT::Callback::onDisconnect);
 
