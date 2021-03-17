@@ -66,7 +66,7 @@ namespace MQTT
                     {
                         GUI::updateMQTTStatus(F("IP wrong"));
                     }
-                    else
+                    else if (!portSet)
                     {
                         GUI::updateMQTTStatus(F("Port wrong"));
                     }
