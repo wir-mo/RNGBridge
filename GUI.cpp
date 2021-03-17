@@ -1,3 +1,6 @@
+#include <Updater.h>
+
+#include "Constants.h"
 #include "GUI.h"
 #include "MQTT.h"
 #include "PVOutput.h"
@@ -155,6 +158,44 @@ namespace GUI
             Settings::store();
             PVOutput::update();
         }
+
+        void handleOTAUpload(
+            AsyncWebServerRequest* request, String filename, size_t index, uint8_t* data, size_t len, bool final)
+        {
+            if (!index)
+            {
+                Serial.printf("UploadStart: %s\n", filename.c_str());
+                // calculate sketch space required for the update
+                const uint32_t maxSketchSpace = (ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000;
+                if (!Update.begin(maxSketchSpace))
+                {
+                    // start with max available size
+                    Update.printError(Serial);
+                }
+                Update.runAsync(true);
+            }
+
+            if (len)
+            {
+                Update.write(data, len);
+            }
+
+            // if the final flag is set then this is the last frame of data
+            if (final)
+            {
+                if (Update.end(true))
+                {
+                    // true to set the size to the current progress
+                    Serial.printf("Update Success: %ub written\nRebooting...\n", index + len);
+                    ESP.restart();
+                }
+                else
+                {
+                    Update.printError(Serial);
+                }
+            }
+        }
+
     } // namespace Callback
 
     void setup()
@@ -243,14 +284,6 @@ namespace GUI
         ESPUI.updateSwitcher(pvoutputEnabled, Settings::settings.pvOutput);
         if (!Settings::firstStart)
         {
-            // const String ssidString(Settings::settings.ssid);
-            // const String wifipwString(Settings::settings.password);
-            // const String mqttIPString(IPAddress(Settings::settings.mqttIP).toString());
-
-            // ESPUI.updateText(wifiSSID, ssidString);
-            // ESPUI.updateText(wifiPassword, wifipwString);
-            // ESPUI.updateText(mqttIPText, mqttIPString);
-
             ESPUI.updateText(wifiSSID, Settings::settings.ssid);
             ESPUI.updateText(wifiPassword, Settings::settings.password);
             ESPUI.updateText(mqttIPText, IPAddress(Settings::settings.mqttIP).toString());
@@ -258,6 +291,16 @@ namespace GUI
             ESPUI.updateText(pvoutputAPIKey, Settings::settings.apiKey);
             ESPUI.updateNumber(pvoutputSysId, Settings::settings.systemID);
         }
+
+#ifdef OTA
+        ESPUI.server->on(
+            "/ota", HTTP_POST, [](AsyncWebServerRequest* request) { request->send(200); }, Callback::handleOTAUpload);
+
+        ESPUI.server->on("/ota", HTTP_GET, [](AsyncWebServerRequest* request) {
+            AsyncWebServerResponse* response = request->beginResponse_P(200, "text/html", OTA_INDEX);
+            request->send(response);
+        });
+#endif // OTA
     }
 
     void update(const uint8_t charge, const float batteryVoltage, const float batteryCurrent,
