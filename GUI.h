@@ -31,6 +31,9 @@ namespace GUI
         extern void updateTimeOffset(Control* sender, int type);
 
         extern void updatePVOutputEnable(Control* sender, int type);
+
+        extern void handleOTAUpload(
+            AsyncWebServerRequest* request, String filename, size_t index, uint8_t* data, size_t len, bool final);
     } // namespace Callback
 
     extern void setup();
