@@ -134,6 +134,5 @@ namespace MQTT
     const char* connectionMsgFormat PROGMEM = R"({"device":"%s","connected":true})";
     WiFiClient espClient;
     PubSubClient mqtt(espClient);
-    bool connected = false;
     bool _setup = false;
 } // namespace MQTT

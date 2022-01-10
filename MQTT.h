@@ -32,6 +32,5 @@ namespace MQTT
     extern const char* connectionMsgFormat PROGMEM;
     extern WiFiClient espClient;
     extern PubSubClient mqtt;
-    extern bool connected;
     extern bool _setup;
 } // namespace MQTT
