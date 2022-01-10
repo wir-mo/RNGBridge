@@ -1,5 +1,6 @@
-#include "GUI.h"
 #include "PVOutput.h"
+
+#include "GUI.h"
 #include "Settings.h"
 
 namespace PVOutput
@@ -10,12 +11,12 @@ namespace PVOutput
         {
             // Send power data
             const bool success
-                = sendPowerData(_powerGeneration, _powerConsumption, _panelVoltage, timeClient.getEpochTime());
+                = sendPowerData(_powerGeneration, _powerConsumption, _voltage, timeClient.getEpochTime());
 
             // Reset counters
             _powerGeneration = 0.0;
             _powerConsumption = 0.0;
-            _panelVoltage = 0.0;
+            _voltage = 0.0;
 
             // Update GUI
             if (success)
@@ -31,8 +32,8 @@ namespace PVOutput
             timeClient.update();
         }
 
-        void updateData(const double interval, const double powerGeneration, const double powerConsumption,
-            const double panelVoltage)
+        void updateData(
+            const double interval, const double powerGeneration, const double powerConsumption, const double voltage)
         {
             // Only update if updateInterval is greater than zero, so we don't accidentally send wrong data and the data
             // does not overflow
@@ -41,7 +42,7 @@ namespace PVOutput
                 const double factor = interval / _updateInterval;
                 _powerGeneration += factor * powerGeneration;
                 _powerConsumption += factor * powerConsumption;
-                _panelVoltage += factor * panelVoltage;
+                _voltage += factor * voltage;
             }
         }
     } // namespace Callback
@@ -286,7 +287,7 @@ namespace PVOutput
 
     double _powerConsumption = 0;
     double _powerGeneration = 0;
-    double _panelVoltage = 0;
+    double _voltage = 0;
     int _updateInterval = 0;
 
     bool started = false;

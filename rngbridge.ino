@@ -170,7 +170,7 @@ void loop()
                         // Reset counters
                         PVOutput::_powerGeneration = 0.0;
                         PVOutput::_powerConsumption = 0.0;
-                        PVOutput::_panelVoltage = 0.0;
+                        PVOutput::_voltage = 0.0;
 
                         secondsPassedPVOutput = 0;
                     }
@@ -178,9 +178,13 @@ void loop()
                 }
             }
 
-            if (Settings::settings.mqtt && !MQTT::connected)
+            if (Settings::settings.mqtt)
             {
-                MQTT::connect();
+                if (!MQTT::mqtt.connected())
+                {
+                    MQTT::connect();
+                }
+                MQTT::mqtt.loop();
             }
 
             if (captiveDNS)

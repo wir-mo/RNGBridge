@@ -1,11 +1,11 @@
+#include "Renogy.h"
+
 #include "Constants.h"
 #include "GUI.h"
 #include "MQTT.h"
 #include "PVOutput.h"
-#include "Renogy.h"
 #include "Settings.h"
 #include "WIFI.h"
-
 
 // 0x0100 (2) 00 - Battery capacity SOC (state of charge)
 // 0x0101 (2) 01 - Battery voltage * 0.1
@@ -125,7 +125,7 @@ namespace Renogy
                 if (Settings::settings.pvOutput)
                 {
                     PVOutput::Callback::updateData(
-                        delta / 1000.0, panelVoltage * panelCurrent, loadVoltage * loadCurrent, panelVoltage);
+                        delta / 1000.0, panelVoltage * panelCurrent, loadVoltage * loadCurrent, batteryVoltage);
                 }
 
                 // update ui
