@@ -1,7 +1,8 @@
+#include "GUI.h"
+
 #include <Updater.h>
 
 #include "Constants.h"
-#include "GUI.h"
 #include "MQTT.h"
 #include "PVOutput.h"
 #include "Settings.h"
@@ -39,7 +40,8 @@ namespace GUI
             if (len > 0 && len < 32)
             {
                 Settings::updateMQTTTopic(sender->value);
-                MQTT::updateTopic();
+                MQTT::disconnect();
+                // MQTT::updateTopic();
             }
         }
 
@@ -50,7 +52,8 @@ namespace GUI
             if (len < 32)
             {
                 Settings::updateMQTTUsername(sender->value);
-                MQTT::updateCredentials();
+                MQTT::disconnect();
+                // MQTT::updateCredentials();
             }
         }
 
@@ -61,7 +64,8 @@ namespace GUI
             if (len < 32)
             {
                 Settings::updateMQTTPassword(sender->value);
-                MQTT::updateCredentials();
+                MQTT::disconnect();
+                // MQTT::updateCredentials();
             }
         }
 
