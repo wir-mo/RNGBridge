@@ -62,7 +62,7 @@ bool captivePortal(AsyncWebServerRequest* request)
 
     if (!isIp(hostH) && hostH.indexOf(FPSTR(HOSTNAME)) < 0)
     {
-        // Serial.println(F("Captive portal"));
+        // Serial1.println(F("Captive portal"));
         AsyncWebServerResponse* response = request->beginResponse(302);
         response->addHeader(F("Location"), F("http://192.168.1.1"));
         request->send(response);
