@@ -1,11 +1,45 @@
 #include "Renogy.h"
 
 #include "Constants.h"
-#include "GUI.h"
 #include "MQTT.h"
 #include "PVOutput.h"
-#include "Settings.h"
-#include "WIFI.h"
+
+namespace ModBus
+{
+    int8_t readInt8Lower(ModbusMaster& modbus, const uint8_t startAddress)
+    {
+        return (modbus.getResponseBuffer(startAddress) & 0xFF);
+    }
+
+    int8_t readInt8Upper(ModbusMaster& modbus, const uint8_t startAddress)
+    {
+        return ((modbus.getResponseBuffer(startAddress) >> 8) & 0xFF);
+    }
+
+    int16_t readInt16BE(ModbusMaster& modbus, const uint8_t startAddress)
+    {
+        return modbus.getResponseBuffer(startAddress);
+    }
+
+    int16_t readInt16LE(ModbusMaster& modbus, const uint8_t startAddress)
+    {
+        const uint16_t reg = readInt16BE(modbus, startAddress);
+        return ((reg << 8) & 0xFF00) | ((reg >> 8) & 0x00FF);
+    }
+
+    int32_t readInt32BE(ModbusMaster& modbus, const uint8_t startAddress)
+    {
+        return (modbus.getResponseBuffer(2 + startAddress) & 0xFFFF)
+            | ((modbus.getResponseBuffer(startAddress) & 0xFFFF) << 16);
+    }
+
+    int32_t readInt32LE(ModbusMaster& modbus, const uint8_t startAddress)
+    {
+        uint32_t reg = readInt32BE(modbus, startAddress);
+        return ((reg << 8) & 0xFF00FF00) | ((reg >> 8) & 0x00FF00FF);
+    }
+
+} // namespace ModBus
 
 // 0x0100 (2) 00 - Battery capacity SOC (state of charge)
 // 0x0101 (2) 01 - Battery voltage * 0.1
@@ -49,7 +83,9 @@
 //            05H: floating charging mode
 //            06H: current limiting (overpower)
 //
-//            - upper 8 bits are street light status and brightness.
+//            - upper 8 bits are street light (load output) status and brightness.
+//            00H - 06H: brightness value
+//            07H: light on (1) or off (0)
 //
 // 0x0121 (4) 33 - controller fault and warning information
 //            - 32 bit value of flags
@@ -72,131 +108,116 @@
 //            E01 B16: battery over-discharge
 //                B0-B15: Reserved
 
-void blinkLED()
+#ifdef DEMO_MODE
+uint8_t batteryCharge = 0;
+bool batteryDirection = true;
+#endif
+
+void Renogy::readAndProcessData()
 {
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(100);
-    digitalWrite(LED_BUILTIN, HIGH);
-}
-
-namespace Renogy
-{
-    namespace Callback
+#ifdef DEMO_MODE
+    batteryDirection ? ++batteryCharge : --batteryCharge;
+    if (batteryCharge == 0 || batteryCharge == 100)
     {
-        void readAndProcessData(const uint32_t delta)
-        {
-            // Read 30 registers starting at 0x0100)
-            ModBus::modbus.clearResponseBuffer();
-            const uint8_t result = ModBus::modbus.readHoldingRegisters(0x0100, 34);
+        batteryDirection = !batteryDirection;
+    }
+    _data.batteryCharge = batteryCharge;
+    _data.batteryVoltage = 0.1 * random(100, 140);
+    _data.batteryCurrent = 0.01 * random(0, 10000);
+    _data.controllerTemperature = random(0, 30);
+    _data.batteryTemperature = random(0, 30);
 
-            if (result == ModBus::modbus.ku8MBSuccess)
-            {
-                uint8_t charge = ModBus::readInt16BE(ModBus::modbus, 0);
-                float batteryVoltage = 0.1 * ModBus::readInt16BE(ModBus::modbus, 1);
-                float batteryCurrent = 0.01 * ModBus::readInt16BE(ModBus::modbus, 2);
-                int8_t controllerTemperature = ModBus::readInt8Upper(ModBus::modbus, 3);
-                int8_t batteryTemperature = ModBus::readInt8Lower(ModBus::modbus, 3);
-
-                float loadVoltage = 0.1 * ModBus::readInt16BE(ModBus::modbus, 4);
-                float loadCurrent = 0.01 * ModBus::readInt16BE(ModBus::modbus, 5);
-                int16_t loadPower = ModBus::readInt16BE(ModBus::modbus, 6);
-
-                float panelVoltage = 0.1 * ModBus::readInt16BE(ModBus::modbus, 7);
-                float panelCurrent = 0.01 * ModBus::readInt16BE(ModBus::modbus, 8);
-                int16_t panelPower = ModBus::readInt16BE(ModBus::modbus, 9);
-
-                int8_t chargingState = ModBus::readInt8Lower(ModBus::modbus, 32);
-                // upper are street light status
-                int32_t errorState = ModBus::readInt32BE(ModBus::modbus, 33);
-
-                // Send MQTT data if it is enabled
-                if (Settings::settings.mqtt)
-                {
-                    // Max size under assumptions Voltage < 1000, Current < 1000: 261 + null terminator + tolerance
-                    //{"device":"0123456789AB","b":{"charge":254,"voltage":999.9,"current":999.99,"temperature":254},"l":{"voltage":999.9,"current":999.99,"power":65534},"p":{"voltage":999.9,"current":999.99,"power":65534},"s":{"state":254,"errorState":4294967295,"temperature":254}}
-                    char jsonBuf[280];
-                    snprintf_P(jsonBuf, 280, jsonFormat, WIFI::mac.c_str(), charge, batteryVoltage, batteryCurrent,
-                        batteryTemperature, loadVoltage, loadCurrent, loadPower, panelVoltage, panelCurrent, panelPower,
-                        chargingState, errorState, controllerTemperature);
-                    MQTT::publish(jsonBuf);
-                }
-
-                // Update PVOutput data if it is enabled
-                if (Settings::settings.pvOutput)
-                {
-                    PVOutput::Callback::updateData(
-                        delta / 1000.0, panelVoltage * panelCurrent, loadVoltage * loadCurrent, batteryVoltage);
-                }
-
-                // update ui
-                if (GUI::clients() > 0)
-                {
-                    GUI::update(charge, batteryVoltage, batteryCurrent, batteryTemperature, controllerTemperature,
-                        loadVoltage, loadCurrent, loadPower, panelVoltage, panelCurrent, panelPower, chargingState,
-                        errorState);
-                }
-            }
-            else
-            {
-                if (Settings::settings.mqtt)
-                {
-                    MQTT::publish("{\"device\":\"" + WIFI::mac + "\",\"mbError\":" + String(result) + "}");
-                }
-            }
-
-            blinkLED();
-        }
-    } // namespace Callback
-
-    namespace ModBus
+    if (_data.loadEnabled)
     {
-        int8_t readInt8Lower(ModbusMaster& modbus, const uint8_t startAddress)
-        {
-            return (modbus.getResponseBuffer(startAddress) & 0xFF);
-        }
-
-        int8_t readInt8Upper(ModbusMaster& modbus, const uint8_t startAddress)
-        {
-            return ((modbus.getResponseBuffer(startAddress) >> 8) & 0xFF);
-        }
-
-        int16_t readInt16BE(ModbusMaster& modbus, const uint8_t startAddress)
-        {
-            return modbus.getResponseBuffer(startAddress);
-        }
-
-        int16_t readInt16LE(ModbusMaster& modbus, const uint8_t startAddress)
-        {
-            const uint16_t reg = readInt16BE(modbus, startAddress);
-            return ((reg << 8) & 0xFF00) | ((reg >> 8) & 0x00FF);
-        }
-
-        int32_t readInt32BE(ModbusMaster& modbus, const uint8_t startAddress)
-        {
-            return (modbus.getResponseBuffer(2 + startAddress) & 0xFFFF)
-                | ((modbus.getResponseBuffer(startAddress) & 0xFFFF) << 16);
-        }
-
-        int32_t readInt32LE(ModbusMaster& modbus, const uint8_t startAddress)
-        {
-            uint32_t reg = readInt32BE(modbus, startAddress);
-            return ((reg << 8) & 0xFF00FF00) | ((reg >> 8) & 0x00FF00FF);
-        }
-
-        ModbusMaster modbus;
-    } // namespace ModBus
-
-    void setup()
+        _data.loadVoltage = 0.1 * random(100, 140);
+        _data.loadCurrent = 0.01 * random(0, 10000);
+        _data.loadPower = floor(_data.loadVoltage * _data.loadCurrent);
+    }
+    else
     {
-        // Modbus at 9600 baud
-        Serial.begin(9600);
-        // Maybe make configurable with updateBaudrate(baud);
-
-        // Renogy Device ID = 1
-        ModBus::modbus.begin(1, Serial);
-        // Maybe make configurable with begin(x, Serial);
+        _data.loadVoltage = 0.1 * random(100, 140);
+        _data.loadCurrent = 0.0f;
+        _data.loadPower = 0;
     }
 
-    const char* jsonFormat PROGMEM
-        = R"({"device":"%s","b":{"charge":%hhu,"voltage":%.1f,"current":%.2f,"temperature":%hhu},"l":{"voltage":%.1f,"current":%.2f,"power":%hu},"p":{"voltage":%.1f,"current":%.2f,"power":%hu},"s":{"state":%hhu,"errorState":%u,"temperature":%hhu}})";
-} // namespace Renogy
+    _data.panelVoltage = 0.1 * random(100, 400);
+    _data.panelCurrent = 0.01 * random(0, 10000);
+    _data.panelPower = floor(_data.panelVoltage * _data.panelCurrent);
+
+    _data.chargingState = random(0, 255);
+
+    _data.errorState = rand();
+
+    // update listener
+    if (_listener)
+    {
+        _listener(_data);
+    }
+
+#else
+    // Read 30 registers starting at 0x0100)
+    _modbus.clearResponseBuffer();
+    const uint8_t result = _modbus.readHoldingRegisters(0x0100, 34);
+
+    if (result == _modbus.ku8MBSuccess)
+    {
+        _data.batteryCharge = ModBus::readInt16BE(_modbus, 0);
+        _data.batteryVoltage = 0.1 * ModBus::readInt16BE(_modbus, 1);
+        _data.batteryCurrent = 0.01 * ModBus::readInt16BE(_modbus, 2);
+        _data.controllerTemperature = ModBus::readInt8Upper(_modbus, 3);
+        _data.batteryTemperature = ModBus::readInt8Lower(_modbus, 3);
+
+        _data.loadVoltage = 0.1 * ModBus::readInt16BE(_modbus, 4);
+        _data.loadCurrent = 0.01 * ModBus::readInt16BE(_modbus, 5);
+        _data.loadPower = ModBus::readInt16BE(_modbus, 6);
+
+        _data.panelVoltage = 0.1 * ModBus::readInt16BE(_modbus, 7);
+        _data.panelCurrent = 0.01 * ModBus::readInt16BE(_modbus, 8);
+        _data.panelPower = ModBus::readInt16BE(_modbus, 9);
+
+        _data.loadEnabled = ModBus::readInt8Upper(_modbus, 32) & 0x80;
+        _data.chargingState = ModBus::readInt8Lower(_modbus, 32);
+
+        _data.errorState = ModBus::readInt32BE(_modbus, 33);
+
+        // Update PVOutput data if it is enabled
+        // if (Settings::settings.pvOutput)
+        // {
+        // PVOutput::Callback::updateData(
+        //     delta / 1000.0, panelVoltage * panelCurrent, loadVoltage * loadCurrent, batteryVoltage);
+        // }
+
+        // update listener
+        if (_listener)
+        {
+            _listener(_data);
+        }
+    }
+    // else
+    // {
+    // if (Settings::settings.mqtt)
+    // {
+    // MQTT::publish("{\"device\":\"" + WIFI::mac + "\",\"mbError\":" + String(result) + "}");
+    // }
+    // }
+#endif
+}
+
+void Renogy::enableLoad(const boolean enable)
+{
+#ifdef DEMO_MODE
+    _data.loadEnabled = enable;
+#else
+    const uint8_t result = _modbus.writeSingleRegister(0x010A, enable ? 0x01 : 0x00);
+    if (result != _modbus.ku8MBSuccess)
+    {
+        DEBUGF("[Error] Could not turn load %s: %d", enable ? "on" : "off", result);
+    }
+#endif
+}
+
+void Renogy::setListener(Listener listener)
+{
+    _listener = listener;
+    _listener(_data);
+}

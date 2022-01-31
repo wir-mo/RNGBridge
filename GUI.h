@@ -1,70 +1,32 @@
 #pragma once
 
-#include <ESPUI.h>
+#include <ArduinoJson.h>
 
-namespace GUI
+#include "Networking.h"
+#include "Renogy.h"
+
+class GUI
 {
-    namespace Callback
-    {
-        extern void updateMQTTIP(Control* sender, int type);
+public:
+    GUI(Networking& networking) : _networking(networking) { }
 
-        extern void updateMQTTPort(Control* sender, int type);
+    GUI(GUI&&) = delete;
 
-        extern void updateMQTTTopic(Control* sender, int type);
+    void updateRenogyStatus(const Renogy::Data& data);
 
-        extern void updateMQTTUsername(Control* sender, int type);
+    void updateWiFiStatus(const String& status);
 
-        extern void updateMQTTPassword(Control* sender, int type);
+    void updateMQTTStatus(const String& status);
 
-        extern void updateMQTTEnable(Control* sender, int type);
+    void updatePVOutputStatus(const String& status);
 
-        extern void updateWifiSSID(Control* sender, int type);
+    void updateUptime(const uint32_t uptime);
 
-        extern void updateWifiPassword(Control* sender, int type);
+    void updateHeap(const uint32_t heap);
 
-        extern void updateWifiEnable(Control* sender, int type);
+    void update();
 
-        extern void updateSystemID(Control* sender, int type);
-
-        extern void updateAPIKey(Control* sender, int type);
-
-        extern void updateTimeOffset(Control* sender, int type);
-
-        extern void updatePVOutputEnable(Control* sender, int type);
-
-        extern void handleOTAUpload(
-            AsyncWebServerRequest* request, String filename, size_t index, uint8_t* data, size_t len, bool final);
-    } // namespace Callback
-
-    extern void setup();
-
-    extern void update(const uint8_t charge, const float batteryVoltage, const float batteryCurrent,
-        const int8_t batteryTemperature, const int8_t controllerTemperature, const float laodVoltage,
-        const float laodCurrent, const int16_t loadPower, const float panelVoltage, const float panelCurrent,
-        const int16_t panelPower, const int8_t chargingState, const int32_t errorState);
-
-    extern void updateWiFiStatus(const String& status);
-
-    extern void updateMQTTStatus(const String& status);
-
-    extern void updatePVOutputStatus(const String& status);
-
-    extern size_t clients();
-
-    extern int chargeLabel;
-    extern int BVLabel;
-    extern int BCLabel;
-    extern int BTLabel;
-    extern int CTLabel;
-    extern int LVLabel;
-    extern int LCLabel;
-    extern int LWLabel;
-    extern int PVLabel;
-    extern int PCLabel;
-    extern int PWLabel;
-    extern int CSLabel;
-    extern int ELabel;
-    extern int mqttStatusLabel;
-    extern int wifiStatusLabel;
-    extern int pvOutputStatusLabel;
-} // namespace GUI
+private:
+    Networking& _networking;
+    StaticJsonDocument<1024> _status = {};
+};
