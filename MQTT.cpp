@@ -37,7 +37,6 @@ void Mqtt::disconnect()
 {
     mqtt.disconnect();
     updateStatus(FPSTR(DISCONNECTED));
-    updateListener();
 }
 
 void Mqtt::loop()
@@ -54,7 +53,7 @@ void Mqtt::loop()
     {
         if (_status.startsWith("D"))
         {
-           updateStatus(FPSTR( CONNECTED);
+            updateStatus(FPSTR(CONNECTED));
         }
     }
     mqtt.loop();
