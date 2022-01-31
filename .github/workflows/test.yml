@@ -41,7 +41,7 @@ jobs:
           arduino-cli lib install --git-url https://github.com/knolleary/pubsubclient.git
           arduino-cli lib install --git-url https://github.com/4-20ma/ModbusMaster
           arduino-cli lib install --git-url https://github.com/arduino-libraries/NTPClient.git
-          arduino-cli lib install --git-url http://playground.arduino.cc/Code/Time/
+          arduino-cli lib install --git-url https://github.com/PaulStoffregen/Time.git
       
       # Compile the sketch
       - name: Compile Sketch
