@@ -22,6 +22,9 @@
 class Networking
 {
 public:
+    typedef std::function<void()> RebootHandler;
+
+public:
     ///@brief Static class has no constructor
     // Networking(Config& config) : config(config), mqtt(config) { }
     Networking(Config& config) : config(config)
@@ -95,6 +98,11 @@ public:
         }
     }
 
+    ///@brief Set a handler for rebooting the ESP upon being called
+    ///
+    ///@param handler RebootHandler
+    void setRebootHandler(RebootHandler handler);
+
 private:
     /// @brief Callback used for captive portal webserver
     ///
@@ -121,7 +129,7 @@ private:
     AsyncEventSource es {"/events"}; /// EventSource for updating clients with live data
     bool isInitialized = false;
     bool restartESP = false; /// Restart ESP after config change
+    RebootHandler _rebootHandler; /// Handler for restarting ESP and gracefully shutting down stuff
 
     Config& config;
-    // Mqtt mqtt;
 }; // namespace Networking

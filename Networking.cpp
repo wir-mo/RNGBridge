@@ -263,8 +263,20 @@ void Networking::update()
 
     if (restartESP)
     {
-        ESP.restart();
+        if (_rebootHandler)
+        {
+            _rebootHandler();
+        }
+        else
+        {
+            ESP.restart();
+        }
     }
+}
+
+void Networking::setRebootHandler(RebootHandler handler)
+{
+    _rebootHandler = handler;
 }
 
 bool Networking::captivePortal(AsyncWebServerRequest* request)
