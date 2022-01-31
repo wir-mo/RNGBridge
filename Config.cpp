@@ -263,6 +263,10 @@ void NetworkConfig::toJson(JsonObject& object) const
 
 bool NetworkConfig::tryUpdate(const JsonObjectConst& object)
 {
+    if (object.isNull())
+    {
+        return false;
+    }
     bool changed = false;
     changed |= updateField(object, "client_enabled", clientEnabled);
     changed |= updateField(object, "client_dhcp_enabled", dhcpEnabled);
@@ -361,6 +365,10 @@ void MqttConfig::toJson(JsonObject& object) const
 
 bool MqttConfig::tryUpdate(const JsonObjectConst& object)
 {
+    if (object.isNull())
+    {
+        return false;
+    }
     bool changed = false;
     changed |= updateField(object, "enabled", enabled);
     changed |= updateField(object, "server", server);
@@ -428,6 +436,10 @@ void PVOutputConfig::toJson(JsonObject& object) const
 
 bool PVOutputConfig::tryUpdate(const JsonObjectConst& object)
 {
+    if (object.isNull())
+    {
+        return false;
+    }
     bool changed = false;
     changed |= updateField(object, "enabled", enabled);
     changed |= updateField(object, "system_id", systemId);

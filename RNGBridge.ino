@@ -11,7 +11,6 @@ const uint32_t RENOGY_INTERVAL = 1; /// The interval in s at which the renogy da
 
 uint8_t lastSecond = 0; /// The last seconds value
 uint8_t secondsPassedRenogy = 0; /// amount of seconds passed
-uint16_t secondsPassedPVOutput = 0; /// amount of seconds passed
 
 Config config;
 Mqtt* mqtt;
@@ -69,6 +68,11 @@ void setup()
         {
             mqtt->updateRenogyStatus(data);
         }
+        if (pvo)
+        {
+            pvo->updateData(
+                2.0, data.panelVoltage * data.panelCurrent, data.loadVoltage * data.loadCurrent, data.batteryVoltage);
+        }
         gui.updateRenogyStatus(data);
     });
 
@@ -96,39 +100,6 @@ void loop()
             renogy.readAndProcessData();
         }
 
-        gui.updateUptime(timeS);
-        gui.updateHeap(ESP.getFreeHeap());
-        gui.update();
-
-        // if (WIFI::connected)
-        // {
-        // if (Settings::settings.pvOutput)
-        // {
-        //     if (PVOutput::started)
-        //     {
-        //         ++secondsPassedPVOutput;
-        //         if (secondsPassedPVOutput >= PVOutput::_updateInterval)
-        //         {
-        //             secondsPassedPVOutput = 0;
-        //             PVOutput::Callback::sendData();
-        //         }
-        //     }
-        //     else
-        //     {
-        //         if (secondsPassedPVOutput)
-        //         {
-        //             // Reset counters
-        //             PVOutput::_powerGeneration = 0.0;
-        //             PVOutput::_powerConsumption = 0.0;
-        //             PVOutput::_voltage = 0.0;
-
-        //             secondsPassedPVOutput = 0;
-        //         }
-        //         PVOutput::start();
-        //     }
-        // }
-        // }
-
         if (mqtt)
         {
             mqtt->loop();
@@ -138,6 +109,10 @@ void loop()
         {
             pvo->loop();
         }
+
+        gui.updateUptime(timeS);
+        gui.updateHeap(ESP.getFreeHeap());
+        gui.update();
 
         networking.update();
 
