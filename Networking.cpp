@@ -204,24 +204,14 @@ void Networking::handleConfigApiPost(AsyncWebServerRequest* request, JsonVariant
 
     JsonObject&& data = json.as<JsonObject>();
 
-    bool changed = false;
-    if (data.containsKey("wifi"))
-    {
-        NetworkConfig& wifi = config.getNetworkConfig();
-        changed = wifi.tryUpdate(data["wifi"]);
-    }
+    NetworkConfig& wifi = config.getNetworkConfig();
+    bool changed = wifi.tryUpdate(data["wifi"]);
 
-    if (data.containsKey("mqtt"))
-    {
-        MqttConfig& mqtt = config.getMqttConfig();
-        changed |= mqtt.tryUpdate(data["mqtt"]);
-    }
+    MqttConfig& mqtt = config.getMqttConfig();
+    changed |= mqtt.tryUpdate(data["mqtt"]);
 
-    if (data.containsKey("pvo"))
-    {
-        PVOutputConfig& pvo = config.getPvoutputConfig();
-        changed |= pvo.tryUpdate(data["pvo"]);
-    }
+    PVOutputConfig& pvo = config.getPvoutputConfig();
+    changed |= pvo.tryUpdate(data["pvo"]);
 
     if (changed)
     {
@@ -304,7 +294,7 @@ bool Networking::captivePortal(AsyncWebServerRequest* request)
     return true;
 }
 
-bool Networking::handleClientFailsave()
+bool Networking::handleClientFailsafe()
 {
     unsigned long start = millis();
     while (WiFi.status() != WL_CONNECTED)
@@ -349,7 +339,7 @@ void Networking::startClient()
     DEBUG(F("Connecting to WiFi .."));
     uint64_t start = millis();
 
-    if (handleClientFailsave())
+    if (handleClientFailsafe())
     {
         DEBUG(F("Connected: "));
         DEBUGLN(WiFi.localIP());

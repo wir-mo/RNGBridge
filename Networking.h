@@ -106,7 +106,7 @@ private:
     /// @brief Launch access point if client connection fails
     /// @return true If connected as client
     /// @return false If connection failed and access point was opened
-    bool handleClientFailsave();
+    bool handleClientFailsafe();
 
     /// @brief Configure wifi for client mode
     void startClient();

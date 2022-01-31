@@ -13,21 +13,26 @@ const char* PVOutput::HOST PROGMEM = "pvoutput.org";
 void PVOutput::sendData()
 {
     // Send power data
-    const bool success = sendPowerData(_powerGeneration, _powerConsumption, _voltage, timeClient.getEpochTime());
+    time_t epoch = timeClient.getEpochTime();
+    const bool success = sendPowerData(_powerGeneration, _powerConsumption, _voltage, epoch);
 
     // Reset counters
     _powerGeneration = 0.0;
     _powerConsumption = 0.0;
     _voltage = 0.0;
 
-    // Update GUI
+    // Update status
     if (success)
     {
-        // GUI::updatePVOutputStatus(F("Sent power data"));
+        char temp[18];
+        const uint8_t currentHour = hour(epoch);
+        const uint8_t currentMinute = minute(epoch);
+        sprintf_P(temp, PSTR("Sent data (%hhu:%hhu)"), currentHour, currentMinute);
+        updateStatus(String(temp));
     }
     else
     {
-        // GUI::updatePVOutputStatus(F("Could not send power data"));
+        updateStatus(F("Could not send power data"));
     }
 
     // Update NTP time
@@ -50,7 +55,7 @@ void PVOutput::updateData(
 
 void PVOutput::start()
 {
-    // GUI::updatePVOutputStatus(F("Starting"));
+    updateStatus(F("Starting"));
     // Try to get the status interval which can't be 0
     const uint8_t interval = getStatusInterval();
     if (interval > 0)
@@ -60,37 +65,44 @@ void PVOutput::start()
         // Do time sync now
         syncTime();
 
-        // GUI::updatePVOutputStatus(F("Running"));
+        _started = true;
 
-        started = true;
+        // Set status running
+        updateStatus(F("Running"));
     }
     else
     {
-        started = false;
+        _started = false;
 
         // Set status error
-        // GUI::updatePVOutputStatus(F("Could not get update interval, retrying in 5s"));
+        updateStatus(F("Could not get update interval, retrying"));
     }
 }
 
-void PVOutput::stop()
+void PVOutput::loop()
 {
-    started = false;
-    _updateInterval = 0;
-}
+    if (_started)
+    {
+        ++_secondsPassed;
+        if (_secondsPassed >= _updateInterval)
+        {
+            _secondsPassed = 0;
+            sendData();
+        }
+    }
+    else
+    {
+        if (_secondsPassed)
+        {
+            // Reset counters
+            _powerGeneration = 0.0;
+            _powerConsumption = 0.0;
+            _voltage = 0.0;
 
-void PVOutput::update()
-{
-    // If PVOutput is enabled by settings start the "service" or else stop it
-    // if (Settings::settings.pvOutput)
-    // {
-    //     start();
-    // }
-    // else
-    // {
-    //     stop();
-    //     // GUI::updatePVOutputStatus(F("Stopped"));
-    // }
+            _secondsPassed = 0;
+        }
+        start();
+    }
 }
 
 bool PVOutput::syncTime()
@@ -99,7 +111,7 @@ bool PVOutput::syncTime()
     // Only attempt sync if the WiFi is connected or we will never get out of the while loop
     if (WiFi.isConnected())
     {
-        // GUI::updatePVOutputStatus(F("Syncing time"));
+        updateStatus(F("Syncing time"));
         while (!synced)
         {
             // Force update until we have a correct time
@@ -110,7 +122,7 @@ bool PVOutput::syncTime()
     }
     else
     {
-        // GUI::updatePVOutputStatus(F("No WiFi for time sync"));
+        updateStatus(F("No WiFi for time sync"));
     }
     return synced;
 }
@@ -124,8 +136,7 @@ bool PVOutput::httpsGET(const String& url, const bool rateLimit)
 bool PVOutput::httpsGET(const char* url, const bool rateLimit)
 {
     // Delegate
-    // return httpsGET(client, url, Settings::settings.apiKey, Settings::settings.systemID, rateLimit);
-    return false;
+    return httpsGET(client, url, _config.apiKey.c_str(), _config.systemId, rateLimit);
 };
 
 bool PVOutput::httpsGET(

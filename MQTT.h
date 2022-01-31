@@ -1,5 +1,7 @@
 #pragma once
 
+#include <functional>
+
 #include <PubSubClient.h>
 
 #include "Config.h"
