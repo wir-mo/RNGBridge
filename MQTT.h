@@ -2,35 +2,57 @@
 
 #include <PubSubClient.h>
 
-#include "WIFI.h"
+#include "Config.h"
+#include "Renogy.h"
 
-namespace MQTT
+class Mqtt
 {
-    /**
-     * @brief Setup the mqtt client
-     * TODO
-     */
-    extern void setup();
+public:
+    typedef std::function<void(const String&)> Listener;
 
-    extern void update();
+public:
+    Mqtt(const MqttConfig& mqttConfig) : mqttConfig(mqttConfig), mqtt(espClient)
+    {
+        _status = "Enabled";
+        mqtt.setServer(mqttConfig.server.c_str(), mqttConfig.port);
+    }
 
-    extern void updateIP(const IPAddress& ip);
+    Mqtt(Mqtt&&) = delete;
 
-    extern void updatePort(const uint16_t port);
+    void connect();
 
-    extern void updateIPPort(const IPAddress& ip, const uint16_t port);
+    void disconnect();
 
-    extern void connect();
+    void loop();
 
-    extern void disconnect();
+    void updateRenogyStatus(const Renogy::Data& data);
 
-    extern void publish(const String& payload, uint8_t qos = 0, bool retain = false);
-    extern void publish(const char* payload, uint8_t qos = 0, bool retain = false);
-    extern void publish(const char* topic, const char* payload, uint8_t qos = 0, bool retain = false);
+    void setListener(Listener listener)
+    {
+        _listener = listener;
+        updateListener();
+    }
 
-    extern const char* lastWillFormat PROGMEM;
-    extern const char* connectionMsgFormat PROGMEM;
-    extern WiFiClient espClient;
-    extern PubSubClient mqtt;
-    extern bool _setup;
-} // namespace MQTT
+private:
+    void publish(const String& payload, uint8_t qos = 0, bool retain = false);
+    void publish(const char* payload, uint8_t qos = 0, bool retain = false);
+    void publish(const char* topic, const char* payload, uint8_t qos = 0, bool retain = false);
+
+    void updateListener()
+    {
+        if (_listener)
+        {
+            _listener(_status);
+        }
+    }
+
+private:
+    static const char* statusFormat PROGMEM;
+    static const char* lastWillFormat PROGMEM;
+    static const char* connectionMsgFormat PROGMEM;
+    const MqttConfig& mqttConfig;
+    WiFiClient espClient;
+    PubSubClient mqtt;
+    Listener _listener;
+    String _status;
+}; // class MQTT

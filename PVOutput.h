@@ -5,36 +5,42 @@
 #include <WiFiClientSecure.h>
 #include <WiFiUdp.h>
 
-namespace PVOutput
+class PVOutput
 {
-    namespace Callback
+public:
+    PVOutput(const PVOutputConfig& config) : timeClient(ntpUDP, "europe.pool.ntp.org", 0, 60000)
     {
-        /**
-         * @brief Send the geneated power, consumed power and voltage data to PVOutput
-         *
-         * Should be called at a specific interval given by \ref PVOutput::getStatusInterval
-         */
-        extern void sendData();
-        /**
-         * @brief Update the current solar data
-         *
-         * @param interval Interval of the update in seconds (how long ago was this data read)
-         * @param powerGeneration Current power generation in Watts
-         * @param powerConsumption  Current power consumption in Watts
-         * @param voltage A voltage in Volts
-         *
-         * Should be called after data was read from the chargecontroller
-         */
-        extern void updateData(
-            const double interval, const double powerGeneration, const double powerConsumption, const double voltage);
-    } // namespace Callback
+        // We need to reduce the buffer sizes or we get issues with HEAP
+        client.setBufferSizes(4096, 512);
+        // Don't want to use Cert Store or Fingerprint cause they need to be updated
+        client.setInsecure();
+        // Set time offset, convert hours to seconds
+        timeClient.setTimeOffset(config.timeOffset * 3600);
+        // Setup time client
+        timeClient.begin();
+    };
+
+    PVOutput(PVOutput&&) = delete;
 
     /**
-     * @brief Setup clients and other stuff needed
+     * @brief Send the geneated power, consumed power and voltage data to PVOutput
      *
-     * Sets up WiFiClientSecure \ref PVOutput::client and the NTPClient \ref PVOutput::timeClient.
+     * Should be called at a specific interval given by \ref PVOutput::getStatusInterval
      */
-    extern void setup();
+    void sendData();
+
+    /**
+     * @brief Update the current solar data
+     *
+     * @param interval Interval of the update in seconds (how long ago was this data read)
+     * @param powerGeneration Current power generation in Watts
+     * @param powerConsumption  Current power consumption in Watts
+     * @param voltage A voltage in Volts
+     *
+     * Should be called after data was read from the chargecontroller
+     */
+    void updateData(
+        const double interval, const double powerGeneration, const double powerConsumption, const double voltage);
 
     /**
      * @brief Tries to start automatic PVOutput data upload
@@ -42,14 +48,14 @@ namespace PVOutput
      * Tries to get the status interval from PVOutput and if it is valid syncs the time and set
      * \ref PVOutput::started true
      */
-    extern void start();
+    void start();
 
     /**
      * @brief Stops the automatic PVOutput data upload
      *
      * Sets \ref PVOutput::started false
      */
-    extern void stop();
+    void stop();
 
     /**
      * @brief Updates the internal state
@@ -57,7 +63,7 @@ namespace PVOutput
      * Checks the settings whether to start or stop the client by either calling \ref PVOutput::start
      * or \ref PVOutput::stop
      */
-    extern void update();
+    void update();
 
     /**
      * @brief Forces to sync the NTP \ref PVOutput::timeClient if WiFi is connected
@@ -65,7 +71,7 @@ namespace PVOutput
      * @return true If NTP was synced
      * @return false If NTP could not be synced
      */
-    extern bool syncTime();
+    bool syncTime();
 
     /**
      * @brief Make an HTTP GET request to the given url
@@ -75,7 +81,7 @@ namespace PVOutput
      * @return true If \ref PVOutput::client could connect and sent data
      * @return false If \ref PVOutput::client could not connect
      */
-    extern bool httpsGET(const String& url, const bool rateLimit = false);
+    bool httpsGET(const String& url, const bool rateLimit = false);
 
     /**
      * @brief Make an HTTP GET request to the given url
@@ -85,7 +91,7 @@ namespace PVOutput
      * @return true If \ref PVOutput::client could connect and sent data
      * @return false If \ref PVOutput::client could not connect
      */
-    extern bool httpsGET(const char* url, const bool rateLimit = false);
+    bool httpsGET(const char* url, const bool rateLimit = false);
 
     /**
      * @brief Make an HTTP GET request to the given url
@@ -98,7 +104,7 @@ namespace PVOutput
      * @return true If \ref PVOutput::client could connect and sent data
      * @return false If \ref PVOutput::client could not connect
      */
-    extern bool httpsGET(WiFiClientSecure& client, const char* url, const char* apiKey, const uint32_t sysID,
+    bool httpsGET(WiFiClientSecure& client, const char* url, const char* apiKey, const uint32_t sysID,
         const bool rateLimit = false);
 
     /**
@@ -111,7 +117,7 @@ namespace PVOutput
      * @return true If data was sent
      * @return false If data was not sent
      */
-    extern bool sendPowerData(
+    bool sendPowerData(
         const int powerGeneration, const int powerConsumption, const double voltage, const time_t dataTime);
 
     /**
@@ -121,25 +127,26 @@ namespace PVOutput
      *
      * @return uint16_t The rate limit
      */
-    extern uint16_t getRateLimit();
+    uint16_t getRateLimit();
 
     /**
      * @brief Get status interval at which to update the status
      *
      * @return uint8_t The interval in minutes
      */
-    extern uint8_t getStatusInterval();
+    uint8_t getStatusInterval();
 
-    extern const char* HOST PROGMEM; //< Host to make rrequests to aka pvoutput.org
+private:
+    static const char* HOST PROGMEM; //< Host to make rrequests to aka pvoutput.org
 
-    extern WiFiClientSecure client; //< Client to make requests with
-    extern WiFiUDP ntpUDP; //< UDP for \ref PVOutput::timeClient
-    extern NTPClient timeClient; //< NTP client for current time
+    WiFiClientSecure client; //< Client to make requests with
+    WiFiUDP ntpUDP; //< UDP for \ref PVOutput::timeClient
+    NTPClient timeClient; //< NTP client for current time
 
-    extern double _powerConsumption; //< Internal counter for power consumption
-    extern double _powerGeneration; //< Internal counter for power generation
-    extern double _voltage; //< Internal counter for panel voltage
-    extern int _updateInterval; //< Internal interval for PVOutput updates in seconds
+    double _powerConsumption = 0.0; //< Internal counter for power consumption
+    double _powerGeneration = 0.0; //< Internal counter for power generation
+    double _voltage = 0.0; //< Internal counter for panel voltage
+    int _updateInterval = 0.0; //< Internal interval for PVOutput updates in seconds
 
-    extern bool started; //< Did we start
-} // namespace PVOutput
+    bool started = false; //< Did we start
+}; // class PVOutput

@@ -1,43 +1,71 @@
 #pragma once
 
+#include <functional>
+
+#include <HardwareSerial.h>
 #include <ModbusMaster.h>
 
-extern void blinkLED();
-
-namespace Renogy
+class Renogy
 {
-    namespace Callback
+public:
+    struct Data
     {
-        /**
-         * @brief Read and process the modbus data
-         *
-         * @param delta The time since the last time this function was called in ms
-         */
-        extern void readAndProcessData(const uint32_t delta);
+        uint8_t batteryCharge = 0;
+        int8_t batteryTemperature = 0;
+        int8_t chargingState = 0;
+        int8_t controllerTemperature = 0;
+        int16_t loadPower = 0;
+        int16_t panelPower = 0;
+        int32_t errorState = 0;
 
-    } // namespace Callback
+        bool loadEnabled = false;
+        float loadVoltage = 0.0f;
+        float loadCurrent = 0.0f;
+        float batteryVoltage = 0.0f;
+        float batteryCurrent = 0.0f;
+        float panelVoltage = 0.0f;
+        float panelCurrent = 0.0f;
+    } _data;
 
-    namespace ModBus
+    typedef std::function<void(const Data&)> Listener;
+
+    // class Listener
+    // {
+    // public:
+    //     virtual ~Listener() = default;
+    //     virtual void onData(const Data&) = 0;
+    // };
+
+public:
+    Renogy(HardwareSerial& serial)
     {
-        extern int8_t readInt8Lower(ModbusMaster& modbus, const uint8_t startAddress);
+        serial.setTimeout(100);
+        // Modbus at 9600 baud
+        serial.begin(9600);
+        // Maybe make configurable with updateBaudrate(baud);
 
-        extern int8_t readInt8Upper(ModbusMaster& modbus, const uint8_t startAddress);
+        // Renogy Device ID = 1
+        _modbus.begin(1, serial);
+        // Maybe make configurable with begin(x, Serial);
+        // TODO Maybe need to check each device ID to find correct one
+    }
 
-        extern int16_t readInt16BE(ModbusMaster& modbus, const uint8_t startAddress);
+    Renogy(Renogy&&) = delete;
 
-        extern int16_t readInt16LE(ModbusMaster& modbus, const uint8_t startAddress);
+    ///@brief Read and process the modbus data
+    void readAndProcessData();
 
-        extern int32_t readInt32BE(ModbusMaster& modbus, const uint8_t startAddress);
+    ///@brief Enable or disable the load output of the controller
+    ///
+    ///@param enable True to enable, false to disable load output
+    void enableLoad(const boolean enable);
 
-        extern int32_t readInt32LE(ModbusMaster& modbus, const uint8_t startAddress);
+    void setListener(Listener listener);
 
-        extern ModbusMaster modbus;
-    } // namespace ModBus
+private:
+    void writeException(const uint8_t code);
 
-    extern void setup();
-
-    extern void writeException(const uint8_t code);
-
-    extern const char* jsonFormat PROGMEM;
-
-} // namespace Renogy
+private:
+    ModbusMaster _modbus;
+    Listener _listener;
+}; // class Renogy

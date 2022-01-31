@@ -2,137 +2,104 @@
 
 #include "Constants.h"
 #include "GUI.h"
-#include "Settings.h"
 
-namespace MQTT
+const char* Mqtt::statusFormat PROGMEM
+    = R"({"device":"%s","b":{"charge":%hhu,"voltage":%.1f,"current":%.2f,"temperature":%hhu},"l":{"voltage":%.1f,"current":%.2f,"power":%hu},"p":{"voltage":%.1f,"current":%.2f,"power":%hu},"s":{"state":%hhu,"error":%u,"temperature":%hhu}})";
+const char* Mqtt::lastWillFormat PROGMEM = R"({"device":"%s","connected":false})";
+const char* Mqtt::connectionMsgFormat PROGMEM = R"({"device":"%s","connected":true})";
+
+void Mqtt::connect()
 {
-    void setup()
-    {
-        GUI::updateMQTTStatus(FPSTR(DISCONNECTED));
-        const IPAddress ip = Settings::settings.mqttIP;
-        updateIPPort(ip, Settings::settings.mqttPort);
+    // Set last will and connect
+    char will[44];
+    snprintf_P(will, 44, lastWillFormat, deviceMAC);
+    const bool connected = mqtt.connect(mqttConfig.id.c_str(), mqttConfig.user.c_str(), mqttConfig.password.c_str(),
+        mqttConfig.topic.c_str(), 2, true, will);
 
-        _setup = true;
+    if (connected)
+    {
+        // Publish connected message
+        char connectionMsq[43];
+        snprintf_P(connectionMsq, 43, connectionMsgFormat, deviceMAC);
+        publish(connectionMsq, 2, true);
+
+        // Update status
+        _status = CONNECTED;
+        updateListener();
     }
-
-    void update()
+    else
     {
-        if (_setup)
+        // Update status
+        _status = F("Could not connect");
+        updateListener();
+    }
+}
+
+void Mqtt::disconnect()
+{
+    mqtt.disconnect();
+    _status = DISCONNECTED;
+    updateListener();
+}
+
+void Mqtt::loop()
+{
+    if (!mqtt.connected())
+    {
+        if (_status.startsWith("C"))
         {
-            if (Settings::settings.mqtt)
-            {
-                GUI::updateMQTTStatus(F("Started"));
-                if (!mqtt.connected())
-                {
-                    const IPAddress ip = Settings::settings.mqttIP;
-                    const bool ipSet = ip.isSet();
-                    const bool portSet = Settings::settings.mqttPort > 0;
-                    if (!ipSet && !portSet)
-                    {
-                        GUI::updateMQTTStatus(F("IP and Port wrong"));
-                    }
-                    else if (!ipSet)
-                    {
-                        GUI::updateMQTTStatus(F("IP wrong"));
-                    }
-                    else if (!portSet)
-                    {
-                        GUI::updateMQTTStatus(F("Port wrong"));
-                    }
-                    connect();
-                }
-            }
-            else
-            {
-                if (mqtt.connected())
-                {
-                    disconnect();
-                }
-                GUI::updateMQTTStatus(F("Stopped"));
-            }
+            _status = DISCONNECTED;
+            updateListener();
+        }
+        connect();
+    }
+    else
+    {
+        if (_status.startsWith("D"))
+        {
+            _status = CONNECTED;
+            updateListener();
         }
     }
+    mqtt.loop();
+}
 
-    void updateIP(const IPAddress& ip) { updateIPPort(ip, Settings::settings.mqttPort); }
+void Mqtt::updateRenogyStatus(const Renogy::Data& data)
+{
 
-    void updatePort(const uint16_t port)
+    // Max size under assumptions Voltage < 1000, Current < 1000: 256 + null terminator + tolerance
+    //{"device":"0123456789AB","b":{"charge":254,"voltage":999.9,"current":999.99,"temperature":254},"l":{"voltage":999.9,"current":999.99,"power":65534},"p":{"voltage":999.9,"current":999.99,"power":65534},"s":{"state":254,"error":4294967295,"temperature":254}}
+    char jsonBuf[280];
+    snprintf_P(jsonBuf, 280, statusFormat, deviceMAC, data.batteryCharge, data.batteryVoltage, data.batteryCurrent,
+        data.batteryTemperature, data.loadVoltage, data.loadCurrent, data.loadPower, data.panelVoltage,
+        data.panelCurrent, data.panelPower, data.chargingState, data.errorState, data.controllerTemperature);
+    publish(jsonBuf);
+}
+
+void Mqtt::publish(const String& payload, uint8_t qos, bool retain)
+{
+    // At most once (0)
+    // At least once (1)
+    // Exactly once (2)
+    if (mqtt.connected())
     {
-        const IPAddress ip = Settings::settings.mqttIP;
-        updateIPPort(ip, port);
+        mqtt.publish(
+            mqttConfig.topic.c_str(), reinterpret_cast<const uint8_t*>(payload.c_str()), payload.length(), retain);
     }
+}
 
-    void updateIPPort(const IPAddress& ip, const uint16_t port)
+void Mqtt::publish(const char* payload, uint8_t qos, bool retain)
+{
+    publish(mqttConfig.topic.c_str(), payload, qos, retain);
+}
+
+void Mqtt::publish(const char* topic, const char* payload, uint8_t qos, bool retain)
+{
+    // At most once (0)
+    // At least once (1)
+    // Exactly once (2)
+    if (mqtt.connected())
     {
-        if (ip.isSet() && port > 0)
-        {
-            mqtt.setServer(ip, port);
-            mqtt.disconnect();
-            // TODO maybe need call to connect here
-        }
+        mqtt.publish(topic, reinterpret_cast<const uint8_t*>(payload), strlen(payload), retain);
     }
-
-    void connect()
-    {
-        // Set last will and connect
-        char will[44];
-        snprintf_P(will, 44, lastWillFormat, WIFI::mac.c_str());
-        const bool connected = mqtt.connect(HOSTNAME, Settings::settings.mqttUser, Settings::settings.mqttPass,
-            Settings::settings.topic, 2, true, will);
-
-        if (connected)
-        {
-            // Publish connected message
-            char connectionMsq[43];
-            snprintf_P(connectionMsq, 43, connectionMsgFormat, WIFI::mac.c_str());
-            MQTT::publish(connectionMsq, 2, true);
-
-            // Update GUI
-            GUI::updateMQTTStatus(FPSTR(CONNECTED));
-        }
-        else
-        {
-            // Update GUI
-            GUI::updateMQTTStatus(F("Could not connect"));
-        }
-    }
-
-    void disconnect()
-    {
-        mqtt.disconnect();
-        GUI::updateMQTTStatus(FPSTR(DISCONNECTED));
-    }
-
-    void publish(const String& payload, uint8_t qos, bool retain)
-    {
-        // At most once (0)
-        // At least once (1)
-        // Exactly once (2)
-        if (mqtt.connected())
-        {
-            mqtt.publish(
-                Settings::settings.topic, reinterpret_cast<const uint8_t*>(payload.c_str()), payload.length(), retain);
-        }
-    }
-
-    void publish(const char* payload, uint8_t qos, bool retain)
-    {
-        publish(Settings::settings.topic, payload, qos, retain);
-    }
-
-    void publish(const char* topic, const char* payload, uint8_t qos, bool retain)
-    {
-        // At most once (0)
-        // At least once (1)
-        // Exactly once (2)
-        if (mqtt.connected())
-        {
-            mqtt.publish(topic, reinterpret_cast<const uint8_t*>(payload), strlen(payload), retain);
-        }
-    }
-
-    const char* lastWillFormat PROGMEM = R"({"device":"%s","connected":false})";
-    const char* connectionMsgFormat PROGMEM = R"({"device":"%s","connected":true})";
-    WiFiClient espClient;
-    PubSubClient mqtt(espClient);
-    bool _setup = false;
-} // namespace MQTT
+}

@@ -1,6 +1,6 @@
 {
-    "board": "esp8266:esp8266:generic",
-    "configuration": "xtal=160,vt=flash,exception=legacy,ssl=all,ResetMethod=nodemcu,CrystalFreq=26,FlashFreq=80,FlashMode=dout,eesz=1M,led=2,sdk=nonosdk3v0,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=115200",
+    "board": "esp8266:esp8266:d1_mini",
+    "configuration": "xtal=160,vt=flash,exception=legacy,ssl=all,eesz=4M2M,ip=lm2f,dbg=Disabled,lvl=None____,wipe=none,baud=921600",
     "sketch": "rngbridge.ino",
     "port": "COM9",
     "output": "./.build"
