@@ -32,13 +32,14 @@ void setup()
     config.initConfig();
 
     networking.init(renogy);
-    networking.setRebootHandler([]() {
-        if (mqtt)
-        {
-            mqtt->disconnect();
-        }
-        ESP.restart();
-    });
+    // Last will of mqtt won't work this way
+    // networking.setRebootHandler([]() {
+    //     if (mqtt)
+    //     {
+    //         mqtt->disconnect();
+    //     }
+    //     ESP.restart();
+    // });
 
     const NetworkConfig& netwConfig = config.getNetworkConfig();
     if (netwConfig.clientEnabled)
