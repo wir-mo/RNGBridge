@@ -1,5 +1,3 @@
-#include <DNSServer.h>
-
 #include "Constants.h"
 #include "GUI.h"
 #include "MQTT.h"
