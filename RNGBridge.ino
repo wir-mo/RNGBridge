@@ -54,8 +54,8 @@ void setup()
         if (pvoConfig.enabled)
         {
             pvo = new PVOutput(pvoConfig);
-            // pvo->setListener([](const String& status) { gui.updatePVOutputStatus(status); });
-            // pvo->connect();
+            pvo->setListener([](const String& status) { gui.updatePVOutputStatus(status); });
+            pvo->start();
         }
         else
         {

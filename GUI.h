@@ -14,8 +14,6 @@ public:
 
     void updateRenogyStatus(const Renogy::Data& data);
 
-    void updateWiFiStatus(const String& status);
-
     void updateMQTTStatus(const String& status);
 
     void updatePVOutputStatus(const String& status);
