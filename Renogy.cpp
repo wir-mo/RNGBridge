@@ -122,26 +122,26 @@ void Renogy::readAndProcessData()
         batteryDirection = !batteryDirection;
     }
     _data.batteryCharge = batteryCharge;
-    _data.batteryVoltage = 0.1 * random(100, 140);
-    _data.batteryCurrent = 0.01 * random(0, 10000);
+    _data.batteryVoltage = 0.1f * random(100, 140);
+    _data.batteryCurrent = 0.01f * random(0, 10000);
     _data.controllerTemperature = random(0, 30);
     _data.batteryTemperature = random(0, 30);
 
     if (_data.loadEnabled)
     {
-        _data.loadVoltage = 0.1 * random(100, 140);
-        _data.loadCurrent = 0.01 * random(0, 10000);
+        _data.loadVoltage = 0.1f * random(100, 140);
+        _data.loadCurrent = 0.01f * random(0, 10000);
         _data.loadPower = floor(_data.loadVoltage * _data.loadCurrent);
     }
     else
     {
-        _data.loadVoltage = 0.1 * random(100, 140);
+        _data.loadVoltage = 0.1f * random(100, 140);
         _data.loadCurrent = 0.0f;
         _data.loadPower = 0;
     }
 
-    _data.panelVoltage = 0.1 * random(100, 400);
-    _data.panelCurrent = 0.01 * random(0, 10000);
+    _data.panelVoltage = 0.1f * random(100, 400);
+    _data.panelCurrent = 0.01f * random(0, 10000);
     _data.panelPower = floor(_data.panelVoltage * _data.panelCurrent);
 
     _data.chargingState = random(0, 255);
