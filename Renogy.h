@@ -60,6 +60,9 @@ public:
     ///@param enable True to enable, false to disable load output
     void enableLoad(const boolean enable);
 
+    ///@brief Set a listener which receives @ref Renogy::Data updates
+    ///
+    ///@param listener Listener or null
     void setListener(Listener listener);
 
 private:

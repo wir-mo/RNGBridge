@@ -105,6 +105,15 @@ void PVOutput::loop()
     }
 }
 
+void PVOutput::setListener(Listener listener)
+{
+    _listener = listener;
+    if (_listener)
+    {
+        _listener(_status);
+    }
+}
+
 bool PVOutput::syncTime()
 {
     bool synced = false;
@@ -278,4 +287,13 @@ uint8_t PVOutput::getStatusInterval()
     // Release HEAP
     client.stop();
     return interval;
+}
+
+void PVOutput::updateStatus(const String& status)
+{
+    _status = status;
+    if (_listener)
+    {
+        _listener(_status);
+    }
 }

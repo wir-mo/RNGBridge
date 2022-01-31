@@ -219,5 +219,8 @@ void Renogy::enableLoad(const boolean enable)
 void Renogy::setListener(Listener listener)
 {
     _listener = listener;
-    _listener(_data);
+    if (_listener)
+    {
+        _listener(_data);
+    }
 }

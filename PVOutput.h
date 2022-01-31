@@ -57,11 +57,10 @@ public:
     /// or \ref PVOutput::stop
     void loop();
 
-    void setListener(Listener listener)
-    {
-        _listener = listener;
-        // updateListener();
-    }
+    ///@brief Set a listener which receives status updates
+    ///
+    ///@param listener Listener or null
+    void setListener(Listener listener);
 
 private:
     ///@brief Forces to sync the NTP \ref PVOutput::timeClient if WiFi is connected
@@ -121,14 +120,10 @@ private:
     ///@return uint8_t The interval in minutes
     uint8_t getStatusInterval();
 
-    void updateStatus(const String& status)
-    {
-        _status = status;
-        if (_listener)
-        {
-            _listener(_status);
-        }
-    }
+    ///@brief Update the internal status string and notify listener
+    ///
+    ///@param status New status
+    void updateStatus(const String& status);
 
 private:
     static const char* HOST PROGMEM; /// Host to make rrequests to aka pvoutput.org

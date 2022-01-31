@@ -29,24 +29,20 @@ public:
 
     void updateRenogyStatus(const Renogy::Data& data);
 
-    void setListener(Listener listener)
-    {
-        _listener = listener;
-        updateListener();
-    }
+    ///@brief Set a listener which receives status updates
+    ///
+    ///@param listener Listener or null
+    void setListener(Listener listener);
 
 private:
     void publish(const String& payload, uint8_t qos = 0, bool retain = false);
     void publish(const char* payload, uint8_t qos = 0, bool retain = false);
     void publish(const char* topic, const char* payload, uint8_t qos = 0, bool retain = false);
 
-    void updateListener()
-    {
-        if (_listener)
-        {
-            _listener(_status);
-        }
-    }
+    ///@brief Update the internal status string and notify listener
+    ///
+    ///@param status New status
+    void updateStatus(const String& status);
 
 private:
     static const char* statusFormat PROGMEM;
