@@ -24,21 +24,19 @@ void Mqtt::connect()
         publish(connectionMsq, 2, true);
 
         // Update status
-        _status = CONNECTED;
-        updateListener();
+        updateStatus(FPSTR(CONNECTED));
     }
     else
     {
         // Update status
-        _status = F("Could not connect");
-        updateListener();
+        updateStatus(F("Could not connect"));
     }
 }
 
 void Mqtt::disconnect()
 {
     mqtt.disconnect();
-    _status = DISCONNECTED;
+    updateStatus(FPSTR(DISCONNECTED));
     updateListener();
 }
 
@@ -48,8 +46,7 @@ void Mqtt::loop()
     {
         if (_status.startsWith("C"))
         {
-            _status = DISCONNECTED;
-            updateListener();
+            updateStatus(FPSTR(DISCONNECTED));
         }
         connect();
     }
@@ -57,8 +54,7 @@ void Mqtt::loop()
     {
         if (_status.startsWith("D"))
         {
-            _status = CONNECTED;
-            updateListener();
+           updateStatus(FPSTR( CONNECTED);
         }
     }
     mqtt.loop();
@@ -74,6 +70,15 @@ void Mqtt::updateRenogyStatus(const Renogy::Data& data)
         data.batteryTemperature, data.loadVoltage, data.loadCurrent, data.loadPower, data.panelVoltage,
         data.panelCurrent, data.panelPower, data.chargingState, data.errorState, data.controllerTemperature);
     publish(jsonBuf);
+}
+
+void Mqtt::setListener(Listener listener)
+{
+    _listener = listener;
+    if (_listener)
+    {
+        _listener(_status);
+    }
 }
 
 void Mqtt::publish(const String& payload, uint8_t qos, bool retain)
@@ -101,5 +106,14 @@ void Mqtt::publish(const char* topic, const char* payload, uint8_t qos, bool ret
     if (mqtt.connected())
     {
         mqtt.publish(topic, reinterpret_cast<const uint8_t*>(payload), strlen(payload), retain);
+    }
+}
+
+void Mqtt::updateStatus(const String& status)
+{
+    _status = status;
+    if (_listener)
+    {
+        _listener(_status);
     }
 }
