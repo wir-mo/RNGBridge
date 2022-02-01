@@ -6,16 +6,17 @@
 #include <pgmspace.h>
 #endif
 
-#define DEMO_MODE // Enable demo mode with dummy data
-#define DEBUG_SERIAL Serial
+// #define DEMO_MODE // Enable demo mode with dummy data
+#define DEBUG_SERIAL Serial1
+// #define DEBUG_CONFIG // Uncomment to dump config on startup
 
 #ifdef DEBUG_SERIAL
 #define DEBUG(s) DEBUG_SERIAL.print(s)
 #define DEBUGLN(s) DEBUG_SERIAL.println(s)
 #if defined(__cplusplus) && (__cplusplus > 201703L)
-#define DEBUGF(format, ...) DEBUG_SERIAL.printf(format, __VA_OPT__(, ) __VA_ARGS__)
+#define DEBUGF(format, ...) DEBUG_SERIAL.printf_P(PSTR(format), __VA_OPT__(, ) __VA_ARGS__)
 #else // !(defined(__cplusplus) && (__cplusplus >  201703L))
-#define DEBUGF(format, ...) DEBUG_SERIAL.printf(format, ##__VA_ARGS__)
+#define DEBUGF(format, ...) DEBUG_SERIAL.printf_P(PSTR(format), ##__VA_ARGS__)
 #endif
 #else
 #define DEBUG(s)
@@ -34,3 +35,5 @@ extern const char* HOSTNAME PROGMEM;
 /// MAC adress of ESP8266
 // size: 13 chars
 extern char deviceMAC[13];
+
+extern const uint32_t RENOGY_INTERVAL; /// The interval in s at which the renogy data should be read

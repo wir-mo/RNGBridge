@@ -193,13 +193,14 @@ void Renogy::readAndProcessData()
             _listener(_data);
         }
     }
-    // else
-    // {
-    // if (Settings::settings.mqtt)
-    // {
-    // MQTT::publish("{\"device\":\"" + WIFI::mac + "\",\"mbError\":" + String(result) + "}");
-    // }
-    // }
+    else
+    {
+        // if (Settings::settings.mqtt)
+        // {
+        // MQTT::publish("{\"device\":\"" + WIFI::mac + "\",\"mbError\":" + String(result) + "}");
+        // }
+        DEBUGF("[Renogy] Could not read registers: %d\n", result);
+    }
 #endif
 }
 
@@ -211,12 +212,12 @@ void Renogy::enableLoad(const boolean enable)
     const uint8_t result = _modbus.writeSingleRegister(0x010A, enable ? 0x01 : 0x00);
     if (result != _modbus.ku8MBSuccess)
     {
-        DEBUGF("[Error] Could not turn load %s: %d", enable ? "on" : "off", result);
+        DEBUGF("[Renogy] Could not turn load %s: %d\n", enable ? "on" : "off", result);
     }
 #endif
 }
 
-void Renogy::setListener(Listener listener)
+void Renogy::setListener(DataListener listener)
 {
     _listener = listener;
     if (_listener)

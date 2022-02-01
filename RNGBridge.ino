@@ -7,8 +7,6 @@
 // 60 requests per hour.
 // 300 requests per hour in donation mode.
 
-const uint32_t RENOGY_INTERVAL = 1; /// The interval in s at which the renogy data should be read
-
 uint8_t lastSecond = 0; /// The last seconds value
 uint8_t secondsPassedRenogy = 0; /// amount of seconds passed
 
@@ -21,6 +19,9 @@ Renogy renogy(Serial);
 
 void setup()
 {
+#ifdef DEBUG_SERIAL
+    DEBUG_SERIAL.begin(115200);
+#endif
     // Signal startup
     pinMode(LED_BUILTIN, OUTPUT); // Initialize the LED_BUILTIN pin as an output
     digitalWrite(LED_BUILTIN, LOW);
@@ -78,8 +79,8 @@ void setup()
         }
         if (pvo)
         {
-            pvo->updateData(
-                2.0, data.panelVoltage * data.panelCurrent, data.loadVoltage * data.loadCurrent, data.batteryVoltage);
+            pvo->updateData(RENOGY_INTERVAL / 1000.0, data.panelVoltage * data.panelCurrent,
+                data.loadVoltage * data.loadCurrent, data.batteryVoltage);
         }
         gui.updateRenogyStatus(data);
     });

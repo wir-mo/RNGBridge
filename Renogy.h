@@ -8,35 +8,33 @@
 class Renogy
 {
 public:
+    ///@brief Contains data retreived from charge controller
     struct Data
     {
-        uint8_t batteryCharge = 0;
-        int8_t batteryTemperature = 0;
-        int8_t chargingState = 0;
-        int8_t controllerTemperature = 0;
-        int16_t loadPower = 0;
-        int16_t panelPower = 0;
-        int32_t errorState = 0;
+        uint8_t batteryCharge = 0; /// Battery Charge in % [0-100]
+        int8_t batteryTemperature = 0; /// Battery temperature in degrees C
+        int8_t chargingState = 0; /// Controller charging state
+        int8_t controllerTemperature = 0; /// Controller temperature in degrees C
+        int16_t loadPower = 0; /// Power of load output in Watt
+        int16_t panelPower = 0; /// Power of solar panel input in Watt
+        int32_t errorState = 0; /// Controller error state
 
-        bool loadEnabled = false;
-        float loadVoltage = 0.0f;
-        float loadCurrent = 0.0f;
-        float batteryVoltage = 0.0f;
-        float batteryCurrent = 0.0f;
-        float panelVoltage = 0.0f;
-        float panelCurrent = 0.0f;
+        bool loadEnabled = false; /// Load output enabled state, true=enabled, false=disabled
+        float loadVoltage = 0.0f; /// Load output voltage in Volt
+        float loadCurrent = 0.0f; /// Load output current in Ampere
+        float batteryVoltage = 0.0f; /// Batery voltage in Volt
+        float batteryCurrent = 0.0f; /// Battery current in Ampere
+        float panelVoltage = 0.0f; /// Solar panel voltage in Volt
+        float panelCurrent = 0.0f; /// Solar panel current in Ampere
     } _data;
 
-    typedef std::function<void(const Data&)> Listener;
-
-    // class Listener
-    // {
-    // public:
-    //     virtual ~Listener() = default;
-    //     virtual void onData(const Data&) = 0;
-    // };
+    ///@brief Callback definition for data listener
+    typedef std::function<void(const Data&)> DataListener;
 
 public:
+    ///@brief Construct a new Renogy object
+    ///
+    ///@param serial Hardware Serial for ModBus communication
     Renogy(HardwareSerial& serial)
     {
         serial.setTimeout(100);
@@ -63,12 +61,9 @@ public:
     ///@brief Set a listener which receives @ref Renogy::Data updates
     ///
     ///@param listener Listener or null
-    void setListener(Listener listener);
-
-private:
-    void writeException(const uint8_t code);
+    void setListener(DataListener listener);
 
 private:
     ModbusMaster _modbus;
-    Listener _listener;
+    DataListener _listener;
 }; // class Renogy

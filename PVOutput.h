@@ -12,7 +12,7 @@
 class PVOutput
 {
 public:
-    typedef std::function<void(const String&)> Listener;
+    typedef std::function<void(const String&)> StatusListener;
 
 public:
     PVOutput(const PVOutputConfig& config) : _config(config), timeClient(ntpUDP, "europe.pool.ntp.org", 0, 60000)
@@ -47,20 +47,19 @@ public:
 
     ///@brief Tries to start automatic PVOutput data upload
     ///
-    /// Tries to get the status interval from PVOutput and if it is valid syncs the time and set
-    ///\ref PVOutput::started true
+    /// Tries to get the status interval from PVOutput and if it is valid syncs the time and sets _started true
     void start();
 
     ///@brief Updates the internal state
     ///
-    /// Checks the settings whether to start or stop the client by either calling \ref PVOutput::start
-    /// or \ref PVOutput::stop
+    /// Uploads data to PVOutput and resets counters
+    /// Should be called once every second.
     void loop();
 
     ///@brief Set a listener which receives status updates
     ///
     ///@param listener Listener or null
-    void setListener(Listener listener);
+    void setListener(StatusListener listener);
 
 private:
     ///@brief Forces to sync the NTP \ref PVOutput::timeClient if WiFi is connected
@@ -143,6 +142,6 @@ private:
 
     uint16_t _secondsPassed = 0; /// amount of seconds passed
 
-    Listener _listener;
+    StatusListener _listener;
     String _status;
 }; // class PVOutput

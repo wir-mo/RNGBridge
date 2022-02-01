@@ -8,43 +8,44 @@
 
 void GUI::updateRenogyStatus(const Renogy::Data& data)
 {
-    _status["b"]["charge"] = data.batteryCharge;
-    _status["b"]["voltage"] = data.batteryVoltage;
-    _status["b"]["current"] = data.batteryCurrent;
-    _status["b"]["temperature"] = data.batteryTemperature;
+    _status["b"]["ch"] = data.batteryCharge;
+    _status["b"]["vo"] = data.batteryVoltage;
+    _status["b"]["cu"] = data.batteryCurrent;
+    _status["b"]["te"] = data.batteryTemperature;
 
-    _status["l"]["enabled"] = data.loadEnabled;
-    _status["l"]["voltage"] = data.loadVoltage;
-    _status["l"]["current"] = data.loadCurrent;
+    _status["l"]["en"] = data.loadEnabled;
+    _status["l"]["vo"] = data.loadVoltage;
+    _status["l"]["cu"] = data.loadCurrent;
 
-    _status["p"]["voltage"] = data.panelVoltage;
-    _status["p"]["current"] = data.panelCurrent;
+    _status["p"]["vo"] = data.panelVoltage;
+    _status["p"]["cu"] = data.panelCurrent;
 
-    _status["s"]["state"] = data.chargingState;
-    _status["s"]["error"] = data.errorState;
-    _status["s"]["temperature"] = data.controllerTemperature;
+    _status["s"]["st"] = data.chargingState;
+    _status["s"]["er"] = data.errorState;
+    _status["s"]["te"] = data.controllerTemperature;
 }
 
 void GUI::updateMQTTStatus(const String& status)
 {
-    _status["mqtt"]["status"] = status;
+    _status["mqttstat"] = status;
 }
 
 void GUI::updatePVOutputStatus(const String& status)
 {
-    _status["pvo"]["status"] = status;
+    _status.garbageCollect();
+    _status["pvostat"] = status;
 }
 
 void GUI::updateUptime(const uint32_t uptime)
 {
-    DEBUG(F("Uptime: "));
+    DEBUG(F("[System] Uptime: "));
     DEBUGLN(uptime);
-    _status["uptime"] = uptime;
+    _status["up"] = uptime;
 }
 
 void GUI::updateHeap(const uint32_t heap)
 {
-    _status["heap"] = heap;
+    _status["he"] = heap;
 }
 
 void GUI::update()
