@@ -53,21 +53,21 @@ void Config::initConfig()
 {
     if (SPIFFS.begin())
     {
-        DEBUGLN(F("Mounted file system"));
+        DEBUGLN(F("[Config] Mounted file system"));
         if (SPIFFS.exists("/config.json"))
         {
             readConfig();
         }
         else
         {
-            DEBUGLN(F("Config file does not exist"));
+            DEBUGLN(F("[Config] File does not exist"));
             setDefaultConfig();
             saveConfig();
         }
     }
     else
     {
-        DEBUGLN(F("Failed to mount FS"));
+        DEBUGLN(F("[Config] Failed to mount FS"));
         Config::setDefaultConfig();
     }
 }
@@ -96,7 +96,7 @@ void Config::setDefaultConfig()
 
 void Config::saveConfig()
 {
-    DEBUGLN(F("Writing config file"));
+    DEBUGLN(F("[Config] Writing file"));
     File configFile = SPIFFS.open("/config.json", "w");
 
     StaticJsonDocument<documentSizeConfig> json;
@@ -104,16 +104,16 @@ void Config::saveConfig()
 
     if (serializeJson(json, configFile) == 0)
     {
-        DEBUGLN(F("Failed to write to file"));
+        DEBUGLN(F("[Config] Failed to write to file"));
     }
     else
     {
-        DEBUGLN(F("Successfully updated config."));
+        DEBUGLN(F("[Config] Successfully updated config"));
     }
     configFile.close();
     if (configFile)
     {
-        DEBUGLN(F("[Error] File was not closed."));
+        DEBUGLN(F("[Config] File was not closed"));
     }
 }
 
@@ -129,27 +129,35 @@ void Config::createJson(JsonDocument& output)
 
 void Config::readConfig()
 {
-    DEBUGLN(F("Reading config file"));
+    DEBUGLN(F("[Config] Reading file"));
     File configFile = SPIFFS.open("/config.json", "r");
 
     if (configFile)
     {
-        DEBUGLN(F("Opened config file"));
+        DEBUGLN(F("[Config] Opened file"));
 
         StaticJsonDocument<documentSizeConfig> json;
 
         DeserializationError error = deserializeJson(json, configFile);
         if (error)
         {
-            DEBUGLN(F("Failed to read file, using default configuration"));
+            DEBUGLN(F("[Config] Failed to read file, using default configuration"));
             setDefaultConfig();
             return;
         }
         else
         {
-            DEBUGLN(F("Successfully loaded config file"));
+            DEBUGLN(F("[Config] Successfully loaded config file"));
         }
         configFile.close();
+
+#ifdef DEBUG_CONFIG
+        String jsonstr;
+        jsonstr.reserve(measureJsonPretty(json));
+        serializeJsonPretty(json, jsonstr);
+        DEBUGLN(jsonstr);
+#endif
+
         const auto& jWifi = json["wifi"];
         const auto& jMqtt = json["mqtt"];
         const auto& jPvo = json["pvo"];
@@ -161,7 +169,7 @@ void Config::readConfig()
         }
         else
         {
-            DEBUGLN(F("Invalid file contents, removing config.json"));
+            DEBUGLN(F("[Config] Invalid file contents, removing file"));
             SPIFFS.remove("/config.json");
         }
     }
@@ -169,65 +177,13 @@ void Config::readConfig()
 
 bool NetworkConfig::verify(const JsonObjectConst& object) const
 {
-    DEBUGLN(F("Verifying NetworkConfig"));
-    if (!object["client_enabled"].is<bool>())
-    {
-        DEBUGLN(F("client_enabled not bool"));
-        return false;
-    }
-    if (!object["client_dhcp_enabled"].is<bool>())
-    {
-        DEBUGLN(F("client_dhcp_enabled not bool"));
-        return false;
-    }
-    if (!object["client_ssid"].is<const char*>())
-    {
-        DEBUGLN(F("client_ssid not const char*"));
-        return false;
-    }
-    if (!object["client_password"].is<const char*>())
-    {
-        DEBUGLN(F("client_password not const char*"));
-        return false;
-    }
-    if (!object["client_gateway"].is<const char*>())
-    {
-        DEBUGLN(F("client_gateway not const char*"));
-        return false;
-    }
-    if (!object["client_dns"].is<const char*>())
-    {
-        DEBUGLN(F("client_dns not const char*"));
-        return false;
-    }
-    if (!object["client_mask"].is<const char*>())
-    {
-        DEBUGLN(F("client_mask not const char*"));
-        return false;
-    }
-    if (!object["ap_enabled"].is<bool>())
-    {
-        DEBUGLN(F("ap_enabled not bool"));
-        return false;
-    }
-    if (!object["ap_ssid"].is<const char*>())
-    {
-        DEBUGLN(F("ap_ssid not const char*"));
-        return false;
-    }
-    if (!object["ap_password"].is<const char*>())
-    {
-        DEBUGLN(F("ap_password not const char*"));
-        return false;
-    }
-    return true;
+    DEBUGLN(F("[Config] Verifying NetworkConfig"));
 
-    // return object["client_enabled"].is<bool>() && object["client_dhcp_enabled"].is<bool>()
-    //     && object["client_ssid"].is<const char*>() && object["client_password"].is<const char*>()
-    //     && object["client_gateway"].is<const char*>()
-    //     && object["client_dns"].is<const char*>() && object["client_mask"].is<const char*>()
-    //     && object["ap_enabled"].is<bool>() && object["ap_ssid"].is<const char*>()
-    //     && object["ap_password"].is<const char*>();
+    return object["client_enabled"].is<bool>() && object["client_dhcp_enabled"].is<bool>()
+        && object["client_ssid"].is<const char*>() && object["client_password"].is<const char*>()
+        && object["client_gateway"].is<const char*>() && object["client_dns"].is<const char*>()
+        && object["client_mask"].is<const char*>() && object["ap_enabled"].is<bool>()
+        && object["ap_ssid"].is<const char*>() && object["ap_password"].is<const char*>();
 }
 
 void NetworkConfig::fromJson(const JsonObjectConst& object)
@@ -297,47 +253,11 @@ void NetworkConfig::setDefaultConfig()
 
 bool MqttConfig::verify(const JsonObjectConst& object) const
 {
-    DEBUGLN(F("Verifying MqttConfig"));
-    if (!object["enabled"].is<bool>())
-    {
-        DEBUGLN(F("enabled not bool"));
-        return false;
-    }
-    if (!object["server"].is<const char*>())
-    {
-        DEBUGLN(F("server not const char*"));
-        return false;
-    }
-    if (!object["port"].is<unsigned int>())
-    {
-        DEBUGLN(F("port not unsigned int"));
-        return false;
-    }
-    if (!object["id"].is<const char*>())
-    {
-        DEBUGLN(F("id not const char*"));
-        return false;
-    }
-    if (!object["user"].is<const char*>())
-    {
-        DEBUGLN(F("user not const char*"));
-        return false;
-    }
-    if (!object["password"].is<const char*>())
-    {
-        DEBUGLN(F("password not const char*"));
-        return false;
-    }
-    if (!object["topic"].is<const char*>())
-    {
-        DEBUGLN(F("topic not const char*"));
-        return false;
-    }
-    return true;
+    DEBUGLN(F("[Config] Verifying MqttConfig"));
 
-    // return object["enabled"].is<bool>() && object["server"].is<const char*>() && object["port"].is<unsigned int>()
-    //     && object["id"].is<const char*>() && object["user"].is<const char*>() && object["password"].is<const char*>()
-    //     && object["topic"].is<const char*>();
+    return object["enabled"].is<bool>() && object["server"].is<const char*>() && object["port"].is<unsigned int>()
+        && object["id"].is<const char*>() && object["user"].is<const char*>() && object["password"].is<const char*>()
+        && object["topic"].is<const char*>();
 }
 
 void MqttConfig::fromJson(const JsonObjectConst& object)
@@ -390,31 +310,9 @@ void MqttConfig::setDefaultConfig()
 
 bool PVOutputConfig::verify(const JsonObjectConst& object) const
 {
-    DEBUGLN(F("Verifying PVOutputConfig"));
-    if (!object["enabled"].is<bool>())
-    {
-        DEBUGLN(F("enabled not bool"));
-        return false;
-    }
-    if (!object["system_id"].is<unsigned int>())
-    {
-        DEBUGLN(F("system_id not unsigned int"));
-        return false;
-    }
-    if (!object["api_key"].is<const char*>())
-    {
-        DEBUGLN(F("api_key not const char*"));
-        return false;
-    }
-    if (!object["time_offset"].is<int>())
-    {
-        DEBUGLN(F("time_offset not int"));
-        return false;
-    }
-    return true;
-    // return object["enabled"].is<bool>() && object["system_id"].is<unsigned int>() && object["api_key"].is<const
-    // char*>()
-    //     && object["time_offset"].is<int>();
+    DEBUGLN(F("[Config] Verifying PVOutputConfig"));
+    return object["enabled"].is<bool>() && object["system_id"].is<unsigned int>() && object["api_key"].is<const char*>()
+        && object["time_offset"].is<int>();
 }
 
 void PVOutputConfig::fromJson(const JsonObjectConst& object)

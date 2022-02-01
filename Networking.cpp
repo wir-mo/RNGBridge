@@ -6,12 +6,12 @@ void Networking::initWifi()
 {
     if (isInitialized)
     {
-        DEBUGLN(F("Wifi already initialized, should not be called again"));
+        DEBUGLN(F("[Networking] Wifi already initialized, should not be called again"));
         return;
     }
     else if (WiFi.status() == WL_CONNECTED)
     {
-        DEBUGLN(F("Wifi auto connected"));
+        DEBUGLN(F("[Networking] Wifi auto connected"));
         isInitialized = true;
     }
 
@@ -24,12 +24,12 @@ void Networking::initWifi()
     //}
     if (wifi.clientEnabled && !isInitialized)
     {
-        DEBUGLN(F("Init wifi client"));
+        DEBUGLN(F("[Networking] Init wifi client"));
         startClient();
     }
     else if (wifi.apEnabled)
     {
-        DEBUGLN(F("Init wifi AP"));
+        DEBUGLN(F("[Networking] Init wifi AP"));
         startAccessPoint();
     }
 
@@ -40,7 +40,7 @@ void Networking::initServer(Renogy& renogy)
 {
     // Handle EventSource
     es.onConnect([this](AsyncEventSourceClient* client) {
-        DEBUGF("es[%s] connect\n", client->client()->remoteIP().toString().c_str());
+        DEBUGF("[Networking] ES[%s] connect\n", client->client()->remoteIP().toString().c_str());
 
         DynamicJsonDocument output(3000);
 
@@ -90,7 +90,7 @@ void Networking::initServer(Renogy& renogy)
 
     server.begin();
 
-    DEBUGLN(F("Server setup"));
+    DEBUGLN(F("[Networking] Server setup"));
 }
 
 void Networking::init(Renogy& renogy)
@@ -126,7 +126,7 @@ void Networking::handleOTAUpload(
 {
     if (!index)
     {
-        DEBUGLN(F("UploadStart"));
+        DEBUGLN(F("[OTA] UploadStart"));
 // calculate sketch space required for the update, for ESP32 use the max constant
 #if defined(ESP32)
         if (!Update.begin(UPDATE_SIZE_UNKNOWN))
@@ -155,7 +155,7 @@ void Networking::handleOTAUpload(
         if (Update.end(true))
         {
             // true to set the size to the current progress
-            DEBUGLN(F("Update Success, \nRebooting..."));
+            DEBUGLN(F("[OTA] Update Success, \nRebooting..."));
             restartESP = true;
         }
 #ifdef DEBUG_SERIAL
@@ -170,12 +170,10 @@ void Networking::handleOTAUpload(
 
 void Networking::handleIndex(AsyncWebServerRequest* request)
 {
-    DEBUGLN(F("handleIndex start"));
     AsyncWebServerResponse* response
         = request->beginResponse_P(200, F("text/html"), build_html_gz_start, build_html_gz_size);
     response->addHeader(F("Content-Encoding"), F("gzip"));
     request->send(response);
-    DEBUGLN(F("handleIndex end"));
 }
 
 void Networking::handleConfigApiGet(AsyncWebServerRequest* request)
@@ -200,7 +198,7 @@ void Networking::handleConfigApiGet(AsyncWebServerRequest* request)
 
 void Networking::handleConfigApiPost(AsyncWebServerRequest* request, JsonVariant& json)
 {
-    DEBUGLN(F("Received new config"));
+    DEBUGLN(F("[Networking] Received new config"));
 
     JsonObject&& data = json.as<JsonObject>();
 
@@ -219,7 +217,7 @@ void Networking::handleConfigApiPost(AsyncWebServerRequest* request, JsonVariant
     }
     else
     {
-        DEBUGLN(F("Config did not change"));
+        DEBUGLN(F("[Networking] Config did not change"));
     }
 
     AsyncWebServerResponse* response = request->beginResponse(200, "text/plain", "OK");
@@ -236,9 +234,7 @@ void Networking::handleRenogyApi(AsyncWebServerRequest* request, JsonVariant& js
     JsonObject&& data = json.as<JsonObject>();
     const bool loadEnabled = data["enabled"];
     renogy.enableLoad(loadEnabled);
-    DEBUGF("Received load command: %s\n", loadEnabled ? "true" : "false");
 
-    // TODOD text/plain or text/html?
     AsyncWebServerResponse* response = request->beginResponse(200, "text/plain", "OK");
     request->send(response);
 }
@@ -283,23 +279,23 @@ bool Networking::captivePortal(AsyncWebServerRequest* request)
 {
     if (ON_STA_FILTER(request))
     {
-        // DEBUGLN(F("Captive STA Filter"));
+        // DEBUGLN(F("[Networking] Captive STA Filter"));
         return false; // only serve captive portal in AP mode
     }
     if (!request->hasHeader("Host"))
     {
-        // DEBUGLN(F("Captive Host header missing"));
+        // DEBUGLN(F("[Networking] Captive Host header missing"));
         return false;
     }
     const String hostHeader = request->getHeader("Host")->value();
     if (isIp(hostHeader) || hostHeader.indexOf(HOSTNAME) >= 0)
     {
-        // DEBUG(F("Captive Host Filter: ");
+        // DEBUG(F("[Networking] Captive Host Filter: ");
         // DEBUGLN(hostHeader);
         return false;
     }
 
-    DEBUGLN(F("Captive portal"));
+    DEBUGLN(F("[Networking] Captive portal"));
     AsyncWebServerResponse* response = request->beginResponse(302);
     response->addHeader(F("Location"), F("http://192.168.4.1"));
     request->send(response);
@@ -316,8 +312,7 @@ bool Networking::handleClientFailsafe()
         delay(1000);
         if (millis() - start > 15000)
         {
-            DEBUGLN();
-            DEBUGLN(F("Failed, enabling AP"));
+            DEBUGLN(F("\n[Networking] Failed, enabling AP"));
 
             startAccessPoint(false);
             return false;
@@ -328,27 +323,27 @@ bool Networking::handleClientFailsafe()
 
 void Networking::startClient()
 {
-    DEBUGLN(F("Using wifi in client mode"));
+    DEBUGLN(F("[Networking] Using wifi in client mode"));
 
     const NetworkConfig& wifi = config.getNetworkConfig();
 
     if (!wifi.dhcpEnabled)
     {
-        DEBUGLN(F("Using static ip"));
+        DEBUGLN(F("[Networking] Using static ip"));
         if (!WiFi.config(wifi.clientIp, wifi.clientGateway, wifi.clientMask, wifi.clientDns))
         {
-            DEBUGLN(F("STA Failed to configure"));
+            DEBUGLN(F("[Networking] STA Failed to configure"));
         }
     }
     else
     {
-        DEBUGLN(F("Using DHCP"));
+        DEBUGLN(F("[Networking] Using DHCP"));
     }
 
     WiFi.persistent(true);
     WiFi.mode(WIFI_STA);
     WiFi.begin(wifi.clientSsid, wifi.clientPassword);
-    DEBUG(F("Connecting to WiFi .."));
+    DEBUG(F("[Networking] Connecting to WiFi .."));
     uint64_t start = millis();
 
     if (handleClientFailsafe())
@@ -365,7 +360,7 @@ void Networking::startAccessPoint(bool persistent)
 {
     const NetworkConfig& wifi = config.getNetworkConfig();
 
-    DEBUGLN(F("Using wifi in ap mode"));
+    DEBUGLN(F("[Networking] Using wifi in ap mode"));
 
     WiFi.persistent(persistent);
 
@@ -375,16 +370,16 @@ void Networking::startAccessPoint(bool persistent)
     if (wifi.apPassword.length() == 0)
     {
         WiFi.softAP(wifi.apSsid);
-        DEBUGLN(F("Starting open AP"));
+        DEBUGLN(F("[Networking] Starting open AP"));
     }
     else
     {
         WiFi.softAP(wifi.apSsid, wifi.apPassword);
-        DEBUGLN(F("Starting protected AP"));
+        DEBUGLN(F("[Networking] Starting protected AP"));
     }
 
     // captive portal
-    DEBUGLN(F("Starting DNS server"));
+    DEBUGLN(F("[Networking] Starting DNS server"));
     dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
     dnsServer.start(53, "*", WiFi.softAPIP());
 }

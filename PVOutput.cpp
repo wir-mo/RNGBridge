@@ -28,10 +28,12 @@ void PVOutput::sendData()
         const uint8_t currentHour = hour(epoch);
         const uint8_t currentMinute = minute(epoch);
         sprintf_P(temp, PSTR("Sent data (%hhu:%hhu)"), currentHour, currentMinute);
+        DEBUGF("[PVO] %s", temp);
         updateStatus(String(temp));
     }
     else
     {
+        DEBUGLN(F("[PVO] Could not send power data"));
         updateStatus(F("Could not send power data"));
     }
 
@@ -55,6 +57,7 @@ void PVOutput::updateData(
 
 void PVOutput::start()
 {
+    DEBUGLN(F("[PVO] Starting"));
     updateStatus(F("Starting"));
     // Try to get the status interval which can't be 0
     const uint8_t interval = getStatusInterval();
@@ -68,6 +71,7 @@ void PVOutput::start()
         _started = true;
 
         // Set status running
+        DEBUGLN(F("[PVO] Running"));
         updateStatus(F("Running"));
     }
     else
@@ -75,6 +79,7 @@ void PVOutput::start()
         _started = false;
 
         // Set status error
+        DEBUGLN(F("[PVO] Could not get update interval, retrying"));
         updateStatus(F("Could not get update interval, retrying"));
     }
 }
@@ -105,7 +110,7 @@ void PVOutput::loop()
     }
 }
 
-void PVOutput::setListener(Listener listener)
+void PVOutput::setListener(StatusListener listener)
 {
     _listener = listener;
     if (_listener)
@@ -121,16 +126,20 @@ bool PVOutput::syncTime()
     if (WiFi.isConnected())
     {
         updateStatus(F("Syncing time"));
+        DEBUG(F("[PVO] Syncing time"));
         while (!synced)
         {
             // Force update until we have a correct time
             timeClient.forceUpdate();
             synced = year(timeClient.getEpochTime()) > 2019;
             delay(500);
+            DEBUG(".");
         }
+        DEBUGLN(F("\n[PVO] Synced time"));
     }
     else
     {
+        DEBUGLN(F("[PVO] No WiFi for time sync"));
         updateStatus(F("No WiFi for time sync"));
     }
     return synced;
@@ -151,6 +160,7 @@ bool PVOutput::httpsGET(const char* url, const bool rateLimit)
 bool PVOutput::httpsGET(
     WiFiClientSecure& client, const char* url, const char* apiKey, const uint32_t sysID, const bool rateLimit)
 {
+    // DEBUGF("[PVO] GET %s, k: %s, i: %d\n", url, apiKey, sysID);
     // Try to connect to server
     const bool connected = client.connect(HOST, 443);
     if (connected)
