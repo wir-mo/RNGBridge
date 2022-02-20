@@ -79,8 +79,8 @@ void setup()
         }
         if (pvo)
         {
-            pvo->updateData(RENOGY_INTERVAL / 1000.0, data.panelVoltage * data.panelCurrent,
-                data.loadVoltage * data.loadCurrent, data.batteryVoltage);
+            pvo->updateData(RENOGY_INTERVAL, data.panelVoltage * data.panelCurrent, data.loadVoltage * data.loadCurrent,
+                data.batteryVoltage);
         }
         gui.updateRenogyStatus(data);
     });

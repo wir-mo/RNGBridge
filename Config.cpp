@@ -169,8 +169,13 @@ void Config::readConfig()
         }
         else
         {
-            DEBUGLN(F("[Config] Invalid file contents, removing file"));
-            SPIFFS.remove("/config.json");
+            DEBUGLN(F("[Config] Invalid file contents"));
+            setDefaultConfig();
+            if (networkConfig.tryUpdate(jWifi) || mqttConfig.tryUpdate(jMqtt) || pvoutputConfig.tryUpdate(jPvo))
+            {
+                DEBUGLN(F("[Config] Read partial data from config file"));
+            }
+            saveConfig();
         }
     }
 }
