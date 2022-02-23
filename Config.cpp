@@ -87,11 +87,17 @@ PVOutputConfig& Config::getPvoutputConfig()
     return pvoutputConfig;
 }
 
+DeviceConfig& Config::getDeviceConfig()
+{
+    return deviceConfig;
+}
+
 void Config::setDefaultConfig()
 {
     networkConfig.setDefaultConfig();
     mqttConfig.setDefaultConfig();
     pvoutputConfig.setDefaultConfig();
+    deviceConfig.setDefaultConfig();
 }
 
 void Config::saveConfig()
@@ -125,6 +131,8 @@ void Config::createJson(JsonDocument& output)
     mqttConfig.toJson(mqtt);
     JsonObject pvo = output.createNestedObject("pvo");
     pvoutputConfig.toJson(pvo);
+    JsonObject dev = output.createNestedObject("dev");
+    deviceConfig.toJson(dev);
 }
 
 void Config::readConfig()
@@ -161,17 +169,21 @@ void Config::readConfig()
         const auto& jWifi = json["wifi"];
         const auto& jMqtt = json["mqtt"];
         const auto& jPvo = json["pvo"];
-        if (networkConfig.verify(jWifi) && mqttConfig.verify(jMqtt) && pvoutputConfig.verify(jPvo))
+        const auto& jDev = json["dev"];
+        if (networkConfig.verify(jWifi) && mqttConfig.verify(jMqtt) && pvoutputConfig.verify(jPvo)
+            && deviceConfig.verify(jDev))
         {
             networkConfig.fromJson(jWifi);
             mqttConfig.fromJson(jMqtt);
             pvoutputConfig.fromJson(jPvo);
+            deviceConfig.fromJson(jDev);
         }
         else
         {
             DEBUGLN(F("[Config] Invalid file contents"));
             setDefaultConfig();
-            if (networkConfig.tryUpdate(jWifi) || mqttConfig.tryUpdate(jMqtt) || pvoutputConfig.tryUpdate(jPvo))
+            if (networkConfig.tryUpdate(jWifi) || mqttConfig.tryUpdate(jMqtt) || pvoutputConfig.tryUpdate(jPvo)
+                || deviceConfig.tryUpdate(jDev))
             {
                 DEBUGLN(F("[Config] Read partial data from config file"));
             }
@@ -357,4 +369,37 @@ void PVOutputConfig::setDefaultConfig()
     systemId = 0;
     apiKey = "YourAPIKey";
     timeOffset = 0;
+}
+
+bool DeviceConfig::verify(const JsonObjectConst& object) const
+{
+    DEBUGLN(F("[Config] Verifying DeviceConfig"));
+    return object["name"].is<const char*>();
+}
+
+void DeviceConfig::fromJson(const JsonObjectConst& object)
+{
+    constexpr const char* emptyString = "";
+    name = object["name"] | emptyString;
+}
+
+void DeviceConfig::toJson(JsonObject& object) const
+{
+    object["name"] = name;
+}
+
+bool DeviceConfig::tryUpdate(const JsonObjectConst& object)
+{
+    if (object.isNull())
+    {
+        return false;
+    }
+    bool changed = false;
+    changed |= updateField(object, "name", name);
+    return changed;
+}
+
+void DeviceConfig::setDefaultConfig()
+{
+    name = "RNGBridge";
 }

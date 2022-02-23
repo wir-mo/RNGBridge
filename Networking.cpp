@@ -106,8 +106,6 @@ void Networking::getStatusJsonString(JsonObject& output)
 {
     auto&& networking = output.createNestedObject("network");
 
-    networking["mac"] = deviceMAC;
-
     bool client_enabled = config.getNetworkConfig().clientEnabled;
 
     auto&& wifi_client = networking.createNestedObject("wifi_client");
@@ -211,6 +209,9 @@ void Networking::handleConfigApiPost(AsyncWebServerRequest* request, JsonVariant
     PVOutputConfig& pvo = config.getPvoutputConfig();
     changed |= pvo.tryUpdate(data["pvo"]);
 
+    DeviceConfig& dev = config.getDeviceConfig();
+    changed |= dev.tryUpdate(data["dev"]);
+
     if (changed)
     {
         config.saveConfig();
@@ -268,6 +269,18 @@ void Networking::update()
             ESP.restart();
         }
     }
+
+    // if (config.getNetworkConfig().clientEnabled && !WiFi.isConnected()
+    //     && (millis() - lastReconnect) >= (reconnectBackoff * 1000))
+    // {
+    //     if (reconnectBackoff < 512)
+    //     {
+    //         reconnectBackoff << 1;
+    //     }
+    //     lastReconnect = millis();
+    //     DEBUGLN("Reconnecting WiFi");
+    //     startClient();
+    // }
 }
 
 void Networking::setRebootHandler(RebootHandler handler)

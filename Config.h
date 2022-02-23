@@ -80,6 +80,24 @@ struct PVOutputConfig
     void setDefaultConfig();
 };
 
+struct DeviceConfig
+{
+    String name;
+
+    /// @brief Verify that the object can be parsed
+    /// @returns true if fromJson can be executed
+    bool verify(const JsonObjectConst& object) const;
+    void fromJson(const JsonObjectConst& object);
+    void toJson(JsonObject& object) const;
+
+    /// @brief Update all fields in object, if possible
+    /// @returns true when any value was changed
+    bool tryUpdate(const JsonObjectConst& object);
+
+    ///@brief Set the contained data to the default
+    void setDefaultConfig();
+};
+
 class Config
 {
 public:
@@ -87,6 +105,7 @@ public:
     NetworkConfig& getNetworkConfig();
     MqttConfig& getMqttConfig();
     PVOutputConfig& getPvoutputConfig();
+    DeviceConfig& getDeviceConfig();
     void setDefaultConfig();
     void saveConfig();
     void createJson(JsonDocument& output);
@@ -98,4 +117,5 @@ private:
     NetworkConfig networkConfig;
     MqttConfig mqttConfig;
     PVOutputConfig pvoutputConfig;
+    DeviceConfig deviceConfig;
 }; // namespace Networking
