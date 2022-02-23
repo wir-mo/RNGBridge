@@ -130,6 +130,8 @@ private:
     bool isInitialized = false;
     bool restartESP = false; /// Restart ESP after config change
     RebootHandler _rebootHandler; /// Handler for restarting ESP and gracefully shutting down stuff
+    // uint16_t reconnectBackoff = 1;
+    // uint32_t lastReconnect = 0;
 
     Config& config;
 }; // namespace Networking
