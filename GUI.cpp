@@ -38,8 +38,6 @@ void GUI::updatePVOutputStatus(const String& status)
 
 void GUI::updateUptime(const uint32_t uptime)
 {
-    DEBUG(F("[System] Uptime: "));
-    DEBUGLN(uptime);
     _status["up"] = uptime;
 }
 
