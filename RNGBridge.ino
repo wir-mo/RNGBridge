@@ -21,10 +21,12 @@ void setup()
 {
 #ifdef DEBUG_SERIAL
     DEBUG_SERIAL.begin(115200);
+    DEBUGLN();
+    DEBUGLN("RNGBridge HWV-2 SWV-1.1.1");
 #endif
     // Signal startup
-    pinMode(LED_BUILTIN, OUTPUT); // Initialize the LED_BUILTIN pin as an output
-    digitalWrite(LED_BUILTIN, LOW);
+    // pinMode(LED_BUILTIN, OUTPUT); // Initialize the LED_BUILTIN pin as an output
+    // digitalWrite(LED_BUILTIN, LOW);
 
     uint8_t mac[6];
     wifi_get_macaddr(STATION_IF, mac);
@@ -86,7 +88,7 @@ void setup()
     });
 
     // Signal setup done
-    digitalWrite(LED_BUILTIN, HIGH);
+    // digitalWrite(LED_BUILTIN, HIGH);
 }
 
 void loop()
@@ -98,7 +100,9 @@ void loop()
     if (currentSecond != lastSecond)
     {
         // Signal start of work
-        digitalWrite(LED_BUILTIN, LOW);
+        // digitalWrite(LED_BUILTIN, LOW);
+        DEBUG(F("[System] Uptime: "));
+        DEBUGLN(timeS);
         lastSecond = currentSecond;
 
         ++secondsPassedRenogy;
@@ -126,7 +130,7 @@ void loop()
         networking.update();
 
         // Signal end of work
-        digitalWrite(LED_BUILTIN, HIGH);
+        // digitalWrite(LED_BUILTIN, HIGH);
     }
 
     // handle wifi or whatever the esp is doing
