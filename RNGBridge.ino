@@ -1,9 +1,13 @@
+#include <functional>
+
+#include "Config.h"
 #include "Constants.h"
 #include "GUI.h"
 #include "MQTT.h"
 #include "Networking.h"
 #include "PVOutput.h"
 #include "Renogy.h"
+
 // 60 requests per hour.
 // 300 requests per hour in donation mode.
 
@@ -17,16 +21,63 @@ Networking networking(config);
 GUI gui(networking);
 Renogy renogy(Serial);
 
+constexpr static const uint8_t LED = D1;
+
+namespace
+{
+    void handleOutput(OutputControl& output, const Renogy::Data& data, std::function<void(bool)> enable)
+    {
+        if (output.inputType == InputType::disabled)
+        {
+            return;
+        }
+
+        float value = 0;
+        switch (output.inputType)
+        {
+        case InputType::bsoc:
+            value = data.batteryCharge;
+            break;
+        case InputType::bvoltage:
+            value = data.batteryVoltage;
+            break;
+        }
+
+        if (value >= output.max)
+        {
+            const bool newState = !output.inverted;
+            if (output.lastState != newState)
+            {
+                DEBUGLN("Val >= max");
+                output.lastState = newState;
+                enable(newState);
+            }
+        }
+        else if (value < output.min)
+        {
+            const bool newState = output.inverted;
+            if (output.lastState != newState)
+            {
+                DEBUGLN("Val < min");
+                output.lastState = newState;
+                enable(newState);
+            }
+        }
+    }
+} // namespace
+
 void setup()
 {
 #ifdef DEBUG_SERIAL
     DEBUG_SERIAL.begin(115200);
     DEBUGLN();
-    DEBUGLN("RNGBridge HWV-2 SWV-1.1.1");
+    // Note version is made up of
+    // Major Changes . New Features . Bugfixes (aka major.minor.bug)
+    DEBUGLN("RNGBridge HWV-2 SWV-1.2.0");
 #endif
     // Signal startup
-    // pinMode(LED_BUILTIN, OUTPUT); // Initialize the LED_BUILTIN pin as an output
-    // digitalWrite(LED_BUILTIN, LOW);
+    pinMode(LED, OUTPUT);
+    digitalWrite(LED, HIGH);
 
     uint8_t mac[6];
     wifi_get_macaddr(STATION_IF, mac);
@@ -74,7 +125,18 @@ void setup()
         }
     }
 
-    renogy.setListener([](const Renogy::Data& data) {
+    pinMode(D5, OUTPUT);
+    pinMode(D6, OUTPUT);
+    pinMode(D7, OUTPUT);
+    digitalWrite(D5, LOW);
+    digitalWrite(D6, LOW);
+    digitalWrite(D7, LOW);
+    auto handleLoad = [](bool enable) { renogy.enableLoad(enable); };
+    auto handleOut1 = [](bool enable) { digitalWrite(D5, enable); }; // Out1 = D5;
+    auto handleOut2 = [](bool enable) { digitalWrite(D6, enable); }; // Out2 = D6;
+    auto handleOut3 = [](bool enable) { digitalWrite(D7, enable); }; // Out3 = D7;
+    DeviceConfig& deviceConfig = config.getDeviceConfig();
+    renogy.setListener([&](const Renogy::Data& data) {
         if (mqtt)
         {
             mqtt->updateRenogyStatus(data);
@@ -84,11 +146,17 @@ void setup()
             pvo->updateData(RENOGY_INTERVAL, data.panelVoltage * data.panelCurrent, data.loadVoltage * data.loadCurrent,
                 data.batteryVoltage);
         }
+
+        handleOutput(deviceConfig.load, data, handleLoad);
+        handleOutput(deviceConfig.out1, data, handleOut1);
+        handleOutput(deviceConfig.out2, data, handleOut2);
+        handleOutput(deviceConfig.out3, data, handleOut3);
+
         gui.updateRenogyStatus(data);
     });
 
     // Signal setup done
-    // digitalWrite(LED_BUILTIN, HIGH);
+    digitalWrite(LED, LOW);
 }
 
 void loop()
@@ -100,7 +168,7 @@ void loop()
     if (currentSecond != lastSecond)
     {
         // Signal start of work
-        // digitalWrite(LED_BUILTIN, LOW);
+        digitalWrite(LED, HIGH);
         DEBUG(F("[System] Uptime: "));
         DEBUGLN(timeS);
         lastSecond = currentSecond;
@@ -130,7 +198,7 @@ void loop()
         networking.update();
 
         // Signal end of work
-        // digitalWrite(LED_BUILTIN, HIGH);
+        digitalWrite(LED, LOW);
     }
 
     // handle wifi or whatever the esp is doing

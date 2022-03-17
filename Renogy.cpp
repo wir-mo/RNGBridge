@@ -204,7 +204,7 @@ void Renogy::readAndProcessData()
 #endif
 }
 
-void Renogy::enableLoad(const boolean enable)
+void Renogy::enableLoad(const bool enable)
 {
 #ifdef DEMO_MODE
     _data.loadEnabled = enable;
