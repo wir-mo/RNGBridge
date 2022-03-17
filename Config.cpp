@@ -1,6 +1,6 @@
 #include "Config.h"
 
-constexpr int documentSizeConfig = 1024;
+constexpr int documentSizeConfig = 2048;
 
 namespace
 {
@@ -371,21 +371,70 @@ void PVOutputConfig::setDefaultConfig()
     timeOffset = 0;
 }
 
+bool OutputControl::verify(const JsonObjectConst& object) const
+{
+    DEBUGLN(F("[Config] Verifying OutputControl"));
+    return object["inputType"].is<const char*>() && object["inverted"].is<bool>() && object["min"].is<float>()
+        && object["max"].is<float>();
+}
+
+void OutputControl::fromJson(const JsonObjectConst& object)
+{
+    constexpr const char* emptyString = "";
+    inputType = StringToInputType(object["inputType"] | emptyString);
+    inverted = object["inverted"];
+    min = object["min"];
+    max = object["max"];
+}
+
+bool OutputControl::tryUpdate(const JsonObjectConst& object)
+{
+    if (object.isNull())
+    {
+        return false;
+    }
+    bool changed = false;
+    String type = InputTypeToString(inputType);
+    changed |= updateField(object, "inputType", type);
+    inputType = StringToInputType(type);
+    changed |= updateField(object, "inverted", inverted);
+    changed |= updateField(object, "min", min);
+    changed |= updateField(object, "max", max);
+    return changed;
+}
+
+void OutputControl::setDefaultConfig()
+{
+    inputType = InputType::disabled;
+    inverted = false;
+    min = 30.0;
+    max = 48.0;
+}
+
 bool DeviceConfig::verify(const JsonObjectConst& object) const
 {
     DEBUGLN(F("[Config] Verifying DeviceConfig"));
-    return object["name"].is<const char*>();
+    return object["name"].is<const char*>() && load.verify(object["load"]) && out1.verify(object["out1"])
+        && out2.verify(object["out2"]) && out3.verify(object["out3"]);
 }
 
 void DeviceConfig::fromJson(const JsonObjectConst& object)
 {
     constexpr const char* emptyString = "";
     name = object["name"] | emptyString;
+    load.fromJson(object["load"]);
+    out1.fromJson(object["out1"]);
+    out2.fromJson(object["out2"]);
+    out3.fromJson(object["out3"]);
 }
 
 void DeviceConfig::toJson(JsonObject& object) const
 {
     object["name"] = name;
+    load.toJson(object["load"]);
+    out1.toJson(object["out1"]);
+    out2.toJson(object["out2"]);
+    out3.toJson(object["out3"]);
 }
 
 bool DeviceConfig::tryUpdate(const JsonObjectConst& object)
@@ -396,10 +445,18 @@ bool DeviceConfig::tryUpdate(const JsonObjectConst& object)
     }
     bool changed = false;
     changed |= updateField(object, "name", name);
+    changed |= load.tryUpdate(object["load"]);
+    changed |= out1.tryUpdate(object["out1"]);
+    changed |= out2.tryUpdate(object["out2"]);
+    changed |= out3.tryUpdate(object["out3"]);
     return changed;
 }
 
 void DeviceConfig::setDefaultConfig()
 {
     name = "RNGBridge";
+    load.setDefaultConfig();
+    out1.setDefaultConfig();
+    out2.setDefaultConfig();
+    out3.setDefaultConfig();
 }

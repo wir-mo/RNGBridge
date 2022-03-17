@@ -56,7 +56,7 @@ public:
     ///@brief Enable or disable the load output of the controller
     ///
     ///@param enable True to enable, false to disable load output
-    void enableLoad(const boolean enable);
+    void enableLoad(const bool enable);
 
     ///@brief Set a listener which receives @ref Renogy::Data updates
     ///

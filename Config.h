@@ -80,9 +80,75 @@ struct PVOutputConfig
     void setDefaultConfig();
 };
 
+enum class InputType
+{
+    disabled,
+    bsoc,
+    bvoltage,
+};
+
+static const String InputTypeToString(const InputType type)
+{
+    switch (type)
+    {
+    case InputType::disabled:
+        return "disabled";
+    case InputType::bsoc:
+        return "bsoc";
+    case InputType::bvoltage:
+        return "bvoltage";
+    }
+}
+
+static InputType StringToInputType(const String& str)
+{
+    if (str.equals("bsoc"))
+    {
+        return InputType::bsoc;
+    }
+    if (str.equals("bvoltage"))
+    {
+        return InputType::bvoltage;
+    }
+    return InputType::disabled;
+}
+
+struct OutputControl
+{
+    InputType inputType;
+    bool inverted;
+    float min;
+    float max;
+    bool lastState = false;
+
+    /// @brief Verify that the object can be parsed
+    /// @returns true if fromJson can be executed
+    bool verify(const JsonObjectConst& object) const;
+    void fromJson(const JsonObjectConst& object);
+    template <typename T>
+    void toJson(T&& object) const
+    {
+        object["inputType"] = InputTypeToString(inputType);
+        object["inverted"] = inverted;
+        object["min"] = min;
+        object["max"] = max;
+    }
+
+    /// @brief Update all fields in object, if possible
+    /// @returns true when any value was changed
+    bool tryUpdate(const JsonObjectConst& object);
+
+    ///@brief Set the contained data to the default
+    void setDefaultConfig();
+};
+
 struct DeviceConfig
 {
     String name;
+    OutputControl load;
+    OutputControl out1;
+    OutputControl out2;
+    OutputControl out3;
 
     /// @brief Verify that the object can be parsed
     /// @returns true if fromJson can be executed
