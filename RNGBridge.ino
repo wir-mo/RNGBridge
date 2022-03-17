@@ -73,7 +73,7 @@ void setup()
     DEBUGLN();
     // Note version is made up of
     // Major Changes . New Features . Bugfixes (aka major.minor.bug)
-    DEBUGLN("RNGBridge HWV-2 SWV-1.2.0");
+    DEBUGLN("RNGBridge V2.2.0");
 #endif
     // Signal startup
     pinMode(LED, OUTPUT);
