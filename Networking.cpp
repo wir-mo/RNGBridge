@@ -233,6 +233,15 @@ void Networking::handleConfigApiPost(AsyncWebServerRequest* request, JsonVariant
 void Networking::handleRenogyApi(AsyncWebServerRequest* request, JsonVariant& json, Renogy& renogy)
 {
     JsonObject&& data = json.as<JsonObject>();
+
+    if (!data.containsKey("enabled"))
+    {
+        AsyncWebServerResponse* response
+            = request->beginResponse(400, "text/plain", "JSON does not contain `enabled` key");
+        request->send(response);
+        return;
+    }
+
     const bool loadEnabled = data["enabled"];
     renogy.enableLoad(loadEnabled);
 
