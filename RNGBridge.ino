@@ -48,7 +48,6 @@ namespace
             const bool newState = !output.inverted;
             if (output.lastState != newState)
             {
-                DEBUGLN("Val >= max");
                 output.lastState = newState;
                 enable(newState);
             }
@@ -58,7 +57,6 @@ namespace
             const bool newState = output.inverted;
             if (output.lastState != newState)
             {
-                DEBUGLN("Val < min");
                 output.lastState = newState;
                 enable(newState);
             }
@@ -73,7 +71,7 @@ void setup()
     DEBUGLN();
     // Note version is made up of
     // Major Changes . New Features . Bugfixes (aka major.minor.bug)
-    DEBUGLN("RNGBridge V2.2.0");
+    DEBUGLN("RNGBridge V2.2.1");
 #endif
     // Signal startup
     pinMode(LED, OUTPUT);
