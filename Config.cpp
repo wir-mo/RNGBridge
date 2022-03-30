@@ -12,6 +12,7 @@ namespace
     template <typename T>
     bool updateField(const JsonObjectConst& object, const char* field, T& val)
     {
+        /// @todo Consider using object[field].as<T>() if value for whatever reason is in wrong format
         T newValue = object[field] | val;
         if (newValue != val)
         {

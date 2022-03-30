@@ -71,7 +71,7 @@ void setup()
     DEBUGLN();
     // Note version is made up of
     // Major Changes . New Features . Bugfixes (aka major.minor.bug)
-    DEBUGLN("RNGBridge V2.3.0");
+    DEBUGLN("RNGBridge V2.3.1");
 #endif
     // Signal startup
     pinMode(LED, OUTPUT);
