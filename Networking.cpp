@@ -198,6 +198,13 @@ void Networking::handleConfigApiPost(AsyncWebServerRequest* request, JsonVariant
 {
     DEBUGLN(F("[Networking] Received new config"));
 
+#ifdef DEBUG_CONFIG
+    String jsonstr;
+    jsonstr.reserve(measureJsonPretty(json));
+    serializeJsonPretty(json, jsonstr);
+    DEBUGLN(jsonstr);
+#endif
+
     JsonObject&& data = json.as<JsonObject>();
 
     NetworkConfig& wifi = config.getNetworkConfig();
