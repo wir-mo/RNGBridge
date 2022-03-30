@@ -44,6 +44,7 @@ struct MqttConfig
     String user;
     String password;
     String topic;
+    uint8_t interval; /// Interval in seconds at which mqtt messages are published
 
     /// @brief Verify that the object can be parsed
     /// @returns true if fromJson can be executed

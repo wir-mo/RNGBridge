@@ -274,7 +274,7 @@ bool MqttConfig::verify(const JsonObjectConst& object) const
 
     return object["enabled"].is<bool>() && object["server"].is<const char*>() && object["port"].is<unsigned int>()
         && object["id"].is<const char*>() && object["user"].is<const char*>() && object["password"].is<const char*>()
-        && object["topic"].is<const char*>();
+        && object["topic"].is<const char*>() && object["interval"].is<unsigned int>();
 }
 
 void MqttConfig::fromJson(const JsonObjectConst& object)
@@ -287,6 +287,7 @@ void MqttConfig::fromJson(const JsonObjectConst& object)
     user = object["user"] | emptyString;
     password = object["password"] | emptyString;
     topic = object["topic"] | emptyString;
+    interval = object["interval"];
 }
 
 void MqttConfig::toJson(JsonObject& object) const
@@ -298,6 +299,7 @@ void MqttConfig::toJson(JsonObject& object) const
     object["user"] = user;
     object["password"] = password;
     object["topic"] = topic;
+    object["interval"] = interval;
 }
 
 bool MqttConfig::tryUpdate(const JsonObjectConst& object)
@@ -314,6 +316,7 @@ bool MqttConfig::tryUpdate(const JsonObjectConst& object)
     changed |= updateField(object, "user", user);
     changed |= updateField(object, "password", password);
     changed |= updateField(object, "topic", topic);
+    changed |= updateField(object, "interval", interval);
     return changed;
 }
 
@@ -323,6 +326,7 @@ void MqttConfig::setDefaultConfig()
     port = 1883;
     id = "RNGBridge";
     topic = "/rng";
+    interval = 1;
 }
 
 bool PVOutputConfig::verify(const JsonObjectConst& object) const

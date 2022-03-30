@@ -61,13 +61,18 @@ void Mqtt::loop()
 
 void Mqtt::updateRenogyStatus(const Renogy::Data& data)
 {
-    // Max size under assumptions Voltage < 1000, Current < 1000: 256 + null terminator + tolerance
-    //{"device":"0123456789AB","b":{"charge":254,"voltage":999.9,"current":999.99,"temperature":254},"l":{"voltage":999.9,"current":999.99,"power":65534},"p":{"voltage":999.9,"current":999.99,"power":65534},"s":{"state":254,"error":4294967295,"temperature":254}}
-    char jsonBuf[280];
-    snprintf_P(jsonBuf, 280, statusFormat, deviceMAC, data.batteryCharge, data.batteryVoltage, data.batteryCurrent,
-        data.batteryTemperature, data.loadVoltage, data.loadCurrent, data.loadPower, data.panelVoltage,
-        data.panelCurrent, data.panelPower, data.chargingState, data.errorState, data.controllerTemperature);
-    publish(jsonBuf);
+    ++updateCount;
+    if (updateCount >= mqttConfig.interval)
+    {
+        updateCount = 0;
+        // Max size under assumptions Voltage < 1000, Current < 1000: 256 + null terminator + tolerance
+        //{"device":"0123456789AB","b":{"charge":254,"voltage":999.9,"current":999.99,"temperature":254},"l":{"voltage":999.9,"current":999.99,"power":65534},"p":{"voltage":999.9,"current":999.99,"power":65534},"s":{"state":254,"error":4294967295,"temperature":254}}
+        char jsonBuf[280];
+        snprintf_P(jsonBuf, 280, statusFormat, deviceMAC, data.batteryCharge, data.batteryVoltage, data.batteryCurrent,
+            data.batteryTemperature, data.loadVoltage, data.loadCurrent, data.loadPower, data.panelVoltage,
+            data.panelCurrent, data.panelPower, data.chargingState, data.errorState, data.controllerTemperature);
+        publish(jsonBuf);
+    }
 }
 
 void Mqtt::setListener(Listener listener)
