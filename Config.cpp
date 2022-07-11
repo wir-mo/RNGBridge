@@ -183,8 +183,11 @@ void Config::readConfig()
         {
             DEBUGLN(F("[Config] Invalid file contents"));
             setDefaultConfig();
-            if (networkConfig.tryUpdate(jWifi) || mqttConfig.tryUpdate(jMqtt) || pvoutputConfig.tryUpdate(jPvo)
-                || deviceConfig.tryUpdate(jDev))
+            const bool partialWifi = networkConfig.tryUpdate(jWifi);
+            const bool partialMqtt = mqttConfig.tryUpdate(jMqtt);
+            const bool partialPvo = pvoutputConfig.tryUpdate(jPvo);
+            const bool partialDev = deviceConfig.tryUpdate(jDev);
+            if (partialWifi || partialMqtt || partialPvo || partialDev)
             {
                 DEBUGLN(F("[Config] Read partial data from config file"));
             }
