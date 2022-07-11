@@ -42,8 +42,8 @@ public:
         serial.begin(9600);
         // Maybe make configurable with updateBaudrate(baud);
 
-        // Renogy Device ID = 1
-        _modbus.begin(1, serial);
+        // Renogy Device ID = 255 (was 1)
+        _modbus.begin(0xFF, serial);
         // Maybe make configurable with begin(x, Serial);
         // TODO Maybe need to check each device ID to find correct one
     }

@@ -1,10 +1,9 @@
-#include <functional>
-
 #include "Config.h"
 #include "Constants.h"
 #include "GUI.h"
 #include "MQTT.h"
 #include "Networking.h"
+#include "OutputControl.h"
 #include "PVOutput.h"
 #include "Renogy.h"
 
@@ -20,49 +19,9 @@ PVOutput* pvo;
 Networking networking(config);
 GUI gui(networking);
 Renogy renogy(Serial);
+OutputControl outputs(renogy, config.getDeviceConfig());
 
 constexpr static const uint8_t LED = D1;
-
-namespace
-{
-    void handleOutput(OutputControl& output, const Renogy::Data& data, std::function<void(bool)> enable)
-    {
-        if (output.inputType == InputType::disabled)
-        {
-            return;
-        }
-
-        float value = 0;
-        switch (output.inputType)
-        {
-        case InputType::bsoc:
-            value = data.batteryCharge;
-            break;
-        case InputType::bvoltage:
-            value = data.batteryVoltage;
-            break;
-        }
-
-        if (value >= output.max)
-        {
-            const bool newState = !output.inverted;
-            if (output.lastState != newState)
-            {
-                output.lastState = newState;
-                enable(newState);
-            }
-        }
-        else if (value < output.min)
-        {
-            const bool newState = output.inverted;
-            if (output.lastState != newState)
-            {
-                output.lastState = newState;
-                enable(newState);
-            }
-        }
-    }
-} // namespace
 
 void setup()
 {
@@ -83,7 +42,7 @@ void setup()
 
     config.initConfig();
 
-    networking.init(renogy);
+    networking.init(outputs);
     // Last will of mqtt won't work this way
     // networking.setRebootHandler([]() {
     //     if (mqtt)
@@ -123,16 +82,6 @@ void setup()
         }
     }
 
-    pinMode(D5, OUTPUT);
-    pinMode(D6, OUTPUT);
-    pinMode(D7, OUTPUT);
-    digitalWrite(D5, LOW);
-    digitalWrite(D6, LOW);
-    digitalWrite(D7, LOW);
-    auto handleLoad = [](bool enable) { renogy.enableLoad(enable); };
-    auto handleOut1 = [](bool enable) { digitalWrite(D5, enable); }; // Out1 = D5;
-    auto handleOut2 = [](bool enable) { digitalWrite(D6, enable); }; // Out2 = D6;
-    auto handleOut3 = [](bool enable) { digitalWrite(D7, enable); }; // Out3 = D7;
     DeviceConfig& deviceConfig = config.getDeviceConfig();
     renogy.setListener([&](const Renogy::Data& data) {
         if (mqtt)
@@ -145,10 +94,7 @@ void setup()
                 data.batteryVoltage);
         }
 
-        handleOutput(deviceConfig.load, data, handleLoad);
-        handleOutput(deviceConfig.out1, data, handleOut1);
-        handleOutput(deviceConfig.out2, data, handleOut2);
-        handleOutput(deviceConfig.out3, data, handleOut3);
+        outputs.update(data);
 
         gui.updateRenogyStatus(data);
     });

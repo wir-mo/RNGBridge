@@ -36,7 +36,7 @@ void Networking::initWifi()
     isInitialized = true;
 }
 
-void Networking::initServer(Renogy& renogy)
+void Networking::initServer(OutputControl& outputs)
 {
     // Handle EventSource
     es.onConnect([this](AsyncEventSourceClient* client) {
@@ -73,8 +73,10 @@ void Networking::initServer(Renogy& renogy)
     server.addHandler(handlerSetConfig);
 
     // Handle control
-    AsyncCallbackJsonWebHandler* handlerSetLeds = new AsyncCallbackJsonWebHandler("/api/control",
-        [this, &renogy](AsyncWebServerRequest* request, JsonVariant& json) { handleRenogyApi(request, json, renogy); });
+    AsyncCallbackJsonWebHandler* handlerSetLeds = new AsyncCallbackJsonWebHandler(
+        "/api/control", [this, &outputs](AsyncWebServerRequest* request, JsonVariant& json) {
+            handleRenogyApi(request, json, outputs);
+        });
     server.addHandler(handlerSetLeds);
 
     // Serve UI
@@ -93,12 +95,12 @@ void Networking::initServer(Renogy& renogy)
     DEBUGLN(F("[Networking] Server setup"));
 }
 
-void Networking::init(Renogy& renogy)
+void Networking::init(OutputControl& outputs)
 {
     if (!isInitialized)
     {
         initWifi();
-        initServer(renogy);
+        initServer(outputs);
     }
 }
 
@@ -237,22 +239,48 @@ void Networking::handleConfigApiPost(AsyncWebServerRequest* request, JsonVariant
     }
 }
 
-void Networking::handleRenogyApi(AsyncWebServerRequest* request, JsonVariant& json, Renogy& renogy)
+void Networking::handleRenogyApi(AsyncWebServerRequest* request, JsonVariant& json, OutputControl& outputs)
 {
     JsonObject&& data = json.as<JsonObject>();
 
-    if (!data.containsKey("enabled"))
+    bool success = false;
+    if (data.containsKey("load"))
     {
-        AsyncWebServerResponse* response
-            = request->beginResponse(400, "text/plain", "JSON does not contain `enabled` key");
+        const bool enabled = data["load"];
+        outputs.enableLoad(enabled);
+        success = true;
+    }
+
+    if (data.containsKey("out1"))
+    {
+        const bool enabled = data["out1"];
+        outputs.enableOut1(enabled);
+        success = true;
+    }
+
+    if (data.containsKey("out2"))
+    {
+        const bool enabled = data["out2"];
+        outputs.enableOut2(enabled);
+        success = true;
+    }
+
+    if (data.containsKey("out3"))
+    {
+        const bool enabled = data["out3"];
+        outputs.enableOut3(enabled);
+        success = true;
+    }
+
+    if (success)
+    {
+        AsyncWebServerResponse* response = request->beginResponse(200, "text/plain", "OK");
         request->send(response);
         return;
     }
 
-    const bool loadEnabled = data["enabled"];
-    renogy.enableLoad(loadEnabled);
-
-    AsyncWebServerResponse* response = request->beginResponse(200, "text/plain", "OK");
+    AsyncWebServerResponse* response
+        = request->beginResponse(400, "text/plain", "JSON does not contain `load`, `out1`, `out2` or `out3` key");
     request->send(response);
 }
 
