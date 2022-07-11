@@ -113,40 +113,88 @@ uint8_t batteryCharge = 0;
 bool batteryDirection = true;
 #endif
 
+float batterySocToVolts(const float soc)
+{
+    return 0.000004 * soc * soc * soc - 0.000848 * soc * soc + 0.061113 * soc + 10.6099;
+}
+
 void Renogy::readAndProcessData()
 {
-#ifdef DEMO_MODE
+#if DEMO_MODE == SIMULATED_DEMO_DATA
+
+    // constant 100W supply
+    // P = U * I | I = P / U
+    _data.panelVoltage = 14.0f + 0.1f * random(-10, 10);
+    _data.panelCurrent = 100.0f / _data.panelVoltage;
+    _data.panelPower = floor(_data.panelVoltage * _data.panelCurrent);
+
     batteryDirection ? ++batteryCharge : --batteryCharge;
     if (batteryCharge == 0 || batteryCharge == 100)
     {
         batteryDirection = !batteryDirection;
     }
     _data.batteryCharge = batteryCharge;
-    _data.batteryVoltage = 0.1f * random(100, 140);
-    _data.batteryCurrent = 0.01f * random(0, 10000);
-    _data.controllerTemperature = random(0, 30);
-    _data.batteryTemperature = random(0, 30);
+    _data.batteryVoltage = batterySocToVolts(_data.batteryCharge); // 0.1f * random(100, 140);
+    _data.batteryCurrent = _data.loadEnabled ? (batteryDirection ? (3.0f + 0.01f * random(-100, 100)) : 0.0f)
+                                             : (100.0f / _data.batteryVoltage);
+    _data.controllerTemperature = 21 + random(-2, 2);
+    _data.batteryTemperature = 20 + random(-2, 2);
 
     if (_data.loadEnabled)
     {
-        _data.loadVoltage = 0.1f * random(100, 140);
-        _data.loadCurrent = 0.01f * random(0, 10000);
+        // P = U * I
+        _data.loadVoltage = _data.batteryVoltage;
+        _data.loadCurrent = (100.0f / _data.batteryVoltage) - _data.batteryCurrent;
         _data.loadPower = floor(_data.loadVoltage * _data.loadCurrent);
     }
     else
     {
-        _data.loadVoltage = 0.1f * random(100, 140);
+        _data.loadVoltage = _data.batteryVoltage;
         _data.loadCurrent = 0.0f;
         _data.loadPower = 0;
     }
 
-    _data.panelVoltage = 0.1f * random(100, 400);
-    _data.panelCurrent = 0.01f * random(0, 10000);
+    _data.chargingState = batteryDirection ? 0x01 : 0x00;
+
+    _data.errorState = _data.batteryVoltage <= 11 ? 0x10000 : 0x0;
+
+    // update listener
+    if (_listener)
+    {
+        _listener(_data);
+    }
+
+#elif DEMO_MODE == CONST_DEMO_DATA
+    constexpr static const float PANEL_POWER = 100.0f;
+    _data.panelVoltage = 14.25f;
+    _data.panelCurrent = PANEL_POWER / _data.panelVoltage;
     _data.panelPower = floor(_data.panelVoltage * _data.panelCurrent);
 
-    _data.chargingState = random(0, 255);
+    _data.batteryCharge = 80.0f;
+    _data.batteryVoltage = batterySocToVolts(_data.batteryCharge);
+    _data.batteryCurrent = _data.loadEnabled ? 3.45f : PANEL_POWER / _data.batteryVoltage;
 
-    _data.errorState = rand();
+    _data.controllerTemperature = 21;
+    _data.batteryTemperature = 20;
+
+    if (_data.loadEnabled)
+    {
+        // P = U * I
+        _data.loadVoltage = _data.batteryVoltage;
+        _data.loadCurrent = (PANEL_POWER / _data.batteryVoltage) - _data.batteryCurrent;
+        _data.loadPower = floor(_data.loadVoltage * _data.loadCurrent);
+    }
+    else
+    {
+        _data.loadVoltage = _data.batteryVoltage;
+        _data.loadCurrent = 0.0f;
+        _data.loadPower = 0;
+    }
+
+    _data.chargingState = 2; // 2 = mppt
+
+    // _data.errorState = _data.batteryVoltage <= 11 ? 0x10000 : 0x0;
+    _data.errorState = 0x400000 | 0x20000; //  Ambient temperature too high | Battery over-voltage
 
     // update listener
     if (_listener)
@@ -155,7 +203,7 @@ void Renogy::readAndProcessData()
     }
 
 #else
-    // Read 30 registers starting at 0x0100)
+    // Read 34 registers starting at 0x0100)
     _modbus.clearResponseBuffer();
     const uint8_t result = _modbus.readHoldingRegisters(0x0100, 34);
 

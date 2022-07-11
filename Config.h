@@ -114,7 +114,7 @@ static InputType StringToInputType(const String& str)
     return InputType::disabled;
 }
 
-struct OutputControl
+struct OutputConfig
 {
     InputType inputType;
     bool inverted;
@@ -146,10 +146,10 @@ struct OutputControl
 struct DeviceConfig
 {
     String name;
-    OutputControl load;
-    OutputControl out1;
-    OutputControl out2;
-    OutputControl out3;
+    OutputConfig load;
+    OutputConfig out1;
+    OutputConfig out2;
+    OutputConfig out3;
 
     /// @brief Verify that the object can be parsed
     /// @returns true if fromJson can be executed

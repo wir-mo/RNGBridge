@@ -376,14 +376,14 @@ void PVOutputConfig::setDefaultConfig()
     timeOffset = 0;
 }
 
-bool OutputControl::verify(const JsonObjectConst& object) const
+bool OutputConfig::verify(const JsonObjectConst& object) const
 {
-    DEBUGLN(F("[Config] Verifying OutputControl"));
+    DEBUGLN(F("[Config] Verifying OutputConfig"));
     return object["inputType"].is<const char*>() && object["inverted"].is<bool>() && object["min"].is<float>()
         && object["max"].is<float>();
 }
 
-void OutputControl::fromJson(const JsonObjectConst& object)
+void OutputConfig::fromJson(const JsonObjectConst& object)
 {
     constexpr const char* emptyString = "";
     inputType = StringToInputType(object["inputType"] | emptyString);
@@ -392,7 +392,7 @@ void OutputControl::fromJson(const JsonObjectConst& object)
     max = object["max"];
 }
 
-bool OutputControl::tryUpdate(const JsonObjectConst& object)
+bool OutputConfig::tryUpdate(const JsonObjectConst& object)
 {
     if (object.isNull())
     {
@@ -408,7 +408,7 @@ bool OutputControl::tryUpdate(const JsonObjectConst& object)
     return changed;
 }
 
-void OutputControl::setDefaultConfig()
+void OutputConfig::setDefaultConfig()
 {
     inputType = InputType::disabled;
     inverted = false;

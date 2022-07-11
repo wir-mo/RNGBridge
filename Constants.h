@@ -6,9 +6,12 @@
 #include <pgmspace.h>
 #endif
 
-// #define DEMO_MODE // Enable demo mode with dummy data
+#define SIMULATED_DEMO_DATA 1
+#define CONST_DEMO_DATA 2
+//#define DEMO_MODE SIMULATED_DEMO_DATA // Enable demo mode with dummy data
 #define DEBUG_SERIAL Serial1
-// #define DEBUG_CONFIG // Uncomment to dump config on startup
+//#define DEBUG_SERIAL Serial
+//#define DEBUG_CONFIG // Uncomment to dump config on startup
 
 #ifdef DEBUG_SERIAL
 #define DEBUG(s) DEBUG_SERIAL.print(s)

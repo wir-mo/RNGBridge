@@ -7,7 +7,7 @@
 
 #include "Config.h"
 #include "Constants.h"
-#include "Renogy.h"
+#include "OutputControl.h"
 
 // #include "Mqtt.h"
 
@@ -36,11 +36,8 @@ public:
     Networking(Networking&&) = delete;
 
     void initWifi();
-    void initServer(Renogy& renogy);
-    // void initServer();
 
-    void init(Renogy& renogy);
-    // void init();
+    void init(OutputControl& outputs);
 
     void getStatusJsonString(JsonObject& output);
 
@@ -73,9 +70,8 @@ public:
     ///
     ///@param request Request coming from webserver
     ///@param json JSON object containing values of brightness, speed, effect, etc.
-    ///@param renogy Renogy charge controller
-    void handleRenogyApi(AsyncWebServerRequest* request, JsonVariant& json, Renogy& renogy);
-    // void handleRenogyApi(AsyncWebServerRequest* request, JsonVariant& json);
+    ///@param outputs Control for all outputs including renogy
+    void handleRenogyApi(AsyncWebServerRequest* request, JsonVariant& json, OutputControl& outputs);
 
     /// @brief Check if the given string is an ip address
     ///
@@ -120,6 +116,11 @@ private:
     void startClient();
     /// @brief Configure wifi for access point mode
     void startAccessPoint(bool persistent = true);
+
+    /// @brief Initialize server and rest endpoints
+    ///
+    /// @param outputs Output control
+    void initServer(OutputControl& outputs);
 
 private:
     const IPAddress AP_IP = {192, 168, 4, 1};
