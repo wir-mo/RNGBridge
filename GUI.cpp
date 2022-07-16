@@ -36,6 +36,18 @@ void GUI::updatePVOutputStatus(const String& status)
     _status["pvostat"] = status;
 }
 
+void GUI::updateOutputStatus(const OutputControl::Status& status)
+{
+    _status["o"]["1"] = status.out1;
+    _status["o"]["2"] = status.out2;
+    _status["o"]["3"] = status.out3;
+}
+
+void GUI::updateOtaStatus(const String& status)
+{
+    _status["otastat"] = status;
+}
+
 void GUI::updateUptime(const uint32_t uptime)
 {
     _status["up"] = uptime;
