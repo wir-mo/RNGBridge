@@ -10,6 +10,18 @@
 class OutputControl
 {
 public:
+    /// @brief Current output status
+    struct Status
+    {
+        bool out1 = false; /// The current state of output 1 (on=true, off=false)
+        bool out2 = false; /// The current state of output 2 (on=true, off=false)
+        bool out3 = false; /// The current state of output 3 (on=true, off=false)
+    } _status;
+
+    ///@brief Callback definition for status listener
+    typedef std::function<void(const Status&)> StatusListener;
+
+public:
     /// @brief Construct a new Output Control object
     ///
     /// @param renogy Renogy controller
@@ -38,6 +50,11 @@ public:
     /// @param enable True to turn on, false to turn off
     void enableOut3(const bool enable);
 
+    ///@brief Set a listener which receives @ref OutputControl::Status updates
+    ///
+    ///@param listener Listener or null
+    void setListener(StatusListener listener);
+
 private:
     /// @brief Handle output control for a given output
     ///
@@ -57,4 +74,6 @@ private:
     std::function<void(bool)> handleOut1; /// callback to control RNGBridge output 1
     std::function<void(bool)> handleOut2; /// callback to control RNGBridge output 2
     std::function<void(bool)> handleOut3; /// callback to control RNGBridge output 3
+
+    StatusListener _listener; /// Listener for status updates
 };

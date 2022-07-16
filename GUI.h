@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 
 #include "Networking.h"
+#include "OutputControl.h"
 #include "Renogy.h"
 
 class GUI
@@ -17,6 +18,10 @@ public:
     void updateMQTTStatus(const String& status);
 
     void updatePVOutputStatus(const String& status);
+
+    void updateOutputStatus(const OutputControl::Status& status);
+
+    void updateOtaStatus(const String& status);
 
     void updateUptime(const uint32_t uptime);
 
