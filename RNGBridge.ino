@@ -40,7 +40,7 @@ constexpr static const bool GHOTA_ACCEPT_PRERELEASE = false;
 
 // Note version is made up of
 // Major Changes . New Features . Bugfixes (aka major.minor.bug)
-constexpr static const char* CURRENT_VERSION_TAG = "2.5.0";
+constexpr static const char* CURRENT_VERSION_TAG = "2.6.0";
 
 boolean networkClientEnabled = false; /// Indicates if RNGBridge should have internet access
 

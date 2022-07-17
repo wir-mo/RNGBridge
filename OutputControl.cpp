@@ -88,6 +88,12 @@ void OutputControl::handleOutput(OutputConfig& output, const Renogy::Data& data,
     case InputType::bvoltage:
         value = data.batteryVoltage;
         break;
+    case InputType::pvoltage:
+        value = data.panelVoltage;
+        break;
+    case InputType::pcurrent:
+        value = data.panelCurrent;
+        break;
     }
 
     if (value >= output.max)
