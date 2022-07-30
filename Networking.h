@@ -9,8 +9,6 @@
 #include "Constants.h"
 #include "OutputControl.h"
 
-// #include "Mqtt.h"
-
 #if defined(ESP32)
 #include <Update.h>
 #else
@@ -73,6 +71,11 @@ public:
     ///@param outputs Control for all outputs including renogy
     void handleRenogyApi(AsyncWebServerRequest* request, JsonVariant& json, OutputControl& outputs);
 
+    ///@brief Handle the status GET api
+    ///
+    ///@param request Request coming from webserver
+    void handleStateApiGet(AsyncWebServerRequest* request);
+
     /// @brief Check if the given string is an ip address
     ///
     /// @param str String to check
@@ -87,6 +90,7 @@ public:
 
     void sendTestMessage(const String& message)
     {
+        statusMessage = message;
         if (es.count())
         {
             es.send(message.c_str(), "status");
@@ -133,6 +137,7 @@ private:
     RebootHandler _rebootHandler; /// Handler for restarting ESP and gracefully shutting down stuff
     // uint16_t reconnectBackoff = 1;
     // uint32_t lastReconnect = 0;
+    String statusMessage = "";
 
     Config& config;
 }; // namespace Networking

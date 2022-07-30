@@ -8,44 +8,51 @@
 
 void GUI::updateRenogyStatus(const Renogy::Data& data)
 {
-    _status["b"]["ch"] = data.batteryCharge;
-    _status["b"]["vo"] = data.batteryVoltage;
-    _status["b"]["cu"] = data.batteryCurrent;
-    _status["b"]["te"] = data.batteryTemperature;
+    auto battery = _status["b"];
+    battery["ch"] = data.batteryCharge;
+    battery["vo"] = data.batteryVoltage;
+    battery["cu"] = data.batteryCurrent;
+    battery["te"] = data.batteryTemperature;
 
-    _status["l"]["en"] = data.loadEnabled;
-    _status["l"]["vo"] = data.loadVoltage;
-    _status["l"]["cu"] = data.loadCurrent;
+    auto load = _status["l"];
+    load["vo"] = data.loadVoltage;
+    load["cu"] = data.loadCurrent;
 
-    _status["p"]["vo"] = data.panelVoltage;
-    _status["p"]["cu"] = data.panelCurrent;
+    auto panel = _status["p"];
+    panel["vo"] = data.panelVoltage;
+    panel["cu"] = data.panelCurrent;
 
-    _status["s"]["st"] = data.chargingState;
-    _status["s"]["er"] = data.errorState;
-    _status["s"]["te"] = data.controllerTemperature;
+    auto controller = _status["c"];
+    controller["st"] = data.chargingState;
+    controller["er"] = data.errorState;
+    controller["te"] = data.controllerTemperature;
+
+    auto output = _status["o"];
+    output["l"] = data.loadEnabled;
 }
 
 void GUI::updateMQTTStatus(const String& status)
 {
-    _status["mqttstat"] = status;
+    _status["mqttsta"] = status;
 }
 
 void GUI::updatePVOutputStatus(const String& status)
 {
     _status.garbageCollect();
-    _status["pvostat"] = status;
+    _status["pvosta"] = status;
 }
 
 void GUI::updateOutputStatus(const OutputControl::Status& status)
 {
-    _status["o"]["1"] = status.out1;
-    _status["o"]["2"] = status.out2;
-    _status["o"]["3"] = status.out3;
+    auto output = _status["o"];
+    output["o1"] = status.out1;
+    output["o2"] = status.out2;
+    output["o3"] = status.out3;
 }
 
 void GUI::updateOtaStatus(const String& status)
 {
-    _status["otastat"] = status;
+    _status["otasta"] = status;
 }
 
 void GUI::updateUptime(const uint32_t uptime)

@@ -42,18 +42,16 @@ void Networking::initServer(OutputControl& outputs)
     es.onConnect([this](AsyncEventSourceClient* client) {
         DEBUGF("[Networking] ES[%s] connect\n", client->client()->remoteIP().toString().c_str());
 
-        DynamicJsonDocument output(3000);
-
+        StaticJsonDocument<1024> output;
         auto&& obj = output.to<JsonObject>();
 
         obj["heap_free"] = ESP.getFreeHeap();
-
         getStatusJsonString(obj);
         // mqtt.getStatusJsonString(obj);
         // light->getStatusJsonString(obj);
 
         String buffer;
-        buffer.reserve(512);
+        buffer.reserve(measureJson(output));
         serializeJson(output, buffer);
 
         client->send(buffer.c_str(), "status");
@@ -73,11 +71,14 @@ void Networking::initServer(OutputControl& outputs)
     server.addHandler(handlerSetConfig);
 
     // Handle control
-    AsyncCallbackJsonWebHandler* handlerSetLeds = new AsyncCallbackJsonWebHandler(
+    AsyncCallbackJsonWebHandler* handlerControl = new AsyncCallbackJsonWebHandler(
         "/api/control", [this, &outputs](AsyncWebServerRequest* request, JsonVariant& json) {
             handleRenogyApi(request, json, outputs);
         });
-    server.addHandler(handlerSetLeds);
+    server.addHandler(handlerControl);
+
+    // Handle state
+    server.on("/api/state", HTTP_GET, [this](AsyncWebServerRequest* r) { handleStateApiGet(r); });
 
     // Serve UI
     server.on("/", HTTP_GET, [this](AsyncWebServerRequest* r) { handleIndex(r); });
@@ -284,6 +285,11 @@ void Networking::handleRenogyApi(AsyncWebServerRequest* request, JsonVariant& js
     request->send(response);
 }
 
+void Networking::handleStateApiGet(AsyncWebServerRequest* request)
+{
+    request->send(200, "application/json", statusMessage);
+}
+
 bool Networking::isIp(const String& str)
 {
     for (size_t i = 0; i < str.length(); i++)
@@ -401,7 +407,6 @@ void Networking::startClient()
     WiFi.mode(WIFI_STA);
     WiFi.begin(wifi.clientSsid, wifi.clientPassword);
     DEBUG(F("[Networking] Connecting to WiFi .."));
-    uint64_t start = millis();
 
     if (handleClientFailsafe())
     {

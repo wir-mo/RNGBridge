@@ -27,8 +27,11 @@
 #define DEBUGF(format, ...)
 #endif
 
-// const static String CONNECTED = "Connected";
-// const static String DISCONNECTED = "Disconnected";
+// Note version is made up of
+// Major Changes . New Features . Bugfixes (aka major.minor.bug)
+constexpr static const char* SOFTWARE_VERSION = "2.7.0";
+constexpr static const char* HARDWARE_VERSION = "V2";
+constexpr static const char* MODEL = "RNGBridge";
 
 extern const char* CONNECTED PROGMEM;
 extern const char* DISCONNECTED PROGMEM;
