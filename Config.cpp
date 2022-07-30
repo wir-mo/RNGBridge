@@ -277,15 +277,18 @@ bool MqttConfig::verify(const JsonObjectConst& object) const
 {
     DEBUGLN(F("[Config] Verifying MqttConfig"));
 
-    return object["enabled"].is<bool>() && object["server"].is<const char*>() && object["port"].is<unsigned int>()
-        && object["id"].is<const char*>() && object["user"].is<const char*>() && object["password"].is<const char*>()
-        && object["topic"].is<const char*>() && object["interval"].is<unsigned int>();
+    return object["enabled"].is<bool>() && object["hadisco"].is<bool>() && object["server"].is<const char*>()
+        && object["port"].is<uint16_t>() && object["id"].is<const char*>() && object["user"].is<const char*>()
+        && object["password"].is<const char*>() && object["topic"].is<const char*>() && object["interval"].is<uint8_t>()
+        && object["hadiscotopic"].is<const char*>();
 }
 
 void MqttConfig::fromJson(const JsonObjectConst& object)
 {
     constexpr const char* emptyString = "";
     enabled = object["enabled"];
+    hadiscovery = object["hadisco"];
+    haDiscoveryTopic = object["hadiscotopic"] | emptyString;
     server = object["server"] | emptyString;
     port = object["port"];
     id = object["id"] | emptyString;
@@ -298,6 +301,8 @@ void MqttConfig::fromJson(const JsonObjectConst& object)
 void MqttConfig::toJson(JsonObject& object) const
 {
     object["enabled"].set<bool>(enabled);
+    object["hadisco"].set<bool>(hadiscovery);
+    object["hadiscotopic"] = haDiscoveryTopic;
     object["server"] = server;
     object["port"] = port;
     object["id"] = id;
@@ -315,6 +320,8 @@ bool MqttConfig::tryUpdate(const JsonObjectConst& object)
     }
     bool changed = false;
     changed |= updateField(object, "enabled", enabled);
+    changed |= updateField(object, "hadisco", hadiscovery);
+    changed |= updateField(object, "hadiscotopic", haDiscoveryTopic);
     changed |= updateField(object, "server", server);
     changed |= updateField(object, "port", port);
     changed |= updateField(object, "id", id);
@@ -328,8 +335,10 @@ bool MqttConfig::tryUpdate(const JsonObjectConst& object)
 void MqttConfig::setDefaultConfig()
 {
     enabled = false;
+    hadiscovery = false;
+    haDiscoveryTopic = "homeassistant";
     port = 1883;
-    id = "RNGBridge";
+    id = MODEL;
     topic = "/rng";
     interval = 1;
 }
@@ -463,7 +472,7 @@ bool DeviceConfig::tryUpdate(const JsonObjectConst& object)
 
 void DeviceConfig::setDefaultConfig()
 {
-    name = "RNGBridge";
+    name = MODEL;
     load.setDefaultConfig();
     out1.setDefaultConfig();
     out2.setDefaultConfig();

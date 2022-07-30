@@ -37,14 +37,16 @@ struct NetworkConfig
 
 struct MqttConfig
 {
+    uint16_t port;
+    uint8_t interval; /// Interval in seconds at which mqtt messages are published
     bool enabled;
+    bool hadiscovery; /// Should one or more discovery messages be sent to haDiscoveryTopic
     String server;
-    unsigned int port;
     String id;
     String user;
     String password;
     String topic;
-    uint8_t interval; /// Interval in seconds at which mqtt messages are published
+    String haDiscoveryTopic; /// Topic of homeassistant for discovery
 
     /// @brief Verify that the object can be parsed
     /// @returns true if fromJson can be executed

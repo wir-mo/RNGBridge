@@ -1,27 +1,78 @@
 #include "MQTT.h"
 
+#include <ArduinoJson.h>
+
 #include "Constants.h"
 #include "GUI.h"
-
-const char* Mqtt::statusFormat PROGMEM
-    = R"({"device":"%s","b":{"charge":%hhu,"voltage":%.1f,"current":%.2f,"temperature":%hhu},"l":{"voltage":%.1f,"current":%.2f,"power":%hu},"p":{"voltage":%.1f,"current":%.2f,"power":%hu},"s":{"state":%hhu,"error":%u,"temperature":%hhu}})";
-const char* Mqtt::lastWillFormat PROGMEM = R"({"device":"%s","connected":false})";
-const char* Mqtt::connectionMsgFormat PROGMEM = R"({"device":"%s","connected":true})";
 
 void Mqtt::connect()
 {
     // Set last will and connect
-    char will[44];
-    snprintf_P(will, 44, lastWillFormat, deviceMAC);
     const bool connected = mqtt.connect(mqttConfig.id.c_str(), mqttConfig.user.c_str(), mqttConfig.password.c_str(),
-        mqttConfig.topic.c_str(), 2, true, will);
+        (mqttConfig.topic + "/lwt").c_str(), 2, true, DISCONNECTED);
 
     if (connected)
     {
+        setupLoadControl();
+
+        // if (mqttConfig.hadiscovery)
+        {
+            // update HA make it discover this device
+
+            // Battery related
+            publishSensorDiscovery("Battery SOC", "batsoc", "battery", "%", "measurement", "{{value_json.b.ch}}");
+            publishSensorDiscovery(
+                "Battery Voltage", "batvol", "voltage", "V", "measurement", "{{value_json.b.vo}}", "mdi:battery");
+            publishSensorDiscovery(
+                "Battery Current", "batcur", "current", "A", "measurement", "{{value_json.b.cu}}", "mdi:battery");
+            publishSensorDiscovery("Battery Temperature", "battem", "temperature", "°C", "measurement",
+                "{{value_json.b.te}}", "mdi:battery");
+
+            // Load related
+            publishSensorDiscovery("Load Voltage", "loavol", "voltage", "V", "measurement", "{{value_json.l.vo}}",
+                "mdi:alpha-l-box-outline");
+            publishSensorDiscovery("Load Current", "loacur", "current", "A", "measurement", "{{value_json.l.cu}}",
+                "mdi:alpha-l-box-outline");
+            publishSensorDiscovery("Load Power", "loapow", "power", "W", "measurement",
+                "{{(value_json.l.vo*value_json.l.cu)|round(1)}}", "mdi:alpha-l-box-outline");
+
+            // Panel related
+            publishSensorDiscovery(
+                "Panel Voltage", "panvol", "voltage", "V", "measurement", "{{value_json.p.vo}}", "mdi:solar-panel");
+            publishSensorDiscovery(
+                "Panel Current", "pancur", "current", "A", "measurement", "{{value_json.p.cu}}", "mdi:solar-panel");
+            publishSensorDiscovery("Panel Power", "panpow", "power", "W", "measurement",
+                "{{(value_json.p.vo*value_json.p.cu)|round(1)}}", "mdi:solar-panel");
+
+            // Controller related
+            publishSensorDiscovery("Controller State", "consta",
+                "{{['Unknown',"
+                "'Deactivated',"
+                "'Activated',"
+                "'MPPT',"
+                "'Equalizing',"
+                "'Boost',"
+                "'Floating',"
+                "'Overpower'][value_json.c.st|int(-1)+1]}}",
+                "mdi:server");
+            publishSensorDiscovery("Controller Error", "conerr", "{{value_json.c.er}}", "mdi:server");
+            publishSensorDiscovery("Controller Temperature", "contem", "temperature", "°C", "measurement",
+                "{{value_json.c.te}}", "mdi:server");
+
+            // Output (incl. load)
+            // TODO command_topic
+            publishSwitchDiscovery(
+                "Load", "ol", "{{'true' if value_json.o.l else 'false'}}", "mdi:alpha-l-box-outline");
+            publishSwitchDiscovery(
+                "Out 1", "o1", "{{'true' if value_json.o.o1 else 'false'}}", "mdi:numeric-1-box-outline");
+            publishSwitchDiscovery(
+                "Out 2", "o2", "{{'true' if value_json.o.o2 else 'false'}}", "mdi:numeric-2-box-outline");
+            publishSwitchDiscovery(
+                "Out 3", "o3", "{{'true' if value_json.o.o3 else 'false'}}", "mdi:numeric-3-box-outline");
+        }
+
         // Publish connected message
-        char connectionMsq[43];
-        snprintf_P(connectionMsq, 43, connectionMsgFormat, deviceMAC);
-        publish(connectionMsq, 2, true);
+        publish((mqttConfig.topic + "/lwt").c_str(), CONNECTED, true);
 
         // Update status
         updateStatus(FPSTR(CONNECTED));
@@ -65,13 +116,38 @@ void Mqtt::updateRenogyStatus(const Renogy::Data& data)
     if (updateCount >= mqttConfig.interval)
     {
         updateCount = 0;
-        // Max size under assumptions Voltage < 1000, Current < 1000: 256 + null terminator + tolerance
-        //{"device":"0123456789AB","b":{"charge":254,"voltage":999.9,"current":999.99,"temperature":254},"l":{"voltage":999.9,"current":999.99,"power":65534},"p":{"voltage":999.9,"current":999.99,"power":65534},"s":{"state":254,"error":4294967295,"temperature":254}}
-        char jsonBuf[280];
-        snprintf_P(jsonBuf, 280, statusFormat, deviceMAC, data.batteryCharge, data.batteryVoltage, data.batteryCurrent,
-            data.batteryTemperature, data.loadVoltage, data.loadCurrent, data.loadPower, data.panelVoltage,
-            data.panelCurrent, data.panelPower, data.chargingState, data.errorState, data.controllerTemperature);
-        publish(jsonBuf);
+
+        StaticJsonDocument<512> json;
+
+        auto battery = json["b"];
+        battery["ch"] = data.batteryCharge;
+        battery["vo"] = data.batteryVoltage;
+        battery["cu"] = data.batteryCurrent;
+        battery["te"] = data.batteryTemperature;
+
+        auto load = json["l"];
+        load["vo"] = data.loadVoltage;
+        load["cu"] = data.loadCurrent;
+        load["po"] = data.loadPower;
+
+        auto panel = json["p"];
+        panel["vo"] = data.panelVoltage;
+        panel["cu"] = data.panelCurrent;
+        panel["po"] = data.panelPower;
+
+        auto controller = json["c"];
+        controller["st"] = data.chargingState;
+        controller["er"] = data.errorState;
+        controller["te"] = data.controllerTemperature;
+
+        auto output = json["o"];
+        output["l"] = data.loadEnabled;
+        output["o1"] = outputStatus.out1;
+        output["o2"] = outputStatus.out2;
+        output["o3"] = outputStatus.out3;
+
+        const String topic = mqttConfig.topic + "/state";
+        publishJSON(topic, json, true);
     }
 }
 
@@ -84,32 +160,167 @@ void Mqtt::setListener(Listener listener)
     }
 }
 
-void Mqtt::publish(const String& payload, uint8_t qos, bool retain)
+void Mqtt::setupLoadControl()
 {
-    // At most once (0)
-    // At least once (1)
-    // Exactly once (2)
-    if (mqtt.connected())
-    {
-        mqtt.publish(
-            mqttConfig.topic.c_str(), reinterpret_cast<const uint8_t*>(payload.c_str()), payload.length(), retain);
-    }
+    subscribe(mqttConfig.topic + "/ol");
+    subscribe(mqttConfig.topic + "/o1");
+    subscribe(mqttConfig.topic + "/o2");
+    subscribe(mqttConfig.topic + "/o3");
+
+    mqtt.setCallback([&](char* topic, uint8_t* data, unsigned int size) {
+        data[size] = '\0';
+
+        Serial.print("Received: ");
+        Serial.println(topic);
+        Serial.println((char*)(data));
+
+        const bool enable = strstr((char*)(data), "true") != nullptr;
+        if (strstr(topic, "ol"))
+        {
+            Serial.println("Control load");
+            outputs.enableLoad(enable);
+        }
+        else if (strstr(topic, "o1"))
+        {
+            Serial.println("Control out1");
+            outputs.enableOut1(enable);
+        }
+        else if (strstr(topic, "o2"))
+        {
+            Serial.println("Control out2");
+            outputs.enableOut2(enable);
+        }
+        else if (strstr(topic, "o3"))
+        {
+            Serial.println("Control out3");
+            outputs.enableOut3(enable);
+        }
+    });
 }
 
-void Mqtt::publish(const char* payload, uint8_t qos, bool retain)
+void Mqtt::addDeviceInfo(JsonDocument& json, const String& deviceID)
 {
-    publish(mqttConfig.topic.c_str(), payload, qos, retain);
+    auto dev = json["dev"];
+    dev["mf"] = "enwi";
+    dev["mdl"] = String(MODEL) + " " + HARDWARE_VERSION;
+    dev["name"] = deviceID;
+    dev["sw"] = SOFTWARE_VERSION;
+
+    dev.createNestedArray("ids").add(deviceID);
 }
 
-void Mqtt::publish(const char* topic, const char* payload, uint8_t qos, bool retain)
+void Mqtt::publishSensorDiscovery(const String& name, const String& id, const String& valueTemplate, const String& icon)
 {
-    // At most once (0)
-    // At least once (1)
-    // Exactly once (2)
-    if (mqtt.connected())
+    StaticJsonDocument<512> autoConfig;
+
+    const String deviceID = getDeviceID();
+    addDeviceInfo(autoConfig, deviceID);
+
+    autoConfig["name"] = deviceID + " " + name;
+    autoConfig["uniq_id"] = deviceID + "_" + id;
+    autoConfig["~"] = mqttConfig.topic;
+    autoConfig["avty_t"] = "~/lwt";
+    autoConfig["pl_avail"] = CONNECTED;
+    autoConfig["pl_not_avail"] = DISCONNECTED;
+    autoConfig["stat_t"] = "~/state";
+    autoConfig["val_tpl"] = valueTemplate;
+    if (!icon.isEmpty())
     {
-        mqtt.publish(topic, reinterpret_cast<const uint8_t*>(payload), strlen(payload), retain);
+        autoConfig["ic"] = icon;
     }
+
+    const String topic = "homeassistant/sensor/" + deviceID + "/" + id + "/config";
+    publishJSON(topic, autoConfig, true);
+}
+
+void Mqtt::publishSensorDiscovery(const String& name, const String& id, const String& deviceClass, const String& unit,
+    const String& stateClass, const String& valueTemplate, const String& icon)
+{
+    StaticJsonDocument<512> autoConfig;
+
+    const String deviceID = getDeviceID();
+    addDeviceInfo(autoConfig, deviceID);
+
+    autoConfig["dev_cla"] = deviceClass;
+    autoConfig["unit_of_meas"] = unit;
+    autoConfig["stat_cla"] = stateClass;
+
+    autoConfig["name"] = deviceID + " " + name;
+    autoConfig["uniq_id"] = deviceID + "_" + id;
+    autoConfig["~"] = mqttConfig.topic;
+    autoConfig["avty_t"] = "~/lwt";
+    autoConfig["pl_avail"] = CONNECTED;
+    autoConfig["pl_not_avail"] = DISCONNECTED;
+    autoConfig["stat_t"] = "~/state";
+    autoConfig["val_tpl"] = valueTemplate;
+    if (!icon.isEmpty())
+    {
+        autoConfig["ic"] = icon;
+    }
+
+    const String topic = "homeassistant/sensor/" + deviceID + "/" + id + "/config";
+    publishJSON(topic, autoConfig, true);
+}
+
+void Mqtt::publishSwitchDiscovery(const String& name, const String& id, const String& valueTemplate, const String& icon)
+{
+    StaticJsonDocument<512> autoConfig;
+
+    const String deviceID = getDeviceID();
+    addDeviceInfo(autoConfig, deviceID);
+
+    autoConfig["name"] = deviceID + " " + name;
+    autoConfig["uniq_id"] = deviceID + "_" + id;
+    autoConfig["~"] = mqttConfig.topic;
+    autoConfig["avty_t"] = "~/lwt";
+    autoConfig["pl_avail"] = CONNECTED;
+    autoConfig["pl_not_avail"] = DISCONNECTED;
+    autoConfig["stat_t"] = "~/state";
+    autoConfig["val_tpl"] = valueTemplate;
+
+    autoConfig["cmd_t"] = "~/" + id;
+    autoConfig["payload_off"] = "false";
+    autoConfig["payload_on"] = "true";
+    if (!icon.isEmpty())
+    {
+        autoConfig["ic"] = icon;
+    }
+
+    const String topic = "homeassistant/switch/" + deviceID + "/" + id + "/config";
+    publishJSON(topic, autoConfig, true);
+}
+
+void Mqtt::subscribe(const String& topic)
+{
+    const bool subscribed = mqtt.subscribe(topic.c_str());
+    DEBUGF("Subscribed %s %s", topic.c_str(), subscribed ? "successfully" : "unsuccessfully");
+}
+
+bool Mqtt::publishJSON(const String& topic, const JsonDocument& json, const bool retain)
+{
+    const size_t size = measureJson(json);
+    if (mqtt.beginPublish(topic.c_str(), size, true))
+    {
+        serializeJson(json, mqtt);
+        return mqtt.endPublish();
+    }
+    return false;
+}
+
+bool Mqtt::publish(const String& payload, bool retain)
+{
+    return mqtt.publish(
+        mqttConfig.topic.c_str(), reinterpret_cast<const uint8_t*>(payload.c_str()), payload.length(), retain);
+}
+
+bool Mqtt::publish(const char* payload, bool retain)
+{
+    return publish(mqttConfig.topic.c_str(), payload, retain);
+}
+
+bool Mqtt::publish(const char* topic, const char* payload, bool retain)
+{
+    return mqtt.publish(topic, reinterpret_cast<const uint8_t*>(payload), strlen(payload), retain);
 }
 
 void Mqtt::updateStatus(const String& status)
