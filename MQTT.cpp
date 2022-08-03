@@ -21,26 +21,26 @@ void Mqtt::connect()
 
             // Battery related
             publishSensorDiscovery("Battery SOC", "batsoc", "battery", "%", "measurement", "{{value_json.b.ch}}");
-            publishSensorDiscovery(
-                "Battery Voltage", "batvol", "voltage", "V", "measurement", "{{value_json.b.vo}}", "mdi:battery");
-            publishSensorDiscovery(
-                "Battery Current", "batcur", "current", "A", "measurement", "{{value_json.b.cu}}", "mdi:battery");
+            publishSensorDiscovery("Battery Voltage", "batvol", "voltage", "V", "measurement",
+                "{{value_json.b.vo|round(1)}}", "mdi:battery");
+            publishSensorDiscovery("Battery Current", "batcur", "current", "A", "measurement",
+                "{{value_json.b.cu|round(1)}}", "mdi:battery");
             publishSensorDiscovery("Battery Temperature", "battem", "temperature", "°C", "measurement",
                 "{{value_json.b.te}}", "mdi:battery");
 
             // Load related
-            publishSensorDiscovery("Load Voltage", "loavol", "voltage", "V", "measurement", "{{value_json.l.vo}}",
-                "mdi:alpha-l-box-outline");
-            publishSensorDiscovery("Load Current", "loacur", "current", "A", "measurement", "{{value_json.l.cu}}",
-                "mdi:alpha-l-box-outline");
+            publishSensorDiscovery("Load Voltage", "loavol", "voltage", "V", "measurement",
+                "{{value_json.l.vo|round(1)}}", "mdi:alpha-l-box-outline");
+            publishSensorDiscovery("Load Current", "loacur", "current", "A", "measurement",
+                "{{value_json.l.cu|round(1)}}", "mdi:alpha-l-box-outline");
             publishSensorDiscovery("Load Power", "loapow", "power", "W", "measurement",
                 "{{(value_json.l.vo*value_json.l.cu)|round(1)}}", "mdi:alpha-l-box-outline");
 
             // Panel related
-            publishSensorDiscovery(
-                "Panel Voltage", "panvol", "voltage", "V", "measurement", "{{value_json.p.vo}}", "mdi:solar-panel");
-            publishSensorDiscovery(
-                "Panel Current", "pancur", "current", "A", "measurement", "{{value_json.p.cu}}", "mdi:solar-panel");
+            publishSensorDiscovery("Panel Voltage", "panvol", "voltage", "V", "measurement",
+                "{{value_json.p.vo|round(1)}}", "mdi:solar-panel");
+            publishSensorDiscovery("Panel Current", "pancur", "current", "A", "measurement",
+                "{{value_json.p.cu|round(1)}}", "mdi:solar-panel");
             publishSensorDiscovery("Panel Power", "panpow", "power", "W", "measurement",
                 "{{(value_json.p.vo*value_json.p.cu)|round(1)}}", "mdi:solar-panel");
 
@@ -211,7 +211,7 @@ void Mqtt::addDeviceInfo(JsonDocument& json, const String& deviceID)
 
 void Mqtt::publishSensorDiscovery(const String& name, const String& id, const String& valueTemplate, const String& icon)
 {
-    StaticJsonDocument<512> autoConfig;
+    StaticJsonDocument<600> autoConfig;
 
     const String deviceID = getDeviceID();
     addDeviceInfo(autoConfig, deviceID);
@@ -236,7 +236,7 @@ void Mqtt::publishSensorDiscovery(const String& name, const String& id, const St
 void Mqtt::publishSensorDiscovery(const String& name, const String& id, const String& deviceClass, const String& unit,
     const String& stateClass, const String& valueTemplate, const String& icon)
 {
-    StaticJsonDocument<512> autoConfig;
+    StaticJsonDocument<600> autoConfig;
 
     const String deviceID = getDeviceID();
     addDeviceInfo(autoConfig, deviceID);
@@ -264,7 +264,7 @@ void Mqtt::publishSensorDiscovery(const String& name, const String& id, const St
 
 void Mqtt::publishSwitchDiscovery(const String& name, const String& id, const String& valueTemplate, const String& icon)
 {
-    StaticJsonDocument<512> autoConfig;
+    StaticJsonDocument<600> autoConfig;
 
     const String deviceID = getDeviceID();
     addDeviceInfo(autoConfig, deviceID);
