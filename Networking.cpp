@@ -86,9 +86,9 @@ void Networking::initServer(OutputControl& outputs)
     // captive portal
     auto handleCaptivePortal = [this](AsyncWebServerRequest* request) { captivePortal(request); };
     // Android captive portal. Maybe not needed. Might be handled by notFound handler.
-    server.on("/generate_204", HTTP_GET, handleCaptivePortal);
+    // server.on("/generate_204", HTTP_GET, handleCaptivePortal);
     // Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
-    server.on("/fwlink", HTTP_GET, handleCaptivePortal);
+    // server.on("/fwlink", HTTP_GET, handleCaptivePortal);
     server.onNotFound(handleCaptivePortal);
 
     server.begin();
