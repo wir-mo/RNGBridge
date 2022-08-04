@@ -45,10 +45,7 @@ void Networking::initServer(OutputControl& outputs)
         StaticJsonDocument<1024> output;
         auto&& obj = output.to<JsonObject>();
 
-        obj["heap_free"] = ESP.getFreeHeap();
         getStatusJsonString(obj);
-        // mqtt.getStatusJsonString(obj);
-        // light->getStatusJsonString(obj);
 
         String buffer;
         buffer.reserve(measureJson(output));

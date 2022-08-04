@@ -19,7 +19,7 @@ public:
     {
         if (mState == State::IDLE)
         {
-            DEBUGLN("[OTA] Syncing time");
+            DEBUGLN(F("[OTA] Syncing time"));
             mState = State::SYNC_TIME;
         }
     }
