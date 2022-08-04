@@ -320,17 +320,10 @@ void Networking::update()
         }
     }
 
-    // if (config.getNetworkConfig().clientEnabled && !WiFi.isConnected()
-    //     && (millis() - lastReconnect) >= (reconnectBackoff * 1000))
-    // {
-    //     if (reconnectBackoff < 512)
-    //     {
-    //         reconnectBackoff << 1;
-    //     }
-    //     lastReconnect = millis();
-    //     DEBUGLN("Reconnecting WiFi");
-    //     startClient();
-    // }
+    if (WiFi.isConnected())
+    {
+        RNGBridge::rssi = WiFi.RSSI();
+    }
 }
 
 void Networking::setRebootHandler(RebootHandler handler)

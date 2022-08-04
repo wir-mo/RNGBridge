@@ -59,6 +59,9 @@ void Mqtt::connect()
             publishSensorDiscovery("Controller Temperature", "contem", "temperature", "°C", "measurement",
                 "{{value_json.c.te}}", "mdi:server");
 
+            // Telemetry
+            publishSensorDiscovery("RSSI", "rssi", "signal_strength", "dBm", "measurement", "{{value_json.rssi}}");
+
             // Output (incl. load)
             // TODO command_topic
             publishSwitchDiscovery(
@@ -145,6 +148,8 @@ void Mqtt::updateRenogyStatus(const Renogy::Data& data)
         output["o1"] = outputStatus.out1;
         output["o2"] = outputStatus.out2;
         output["o3"] = outputStatus.out3;
+
+        json["rssi"] = RNGBridge::rssi;
 
         const String topic = mqttConfig.topic + "/state";
         publishJSON(topic, json, true);

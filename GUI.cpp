@@ -68,6 +68,7 @@ void GUI::updateHeap(const uint32_t heap)
 void GUI::update()
 {
     String serialized = {};
+    _status["rssi"] = RNGBridge::rssi;
     serialized.reserve(measureJson(_status));
     serializeJson(_status, serialized);
     _networking.sendTestMessage(serialized);

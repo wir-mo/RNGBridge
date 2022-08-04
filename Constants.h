@@ -29,7 +29,7 @@
 
 // Note version is made up of
 // Major Changes . New Features . Bugfixes (aka major.minor.bug)
-constexpr static const char* SOFTWARE_VERSION = "2.7.1";
+constexpr static const char* SOFTWARE_VERSION = "2.7.2";
 constexpr static const char* HARDWARE_VERSION = "V2";
 constexpr static const char* MODEL = "RNGBridge";
 
@@ -43,3 +43,8 @@ extern const char* HOSTNAME PROGMEM;
 extern char deviceMAC[13];
 
 extern const uint32_t RENOGY_INTERVAL; /// The interval in s at which the renogy data should be read
+
+namespace RNGBridge
+{
+    extern int32_t rssi; /// WiFi signal strength in dBm
+} // namespace RNGBridge
