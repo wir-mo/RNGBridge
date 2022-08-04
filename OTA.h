@@ -6,16 +6,37 @@
 #include <time.h>
 
 #include "Constants.h"
+#include "GUI.h"
 
 class OTA
 {
 public:
-    OTA(const char* versionTag);
+    OTA(const char* versionTag, GUI& gui);
 
     String getNewSoftwareVersion();
 
+    void checkForUpdate()
+    {
+        if (mState == State::IDLE)
+        {
+            DEBUGLN("[OTA] Syncing time");
+            mState = State::SYNC_TIME;
+        }
+    }
+
+    void update();
+
 private:
     void updateTime();
+
+private:
+    enum State
+    {
+        IDLE,
+        SYNC_TIME,
+        SYNCED_TIME,
+        CHECK_FOR_VERSION,
+    } mState;
 
 private:
     constexpr static const char* GHOTA_NTP1 = "pool.ntp.org";
@@ -30,4 +51,6 @@ private:
     constexpr static const bool GHOTA_ACCEPT_PRERELEASE = false;
 
     const char* _versionTag;
+
+    GUI& gui;
 };

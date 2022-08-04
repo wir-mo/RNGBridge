@@ -25,18 +25,6 @@ GUI gui(networking);
 Renogy renogy(Serial);
 OutputControl outputs(renogy, config.getDeviceConfig());
 
-void checkForUpdate(OTA* ota)
-{
-    if (ota)
-    {
-        const String update = ota->getNewSoftwareVersion();
-        if (!update.isEmpty())
-        {
-            gui.updateOtaStatus(update);
-        }
-    }
-}
-
 void setup()
 {
 #ifdef DEBUG_SERIAL
@@ -68,8 +56,8 @@ void setup()
     if (netwConfig.clientEnabled)
     {
         // Check for software update at startup
-        ota = new OTA(SOFTWARE_VERSION);
-        checkForUpdate(ota);
+        ota = new OTA(SOFTWARE_VERSION, gui);
+        ota->checkForUpdate();
 
         // MQTT setup
         const MqttConfig& mqttConfig = config.getMqttConfig();
@@ -137,9 +125,13 @@ void loop()
     {
         // Signal start of work
         digitalWrite(LED, HIGH);
-        DEBUG(F("[System] Uptime: "));
-        DEBUGLN(timeS);
         lastSecond = currentSecond;
+
+        if (currentSecond % 5 == 0)
+        {
+            DEBUG(F("[System] Uptime: "));
+            DEBUGLN(timeS);
+        }
 
         ++secondsPassedRenogy;
         if (secondsPassedRenogy >= RENOGY_INTERVAL)
@@ -160,9 +152,14 @@ void loop()
         }
 
         // Check for software updates every day
-        if (ota && timeS % 86400 == 0)
+        if (ota)
         {
-            checkForUpdate(ota);
+            ota->update();
+
+            if (timeS % 86400 == 0)
+            {
+                ota->checkForUpdate();
+            }
         }
 
         gui.updateUptime(timeS);

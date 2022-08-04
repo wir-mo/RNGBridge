@@ -1,12 +1,16 @@
 #include "OTA.h"
 
-OTA::OTA(const char* versionTag) : _versionTag(versionTag) { }
+OTA::OTA(const char* versionTag, GUI& gui) : _versionTag(versionTag), gui(gui)
+{
+    mState = State::IDLE;
+    configTime(0, 0, GHOTA_NTP1, GHOTA_NTP2); // UTC
+}
 
 String OTA::getNewSoftwareVersion()
 {
-    DEBUGLN("Checking for new software version");
+    DEBUGLN("[OTA] Checking for new software version");
 
-    updateTime(); // Clock needs to be set to perform certificate checks
+    // updateTime(); // Clock needs to be set to perform certificate checks
 
     WiFiClientSecure client;
     // client.setCertStore(_certStore);
@@ -16,7 +20,7 @@ String OTA::getNewSoftwareVersion()
     {
         client.stop();
         // _lastError = "Connection failed";
-        DEBUGLN("Connection to GitHub failed");
+        DEBUGLN("[OTA] Connection to GitHub failed");
         return "";
     }
 
@@ -40,14 +44,14 @@ String OTA::getNewSoftwareVersion()
     if (error)
     {
         // _lastError = "Failed to parse JSON."; // Error was: " + error.c_str();
-        DEBUGF("Failed to parse JSON: %s\n", error.c_str());
+        DEBUGF("[OTA] Failed to parse JSON: %s\n", error.c_str());
         return "";
     }
 
     if (!doc.containsKey("tag_name"))
     {
         // _lastError = "JSON didn't match expected structure. 'tag_name' missing.";
-        DEBUGLN("JSON missing tag_name");
+        DEBUGLN("[OTA] JSON missing tag_name");
         return "";
     }
 
@@ -57,18 +61,18 @@ String OTA::getNewSoftwareVersion()
     if (strcmp(release_tag, _versionTag) == 0)
     {
         // _lastError = "Already running latest release.";
-        DEBUGLN("Already running latest release");
+        DEBUGLN("[OTA] Already running latest release");
         return "";
     }
 
     if (!GHOTA_ACCEPT_PRERELEASE && doc["prerelease"])
     {
         // _lastError = "Latest release is a pre-release and GHOTA_ACCEPT_PRERELEASE is set to false.";
-        DEBUGLN("Latest release is a pre-release");
+        DEBUGLN("[OTA] Latest release is a pre-release");
         return "";
     }
 
-    DEBUGF("Found new release: %s\n", release_tag);
+    DEBUGF("[OTA] Found new release: %s\n", release_tag);
     return release_tag;
 
     // JsonArray assets = doc["assets"];
@@ -87,11 +91,49 @@ String OTA::getNewSoftwareVersion()
     // return "";
 }
 
+void OTA::update()
+{
+    switch (mState)
+    {
+    case State::IDLE:
+        break;
+
+    case State::SYNC_TIME: {
+        if (time(nullptr) >= 8 * 3600 * 2)
+        {
+            mState = State::SYNCED_TIME;
+        }
+    }
+    break;
+
+    case State::SYNCED_TIME: {
+        DEBUGLN("[OTA] Synced time");
+        struct tm timeinfo;
+        time_t now = time(nullptr);
+        gmtime_r(&now, &timeinfo);
+        mState = State::CHECK_FOR_VERSION;
+    }
+    break;
+
+    case State::CHECK_FOR_VERSION: {
+        const String& version = getNewSoftwareVersion();
+        if (!version.isEmpty())
+        {
+            gui.updateOtaStatus(version);
+        }
+        mState = State::IDLE;
+    }
+    break;
+
+    default:
+        break;
+    }
+}
+
 // Set time via NTP, as required for x.509 validation
 void OTA::updateTime()
 {
-    DEBUG("Updating time... ");
-    configTime(0, 0, GHOTA_NTP1, GHOTA_NTP2); // UTC
+    DEBUG("[OTA] Updating time... ");
 
     time_t now = time(nullptr);
     while (now < 8 * 3600 * 2)
@@ -103,5 +145,6 @@ void OTA::updateTime()
 
     struct tm timeinfo;
     gmtime_r(&now, &timeinfo);
+
     DEBUGLN("done");
 }

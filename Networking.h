@@ -94,7 +94,7 @@ public:
         if (es.count())
         {
             es.send(message.c_str(), "status");
-            DEBUGF("[Networking] AVG ES packages %d\n", es.avgPacketsWaiting());
+            // DEBUGF("[Networking] AVG ES packages %d\n", es.avgPacketsWaiting());
         }
     }
 

@@ -13,12 +13,16 @@ void Mqtt::connect()
 
     if (connected)
     {
+        // Publish connected message
+        publish((mqttConfig.topic + "/lwt").c_str(), CONNECTED, true);
+
+        // Update status
+        updateStatus(FPSTR(CONNECTED));
+
         setupLoadControl();
 
-        // if (mqttConfig.hadiscovery)
+        if (mqttConfig.hadiscovery)
         {
-            // update HA make it discover this device
-
             // Battery related
             publishSensorDiscovery("Battery SOC", "batsoc", "battery", "%", "measurement", "{{value_json.b.ch}}");
             publishSensorDiscovery("Battery Voltage", "batvol", "voltage", "V", "measurement",
@@ -73,12 +77,6 @@ void Mqtt::connect()
             publishSwitchDiscovery(
                 "Out 3", "o3", "{{'true' if value_json.o.o3 else 'false'}}", "mdi:numeric-3-box-outline");
         }
-
-        // Publish connected message
-        publish((mqttConfig.topic + "/lwt").c_str(), CONNECTED, true);
-
-        // Update status
-        updateStatus(FPSTR(CONNECTED));
     }
     else
     {
@@ -95,6 +93,7 @@ void Mqtt::disconnect()
 
 void Mqtt::loop()
 {
+    mqtt.loop();
     if (!mqtt.connected())
     {
         if (_status.startsWith("C"))
@@ -110,7 +109,6 @@ void Mqtt::loop()
             updateStatus(FPSTR(CONNECTED));
         }
     }
-    mqtt.loop();
 }
 
 void Mqtt::updateRenogyStatus(const Renogy::Data& data)
@@ -298,7 +296,7 @@ void Mqtt::publishSwitchDiscovery(const String& name, const String& id, const St
 void Mqtt::subscribe(const String& topic)
 {
     const bool subscribed = mqtt.subscribe(topic.c_str());
-    DEBUGF("Subscribed %s %s", topic.c_str(), subscribed ? "successfully" : "unsuccessfully");
+    DEBUGF("Subscribed %s %s\n", topic.c_str(), subscribed ? "successfully" : "unsuccessfully");
 }
 
 bool Mqtt::publishJSON(const String& topic, const JsonDocument& json, const bool retain)
