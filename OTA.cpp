@@ -8,7 +8,7 @@ OTA::OTA(const char* versionTag, GUI& gui) : _versionTag(versionTag), gui(gui)
 
 String OTA::getNewSoftwareVersion()
 {
-    DEBUGLN("[OTA] Checking for new software version");
+    DEBUGLN(F("[OTA] Checking for new software version"));
 
     // updateTime(); // Clock needs to be set to perform certificate checks
 
@@ -20,25 +20,26 @@ String OTA::getNewSoftwareVersion()
     {
         client.stop();
         // _lastError = "Connection failed";
-        DEBUGLN("[OTA] Connection to GitHub failed");
+        DEBUGLN(F("[OTA] Connection to GitHub failed"));
         return "";
     }
 
-    const String url = String("/repos/") + GHOTA_USER + "/" + GHOTA_REPO + "/releases/latest";
-
-    client.print(String("GET ") + url + " HTTP/1.1\r\n" + "Host: " + GHOTA_HOST + "\r\n"
-        + "User-Agent: ESP_OTA_GitHubArduinoLibrary\r\n" + "Connection: close\r\n\r\n");
+    client.printf_P(PSTR("GET /repos/%s/%s/releases/latest HTTP/1.1\r\n"
+                         "Host: %s\r\n"
+                         "User-Agent: ESP_OTA_GitHubArduinoLibrary\r\n"
+                         "Connection: close\r\n\r\n"),
+        GHOTA_USER, GHOTA_REPO, GHOTA_HOST);
 
     // skip header
     client.find("\r\n\r\n");
 
-    // --- ArduinoJSON v6 --- //
+    // Filter to reduce size of resulting doc
+    StaticJsonDocument<32> filter;
+    filter["tag_name"] = true;
+    filter["prerelease"] = true;
+    StaticJsonDocument<256> doc;
+    const DeserializationError error = deserializeJson(doc, client, DeserializationOption::Filter(filter));
 
-    // Get from https://arduinojson.org/v6/assistant/
-    const size_t capacity = JSON_ARRAY_SIZE(3) + 3 * JSON_OBJECT_SIZE(13) + 5 * JSON_OBJECT_SIZE(18) + 5560;
-    DynamicJsonDocument doc(capacity);
-
-    const DeserializationError error = deserializeJson(doc, client);
     client.stop();
 
     if (error)
@@ -51,7 +52,7 @@ String OTA::getNewSoftwareVersion()
     if (!doc.containsKey("tag_name"))
     {
         // _lastError = "JSON didn't match expected structure. 'tag_name' missing.";
-        DEBUGLN("[OTA] JSON missing tag_name");
+        DEBUGLN(F("[OTA] JSON missing tag_name"));
         return "";
     }
 
@@ -61,14 +62,14 @@ String OTA::getNewSoftwareVersion()
     if (strcmp(release_tag, _versionTag) == 0)
     {
         // _lastError = "Already running latest release.";
-        DEBUGLN("[OTA] Already running latest release");
+        DEBUGLN(F("[OTA] Already running latest release"));
         return "";
     }
 
     if (!GHOTA_ACCEPT_PRERELEASE && doc["prerelease"])
     {
         // _lastError = "Latest release is a pre-release and GHOTA_ACCEPT_PRERELEASE is set to false.";
-        DEBUGLN("[OTA] Latest release is a pre-release");
+        DEBUGLN(F("[OTA] Latest release is a pre-release"));
         return "";
     }
 
@@ -107,7 +108,7 @@ void OTA::update()
     break;
 
     case State::SYNCED_TIME: {
-        DEBUGLN("[OTA] Synced time");
+        DEBUGLN(F("[OTA] Synced time"));
         struct tm timeinfo;
         time_t now = time(nullptr);
         gmtime_r(&now, &timeinfo);
@@ -133,7 +134,7 @@ void OTA::update()
 // Set time via NTP, as required for x.509 validation
 void OTA::updateTime()
 {
-    DEBUG("[OTA] Updating time... ");
+    DEBUG(F("[OTA] Updating time... "));
 
     time_t now = time(nullptr);
     while (now < 8 * 3600 * 2)
