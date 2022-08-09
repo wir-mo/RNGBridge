@@ -7,9 +7,7 @@
 
 RNGTime::RNGTime()
 {
-
     configTime(0, 0, _NTP1, _NTP2); // UTC
-    setTimeOffset(2 * 3600);
 }
 
 void RNGTime::loop()
@@ -23,6 +21,7 @@ void RNGTime::loop()
         if (sntp_get_current_timestamp() >= 8 * 3600 * 2)
         {
             _state = State::SYNCED_TIME;
+            RNG_DEBUGLN("[RNGTime] Synched");
         }
     }
 }

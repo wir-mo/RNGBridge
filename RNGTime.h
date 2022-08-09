@@ -2,14 +2,19 @@
 
 #include <Arduino.h>
 
+/// @brief Class for handling time stuff like NTP
 class RNGTime
 {
 public:
-    RNGTime(/* args */);
+    /// @brief Construct a new RNGTime object
+    ///
+    /// Also sets up NTP servers
+    RNGTime();
 
+    /// @brief Update internal state
     void loop();
 
-    /// @brief Get the epoch time
+    /// @brief Get the epoch time with offset
     ///
     /// @return time in seconds since Jan. 1, 1970
     uint32_t getEpochTime() const;
@@ -24,7 +29,14 @@ public:
     /// @param seconds time offset
     void setTimeOffset(const int32_t seconds);
 
+    /// @brief Get a time string of the current time
+    ///
+    /// @return Time string like hh:mm:ss
     String getFormattedTime() const { return getFormattedTime(getEpochTime()); }
+    /// @brief Get a time string of the given time
+    ///
+    /// @param time Epoch time
+    /// @return Time string like hh:mm:ss
     String getFormattedTime(const uint32_t time) const;
 
     /// @brief Check if the time has been synced
@@ -34,16 +46,17 @@ public:
     bool isSynced() const;
 
 private:
+    /// @brief Internal state
     enum State
     {
-        SYNC_TIME,
-        SYNCED_TIME,
+        SYNC_TIME, /// Time is being synced
+        SYNCED_TIME, /// Time has been synced
     } _state
         = State::SYNC_TIME;
 
 private:
-    constexpr static const char* _NTP1 = "pool.ntp.org";
-    constexpr static const char* _NTP2 = "time.nist.gov";
+    constexpr static const char* _NTP1 = "pool.ntp.org"; /// First NTP pool
+    constexpr static const char* _NTP2 = "time.nist.gov"; /// Second NTP pool
 
     int32_t _offsetS = 0; /// Time offset in seconds
 };

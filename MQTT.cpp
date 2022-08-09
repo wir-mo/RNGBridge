@@ -129,12 +129,10 @@ void Mqtt::updateRenogyStatus(const Renogy::Data& data)
         auto load = json["l"];
         load["vo"] = data.loadVoltage;
         load["cu"] = data.loadCurrent;
-        load["po"] = data.loadPower;
 
         auto panel = json["p"];
         panel["vo"] = data.panelVoltage;
         panel["cu"] = data.panelCurrent;
-        panel["po"] = data.panelPower;
 
         auto controller = json["c"];
         controller["st"] = data.chargingState;

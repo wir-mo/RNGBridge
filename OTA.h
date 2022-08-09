@@ -8,13 +8,23 @@
 #include "GUI.h"
 #include "RNGTime.h"
 
+/// @brief Class for checking for software updates and in future for updating the software programatically
 class OTA
 {
 public:
+    /// @brief Construct a new OTA object
+    ///
+    /// @param versionTag The tag of the current running software version
+    /// @param gui Reference to GUI object
+    /// @param time Reference to RNGTime object
     OTA(const char* versionTag, GUI& gui, RNGTime& time);
 
+    /// @brief Get the version tag of the latest software version
+    ///
+    /// @return Version tag
     String getNewSoftwareVersion();
 
+    /// @brief Schedule checking for a new update
     void checkForUpdate()
     {
         if (_state == State::IDLE)
@@ -23,13 +33,17 @@ public:
         }
     }
 
+    /// @brief Update internal state
+    ///
+    /// Call this once in a while
     void loop();
 
 private:
+    /// @brief Internal state
     enum State
     {
-        IDLE,
-        CHECK_FOR_VERSION,
+        IDLE, /// Nothing to be done
+        CHECK_FOR_VERSION, /// Check for new software version
     } _state
         = State::IDLE;
 
