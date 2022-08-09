@@ -16,18 +16,13 @@ void PVOutput::sendData()
     struct tm time = _time.getTmTime();
     const bool success = sendPowerData(_powerGeneration, _powerConsumption, _voltage, time);
 
-    // Reset counters
-    _powerGeneration = 0.0;
-    _powerConsumption = 0.0;
-    _voltage = 0.0;
-
     // Update status
     if (success)
     {
         char temp[18];
         const uint8_t currentHour = time.tm_hour;
         const uint8_t currentMinute = time.tm_min;
-        sprintf_P(temp, PSTR("Sent data (%hhu:%hhu)"), currentHour, currentMinute);
+        sprintf_P(temp, PSTR("Sent data (%02d:%02d)"), currentHour, currentMinute);
         RNG_DEBUGF("[PVO] %s", temp);
         updateStatus(String(temp));
     }
@@ -38,18 +33,20 @@ void PVOutput::sendData()
     }
 }
 
-void PVOutput::updateData(
-    const double interval, const double powerGeneration, const double powerConsumption, const double voltage)
+void PVOutput::updateData(const Renogy::Data& data)
 {
-    // Only update if updateInterval is greater than zero, so we don't accidentally send wrong data and the data
-    // does not overflow
-    if (_updateInterval > 0)
+    if (_initial)
     {
-        const double factor = interval / _updateInterval;
-        _powerGeneration += factor * powerGeneration;
-        _powerConsumption += factor * powerConsumption;
-        _voltage += factor * voltage;
+        _initial = false;
+        _powerGeneration = data.panelVoltage * data.panelCurrent;
+        _powerConsumption = data.loadVoltage * data.loadCurrent;
+        _voltage = data.batteryVoltage;
+        return;
     }
+
+    _powerGeneration += data.panelVoltage * data.panelCurrent;
+    _powerConsumption += data.loadVoltage * data.loadCurrent;
+    _voltage += data.batteryVoltage;
 }
 
 void PVOutput::start()
@@ -94,11 +91,6 @@ void PVOutput::loop()
     {
         if (_secondsPassed)
         {
-            // Reset counters
-            _powerGeneration = 0.0;
-            _powerConsumption = 0.0;
-            _voltage = 0.0;
-
             _secondsPassed = 0;
         }
         start();

@@ -106,8 +106,7 @@ void setup()
         }
         if (pvo)
         {
-            pvo->updateData(RENOGY_INTERVAL, data.panelVoltage * data.panelCurrent, data.loadVoltage * data.loadCurrent,
-                data.batteryVoltage);
+            pvo->updateData(data);
         }
 
         outputs.update(data);
