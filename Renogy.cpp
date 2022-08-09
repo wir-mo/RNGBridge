@@ -221,17 +221,17 @@ void Renogy::readAndProcessData()
     if (result == _modbus.ku8MBSuccess)
     {
         _data.batteryCharge = ModBus::readInt16BE(_modbus, 0);
-        _data.batteryVoltage = 0.1 * ModBus::readInt16BE(_modbus, 1);
-        _data.batteryCurrent = 0.01 * ModBus::readInt16BE(_modbus, 2);
+        _data.batteryVoltage = 0.1f * ModBus::readInt16BE(_modbus, 1);
+        _data.batteryCurrent = 0.01f * ModBus::readInt16BE(_modbus, 2);
         _data.controllerTemperature = ModBus::readInt8Upper(_modbus, 3);
         _data.batteryTemperature = ModBus::readInt8Lower(_modbus, 3);
 
-        _data.loadVoltage = 0.1 * ModBus::readInt16BE(_modbus, 4);
-        _data.loadCurrent = 0.01 * ModBus::readInt16BE(_modbus, 5);
+        _data.loadVoltage = 0.1f * ModBus::readInt16BE(_modbus, 4);
+        _data.loadCurrent = 0.01f * ModBus::readInt16BE(_modbus, 5);
         _data.loadPower = ModBus::readInt16BE(_modbus, 6);
 
-        _data.panelVoltage = 0.1 * ModBus::readInt16BE(_modbus, 7);
-        _data.panelCurrent = 0.01 * ModBus::readInt16BE(_modbus, 8);
+        _data.panelVoltage = 0.1f * ModBus::readInt16BE(_modbus, 7);
+        _data.panelCurrent = 0.01f * ModBus::readInt16BE(_modbus, 8);
         _data.panelPower = ModBus::readInt16BE(_modbus, 9);
 
         _data.loadEnabled = ModBus::readInt8Upper(_modbus, 32) & 0x80;
