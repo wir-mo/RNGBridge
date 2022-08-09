@@ -329,7 +329,7 @@ void Networking::update()
 
     if (WiFi.isConnected())
     {
-        RNGBridge::rssi = WiFi.RSSI();
+        RNGBridge::rssi = RNGBridge::rssi * 0.7f + WiFi.RSSI() * 0.3f;
     }
 }
 
@@ -415,6 +415,8 @@ void Networking::startClient()
 
         WiFi.setAutoConnect(false);
         WiFi.setAutoReconnect(true);
+
+        RNGBridge::rssi = WiFi.RSSI();
     }
 }
 
