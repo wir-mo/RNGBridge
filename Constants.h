@@ -44,7 +44,7 @@ extern const char* HOSTNAME PROGMEM;
 // size: 13 chars
 extern char deviceMAC[13];
 
-extern const uint32_t RENOGY_INTERVAL; /// The interval in s at which the renogy data should be read
+constexpr static const uint32_t RENOGY_INTERVAL = 1; /// The interval in s at which the renogy data should be read
 
 namespace RNGBridge
 {
