@@ -2,12 +2,10 @@
 
 #include <functional>
 
-#include <NTPClient.h>
-#include <TimeLib.h>
 #include <WiFiClientSecure.h>
-#include <WiFiUdp.h>
 
 #include "Config.h"
+#include "RNGTime.h"
 
 class PVOutput
 {
@@ -15,16 +13,15 @@ public:
     typedef std::function<void(const String&)> StatusListener;
 
 public:
-    PVOutput(const PVOutputConfig& config) : _config(config), timeClient(ntpUDP, "europe.pool.ntp.org", 0, 60000)
+    PVOutput(const PVOutputConfig& config, RNGTime& time) : _config(config), _time(time)
     {
         // We need to reduce the buffer sizes or we get issues with HEAP
         client.setBufferSizes(4096, 512);
         // Don't want to use Cert Store or Fingerprint cause they need to be updated
         client.setInsecure();
+
         // Set time offset, convert hours to seconds
-        timeClient.setTimeOffset(_config.timeOffset * 3600);
-        // Setup time client
-        timeClient.begin();
+        _time.setTimeOffset(_config.timeOffset * 3600);
     };
 
     PVOutput(PVOutput&&) = delete;
@@ -62,12 +59,6 @@ public:
     void setListener(StatusListener listener);
 
 private:
-    ///@brief Forces to sync the NTP \ref PVOutput::timeClient if WiFi is connected
-    ///
-    ///@return true If NTP was synced
-    ///@return false If NTP could not be synced
-    bool syncTime();
-
     ///@brief Make an HTTP GET request to the given url
     ///
     ///@param url URL to make request to
@@ -101,11 +92,10 @@ private:
     ///@param powerGeneration The generated power in Watts
     ///@param powerConsumption The consumed power in Watts
     ///@param voltage A voltage in Volts
-    ///@param dataTime The time to update for
+    ///@param tm The time to update for
     ///@return true If data was sent
     ///@return false If data was not sent
-    bool sendPowerData(
-        const int powerGeneration, const int powerConsumption, const double voltage, const time_t dataTime);
+    bool sendPowerData(const int powerGeneration, const int powerConsumption, const double voltage, const tm& tm);
 
     ///@brief Get rate limit
     ///
@@ -128,10 +118,9 @@ private:
     static const char* HOST PROGMEM; /// Host to make rrequests to aka pvoutput.org
 
     const PVOutputConfig& _config;
+    RNGTime& _time;
 
     WiFiClientSecure client; /// Client to make requests with
-    WiFiUDP ntpUDP; /// UDP for \ref PVOutput::timeClient
-    NTPClient timeClient; /// NTP client for current time
 
     double _powerConsumption = 0.0; /// Internal counter for power consumption
     double _powerGeneration = 0.0; /// Internal counter for power generation

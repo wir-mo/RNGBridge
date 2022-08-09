@@ -39,6 +39,17 @@ namespace ModBus
         return ((reg << 8) & 0xFF00FF00) | ((reg >> 8) & 0x00FF00FF);
     }
 
+    String readString(ModbusMaster& modbus, const uint8_t startAddress, const uint8_t registers)
+    {
+        String str = "";
+        for (uint8_t i = 0; i < registers; ++i)
+        {
+            str += static_cast<char>(readInt8Upper(modbus, i));
+            str += static_cast<char>(readInt8Lower(modbus, i));
+        }
+        return str;
+    }
+
 } // namespace ModBus
 
 // 0x0100 (2) 00 - Battery capacity SOC (state of charge)
@@ -240,6 +251,11 @@ void Renogy::readAndProcessData()
         {
             _listener(_data);
         }
+
+        if (model.isEmpty())
+        {
+            readModel();
+        }
     }
     else
     {
@@ -247,7 +263,7 @@ void Renogy::readAndProcessData()
         // {
         // MQTT::publish("{\"device\":\"" + WIFI::mac + "\",\"mbError\":" + String(result) + "}");
         // }
-        DEBUGF("[Renogy] Could not read registers: %d\n", result);
+        RNG_DEBUGF("[Renogy] Could not read registers: %d\n", result);
     }
 #endif
 }
@@ -260,7 +276,7 @@ void Renogy::enableLoad(const bool enable)
     const uint8_t result = _modbus.writeSingleRegister(0x010A, enable ? 0x01 : 0x00);
     if (result != _modbus.ku8MBSuccess)
     {
-        DEBUGF("[Renogy] Could not turn load %s: %d\n", enable ? "on" : "off", result);
+        RNG_DEBUGF("[Renogy] Could not turn load %s: %d\n", enable ? "on" : "off", result);
     }
 #endif
 }
@@ -268,8 +284,23 @@ void Renogy::enableLoad(const bool enable)
 void Renogy::setListener(DataListener listener)
 {
     _listener = listener;
-    if (_listener)
+}
+
+void Renogy::readModel()
+{
+    _modbus.clearResponseBuffer();
+    // const uint8_t result = _modbus.readHoldingRegisters(0x000C, 8);
+    const uint8_t result = _modbus.readHoldingRegisters(0x000C, 19);
+
+    if (result == _modbus.ku8MBSuccess)
     {
-        _listener(_data);
+        model = ModBus::readString(_modbus, 0, 8);
+        RNG_DEBUGF("[Renogy] Model: %s, SWV: %d, HWV: %d, S#: %d addr: %d, ProtV: %d\n", model.c_str(),
+            ModBus::readInt32BE(_modbus, 8), ModBus::readInt32BE(_modbus, 10), ModBus::readInt32BE(_modbus, 12),
+            ModBus::readInt8Lower(_modbus, 14), ModBus::readInt32BE(_modbus, 15));
+    }
+    else
+    {
+        RNG_DEBUGF("[Renogy] Could not read registers: %d\n", result);
     }
 }

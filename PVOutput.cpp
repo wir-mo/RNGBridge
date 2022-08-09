@@ -13,8 +13,8 @@ const char* PVOutput::HOST PROGMEM = "pvoutput.org";
 void PVOutput::sendData()
 {
     // Send power data
-    time_t epoch = timeClient.getEpochTime();
-    const bool success = sendPowerData(_powerGeneration, _powerConsumption, _voltage, epoch);
+    struct tm time = _time.getTmTime();
+    const bool success = sendPowerData(_powerGeneration, _powerConsumption, _voltage, time);
 
     // Reset counters
     _powerGeneration = 0.0;
@@ -25,20 +25,17 @@ void PVOutput::sendData()
     if (success)
     {
         char temp[18];
-        const uint8_t currentHour = hour(epoch);
-        const uint8_t currentMinute = minute(epoch);
+        const uint8_t currentHour = time.tm_hour;
+        const uint8_t currentMinute = time.tm_min;
         sprintf_P(temp, PSTR("Sent data (%hhu:%hhu)"), currentHour, currentMinute);
-        DEBUGF("[PVO] %s", temp);
+        RNG_DEBUGF("[PVO] %s", temp);
         updateStatus(String(temp));
     }
     else
     {
-        DEBUGLN(F("[PVO] Could not send power data"));
+        RNG_DEBUGLN(F("[PVO] Could not send power data"));
         updateStatus(F("Could not send power data"));
     }
-
-    // Update NTP time
-    timeClient.update();
 }
 
 void PVOutput::updateData(
@@ -57,21 +54,19 @@ void PVOutput::updateData(
 
 void PVOutput::start()
 {
-    DEBUGLN(F("[PVO] Starting"));
+    RNG_DEBUGLN(F("[PVO] Starting"));
     updateStatus(F("Starting"));
     // Try to get the status interval which can't be 0
     const uint8_t interval = getStatusInterval();
     if (interval > 0)
     {
-        // Convert minutes to seconds
-        _updateInterval = interval * 60;
-        // Do time sync now
-        syncTime();
-
         _started = true;
 
+        // Convert minutes to seconds
+        _updateInterval = interval * 60;
+
         // Set status running
-        DEBUGLN(F("[PVO] Running"));
+        RNG_DEBUGLN(F("[PVO] Running"));
         updateStatus(F("Running"));
     }
     else
@@ -79,7 +74,7 @@ void PVOutput::start()
         _started = false;
 
         // Set status error
-        DEBUGLN(F("[PVO] Could not get update interval, retrying"));
+        RNG_DEBUGLN(F("[PVO] Could not get update interval, retrying"));
         updateStatus(F("Could not get update interval, retrying"));
     }
 }
@@ -119,32 +114,6 @@ void PVOutput::setListener(StatusListener listener)
     }
 }
 
-bool PVOutput::syncTime()
-{
-    bool synced = false;
-    // Only attempt sync if the WiFi is connected or we will never get out of the while loop
-    if (WiFi.isConnected())
-    {
-        updateStatus(F("Syncing time"));
-        DEBUG(F("[PVO] Syncing time"));
-        while (!synced)
-        {
-            // Force update until we have a correct time
-            timeClient.forceUpdate();
-            synced = year(timeClient.getEpochTime()) > 2019;
-            delay(500);
-            DEBUG(".");
-        }
-        DEBUGLN(F("\n[PVO] Synced time"));
-    }
-    else
-    {
-        DEBUGLN(F("[PVO] No WiFi for time sync"));
-        updateStatus(F("No WiFi for time sync"));
-    }
-    return synced;
-}
-
 bool PVOutput::httpsGET(const String& url, const bool rateLimit)
 {
     // Delegate
@@ -160,7 +129,7 @@ bool PVOutput::httpsGET(const char* url, const bool rateLimit)
 bool PVOutput::httpsGET(
     WiFiClientSecure& client, const char* url, const char* apiKey, const uint32_t sysID, const bool rateLimit)
 {
-    // DEBUGF("[PVO] GET %s, k: %s, i: %d\n", url, apiKey, sysID);
+    // RNG_DEBUGF("[PVO] GET %s, k: %s, i: %d\n", url, apiKey, sysID);
     // Try to connect to server
     const bool connected = client.connect(HOST, 443);
     if (connected)
@@ -197,15 +166,13 @@ bool PVOutput::httpsGET(
     return connected;
 };
 
-bool PVOutput::sendPowerData(
-    const int powerGeneration, const int powerConsumption, const double voltage, const time_t dataTime)
+bool PVOutput::sendPowerData(const int powerGeneration, const int powerConsumption, const double voltage, const tm& tm)
 {
-    // TODO Maybe need to have a Setting for the timezone (+-hours from GMT)
-    const int currentYear = year(dataTime);
-    const uint8_t currentMonth = month(dataTime);
-    const uint8_t currentDay = day(dataTime);
-    const uint8_t currentHour = hour(dataTime);
-    const uint8_t currentMinute = minute(dataTime);
+    const int currentYear = tm.tm_year;
+    const uint8_t currentMonth = tm.tm_mon;
+    const uint8_t currentDay = tm.tm_mday;
+    const uint8_t currentHour = tm.tm_hour;
+    const uint8_t currentMinute = tm.tm_min;
 
     // Generate URL with data
     char data[80]; // 44 static + 8 + 4 + 18

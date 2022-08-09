@@ -1,14 +1,10 @@
 #include "OTA.h"
 
-OTA::OTA(const char* versionTag, GUI& gui) : _versionTag(versionTag), gui(gui)
-{
-    mState = State::IDLE;
-    configTime(0, 0, GHOTA_NTP1, GHOTA_NTP2); // UTC
-}
+OTA::OTA(const char* versionTag, GUI& gui, RNGTime& time) : _versionTag(versionTag), _gui(gui), _time(time) { }
 
 String OTA::getNewSoftwareVersion()
 {
-    DEBUGLN(F("[OTA] Checking for new software version"));
+    RNG_DEBUGLN(F("[OTA] Checking for new software version"));
 
     // updateTime(); // Clock needs to be set to perform certificate checks
 
@@ -20,7 +16,7 @@ String OTA::getNewSoftwareVersion()
     {
         client.stop();
         // _lastError = "Connection failed";
-        DEBUGLN(F("[OTA] Connection to GitHub failed"));
+        RNG_DEBUGLN(F("[OTA] Connection to GitHub failed"));
         return "";
     }
 
@@ -45,14 +41,14 @@ String OTA::getNewSoftwareVersion()
     if (error)
     {
         // _lastError = "Failed to parse JSON."; // Error was: " + error.c_str();
-        DEBUGF("[OTA] Failed to parse JSON: %s\n", error.c_str());
+        RNG_DEBUGF("[OTA] Failed to parse JSON: %s\n", error.c_str());
         return "";
     }
 
     if (!doc.containsKey("tag_name"))
     {
         // _lastError = "JSON didn't match expected structure. 'tag_name' missing.";
-        DEBUGLN(F("[OTA] JSON missing tag_name"));
+        RNG_DEBUGLN(F("[OTA] JSON missing tag_name"));
         return "";
     }
 
@@ -62,18 +58,18 @@ String OTA::getNewSoftwareVersion()
     if (strcmp(release_tag, _versionTag) == 0)
     {
         // _lastError = "Already running latest release.";
-        DEBUGLN(F("[OTA] Already running latest release"));
+        RNG_DEBUGLN(F("[OTA] Already running latest release"));
         return "";
     }
 
     if (!GHOTA_ACCEPT_PRERELEASE && doc["prerelease"])
     {
         // _lastError = "Latest release is a pre-release and GHOTA_ACCEPT_PRERELEASE is set to false.";
-        DEBUGLN(F("[OTA] Latest release is a pre-release"));
+        RNG_DEBUGLN(F("[OTA] Latest release is a pre-release"));
         return "";
     }
 
-    DEBUGF("[OTA] Found new release: %s\n", release_tag);
+    RNG_DEBUGF("[OTA] Found new release: %s\n", release_tag);
     return release_tag;
 
     // JsonArray assets = doc["assets"];
@@ -92,60 +88,15 @@ String OTA::getNewSoftwareVersion()
     // return "";
 }
 
-void OTA::update()
+void OTA::loop()
 {
-    switch (mState)
+    if (_state == State::CHECK_FOR_VERSION && _time.isSynced())
     {
-    case State::IDLE:
-        break;
-
-    case State::SYNC_TIME: {
-        if (time(nullptr) >= 8 * 3600 * 2)
-        {
-            mState = State::SYNCED_TIME;
-        }
-    }
-    break;
-
-    case State::SYNCED_TIME: {
-        DEBUGLN(F("[OTA] Synced time"));
-        struct tm timeinfo;
-        time_t now = time(nullptr);
-        gmtime_r(&now, &timeinfo);
-        mState = State::CHECK_FOR_VERSION;
-    }
-    break;
-
-    case State::CHECK_FOR_VERSION: {
         const String& version = getNewSoftwareVersion();
         if (!version.isEmpty())
         {
-            gui.updateOtaStatus(version);
+            _gui.updateOtaStatus(version);
         }
-        mState = State::IDLE;
+        _state = State::IDLE;
     }
-    break;
-
-    default:
-        break;
-    }
-}
-
-// Set time via NTP, as required for x.509 validation
-void OTA::updateTime()
-{
-    DEBUG(F("[OTA] Updating time... "));
-
-    time_t now = time(nullptr);
-    while (now < 8 * 3600 * 2)
-    {
-        yield();
-        delay(500);
-        now = time(nullptr);
-    }
-
-    struct tm timeinfo;
-    gmtime_r(&now, &timeinfo);
-
-    DEBUGLN("done");
 }
