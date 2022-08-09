@@ -137,7 +137,7 @@ void Renogy::readAndProcessData()
     // P = U * I | I = P / U
     _data.panelVoltage = 14.0f + 0.1f * random(-10, 10);
     _data.panelCurrent = 100.0f / _data.panelVoltage;
-    _data.panelPower = floor(_data.panelVoltage * _data.panelCurrent);
+    // _data.panelPower = floor(_data.panelVoltage * _data.panelCurrent);
 
     batteryDirection ? ++batteryCharge : --batteryCharge;
     if (batteryCharge == 0 || batteryCharge == 100)
@@ -156,13 +156,13 @@ void Renogy::readAndProcessData()
         // P = U * I
         _data.loadVoltage = _data.batteryVoltage;
         _data.loadCurrent = (100.0f / _data.batteryVoltage) - _data.batteryCurrent;
-        _data.loadPower = floor(_data.loadVoltage * _data.loadCurrent);
+        // _data.loadPower = floor(_data.loadVoltage * _data.loadCurrent);
     }
     else
     {
         _data.loadVoltage = _data.batteryVoltage;
         _data.loadCurrent = 0.0f;
-        _data.loadPower = 0;
+        // _data.loadPower = 0;
     }
 
     _data.chargingState = batteryDirection ? 0x01 : 0x00;
@@ -179,7 +179,7 @@ void Renogy::readAndProcessData()
     constexpr static const float PANEL_POWER = 100.0f;
     _data.panelVoltage = 14.25f;
     _data.panelCurrent = PANEL_POWER / _data.panelVoltage;
-    _data.panelPower = floor(_data.panelVoltage * _data.panelCurrent);
+    // _data.panelPower = floor(_data.panelVoltage * _data.panelCurrent);
 
     _data.batteryCharge = 80.0f;
     _data.batteryVoltage = batterySocToVolts(_data.batteryCharge);
@@ -193,13 +193,13 @@ void Renogy::readAndProcessData()
         // P = U * I
         _data.loadVoltage = _data.batteryVoltage;
         _data.loadCurrent = (PANEL_POWER / _data.batteryVoltage) - _data.batteryCurrent;
-        _data.loadPower = floor(_data.loadVoltage * _data.loadCurrent);
+        // _data.loadPower = floor(_data.loadVoltage * _data.loadCurrent);
     }
     else
     {
         _data.loadVoltage = _data.batteryVoltage;
         _data.loadCurrent = 0.0f;
-        _data.loadPower = 0;
+        // _data.loadPower = 0;
     }
 
     _data.chargingState = 2; // 2 = mppt
@@ -228,23 +228,16 @@ void Renogy::readAndProcessData()
 
         _data.loadVoltage = 0.1f * ModBus::readInt16BE(_modbus, 4);
         _data.loadCurrent = 0.01f * ModBus::readInt16BE(_modbus, 5);
-        _data.loadPower = ModBus::readInt16BE(_modbus, 6);
+        // _data.loadPower = ModBus::readInt16BE(_modbus, 6);
 
         _data.panelVoltage = 0.1f * ModBus::readInt16BE(_modbus, 7);
         _data.panelCurrent = 0.01f * ModBus::readInt16BE(_modbus, 8);
-        _data.panelPower = ModBus::readInt16BE(_modbus, 9);
+        // _data.panelPower = ModBus::readInt16BE(_modbus, 9);
 
         _data.loadEnabled = ModBus::readInt8Upper(_modbus, 32) & 0x80;
         _data.chargingState = ModBus::readInt8Lower(_modbus, 32);
 
         _data.errorState = ModBus::readInt32BE(_modbus, 33);
-
-        // Update PVOutput data if it is enabled
-        // if (Settings::settings.pvOutput)
-        // {
-        // PVOutput::Callback::updateData(
-        //     delta / 1000.0, panelVoltage * panelCurrent, loadVoltage * loadCurrent, batteryVoltage);
-        // }
 
         // update listener
         if (_listener)
@@ -259,10 +252,6 @@ void Renogy::readAndProcessData()
     }
     else
     {
-        // if (Settings::settings.mqtt)
-        // {
-        // MQTT::publish("{\"device\":\"" + WIFI::mac + "\",\"mbError\":" + String(result) + "}");
-        // }
         RNG_DEBUGF("[Renogy] Could not read registers: %d\n", result);
     }
 #endif
@@ -289,7 +278,6 @@ void Renogy::setListener(DataListener listener)
 void Renogy::readModel()
 {
     _modbus.clearResponseBuffer();
-    // const uint8_t result = _modbus.readHoldingRegisters(0x000C, 8);
     const uint8_t result = _modbus.readHoldingRegisters(0x000C, 19);
 
     if (result == _modbus.ku8MBSuccess)
