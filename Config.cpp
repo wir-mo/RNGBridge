@@ -54,21 +54,21 @@ void Config::initConfig()
 {
     if (SPIFFS.begin())
     {
-        DEBUGLN(F("[Config] Mounted file system"));
+        RNG_DEBUGLN(F("[Config] Mounted file system"));
         if (SPIFFS.exists("/config.json"))
         {
             readConfig();
         }
         else
         {
-            DEBUGLN(F("[Config] File does not exist"));
+            RNG_DEBUGLN(F("[Config] File does not exist"));
             setDefaultConfig();
             saveConfig();
         }
     }
     else
     {
-        DEBUGLN(F("[Config] Failed to mount FS"));
+        RNG_DEBUGLN(F("[Config] Failed to mount FS"));
         Config::setDefaultConfig();
     }
 }
@@ -103,7 +103,7 @@ void Config::setDefaultConfig()
 
 void Config::saveConfig()
 {
-    DEBUGLN(F("[Config] Writing file"));
+    RNG_DEBUGLN(F("[Config] Writing file"));
     File configFile = SPIFFS.open("/config.json", "w");
 
     StaticJsonDocument<documentSizeConfig> json;
@@ -111,16 +111,16 @@ void Config::saveConfig()
 
     if (serializeJson(json, configFile) == 0)
     {
-        DEBUGLN(F("[Config] Failed to write to file"));
+        RNG_DEBUGLN(F("[Config] Failed to write to file"));
     }
     else
     {
-        DEBUGLN(F("[Config] Successfully updated config"));
+        RNG_DEBUGLN(F("[Config] Successfully updated config"));
     }
     configFile.close();
     if (configFile)
     {
-        DEBUGLN(F("[Config] File was not closed"));
+        RNG_DEBUGLN(F("[Config] File was not closed"));
     }
 }
 
@@ -138,25 +138,25 @@ void Config::createJson(JsonDocument& output)
 
 void Config::readConfig()
 {
-    DEBUGLN(F("[Config] Reading file"));
+    RNG_DEBUGLN(F("[Config] Reading file"));
     File configFile = SPIFFS.open("/config.json", "r");
 
     if (configFile)
     {
-        DEBUGLN(F("[Config] Opened file"));
+        RNG_DEBUGLN(F("[Config] Opened file"));
 
         StaticJsonDocument<documentSizeConfig> json;
 
         DeserializationError error = deserializeJson(json, configFile);
         if (error)
         {
-            DEBUGLN(F("[Config] Failed to read file, using default configuration"));
+            RNG_DEBUGLN(F("[Config] Failed to read file, using default configuration"));
             setDefaultConfig();
             return;
         }
         else
         {
-            DEBUGLN(F("[Config] Successfully loaded config file"));
+            RNG_DEBUGLN(F("[Config] Successfully loaded config file"));
         }
         configFile.close();
 
@@ -164,7 +164,7 @@ void Config::readConfig()
         String jsonstr;
         jsonstr.reserve(measureJsonPretty(json));
         serializeJsonPretty(json, jsonstr);
-        DEBUGLN(jsonstr);
+        RNG_DEBUGLN(jsonstr);
 #endif
 
         const auto& jWifi = json["wifi"];
@@ -181,7 +181,7 @@ void Config::readConfig()
         }
         else
         {
-            DEBUGLN(F("[Config] Invalid file contents"));
+            RNG_DEBUGLN(F("[Config] Invalid file contents"));
             setDefaultConfig();
             bool partial = false;
             partial |= networkConfig.tryUpdate(jWifi);
@@ -190,7 +190,7 @@ void Config::readConfig()
             partial |= deviceConfig.tryUpdate(jDev);
             if (partial)
             {
-                DEBUGLN(F("[Config] Read partial data from config file"));
+                RNG_DEBUGLN(F("[Config] Read partial data from config file"));
             }
             saveConfig();
         }
@@ -199,7 +199,7 @@ void Config::readConfig()
 
 bool NetworkConfig::verify(const JsonObjectConst& object) const
 {
-    DEBUGLN(F("[Config] Verifying NetworkConfig"));
+    RNG_DEBUGLN(F("[Config] Verifying NetworkConfig"));
 
     return object["client_enabled"].is<bool>() && object["client_dhcp_enabled"].is<bool>()
         && object["client_ssid"].is<const char*>() && object["client_password"].is<const char*>()
@@ -275,7 +275,7 @@ void NetworkConfig::setDefaultConfig()
 
 bool MqttConfig::verify(const JsonObjectConst& object) const
 {
-    DEBUGLN(F("[Config] Verifying MqttConfig"));
+    RNG_DEBUGLN(F("[Config] Verifying MqttConfig"));
 
     return object["enabled"].is<bool>() && object["hadisco"].is<bool>() && object["server"].is<const char*>()
         && object["port"].is<uint16_t>() && object["id"].is<const char*>() && object["user"].is<const char*>()
@@ -345,7 +345,7 @@ void MqttConfig::setDefaultConfig()
 
 bool PVOutputConfig::verify(const JsonObjectConst& object) const
 {
-    DEBUGLN(F("[Config] Verifying PVOutputConfig"));
+    RNG_DEBUGLN(F("[Config] Verifying PVOutputConfig"));
     return object["enabled"].is<bool>() && object["system_id"].is<unsigned int>() && object["api_key"].is<const char*>()
         && object["time_offset"].is<int>();
 }
@@ -391,7 +391,7 @@ void PVOutputConfig::setDefaultConfig()
 
 bool OutputConfig::verify(const JsonObjectConst& object) const
 {
-    DEBUGLN(F("[Config] Verifying OutputConfig"));
+    RNG_DEBUGLN(F("[Config] Verifying OutputConfig"));
     return object["inputType"].is<const char*>() && object["inverted"].is<bool>() && object["min"].is<float>()
         && object["max"].is<float>();
 }
@@ -431,7 +431,7 @@ void OutputConfig::setDefaultConfig()
 
 bool DeviceConfig::verify(const JsonObjectConst& object) const
 {
-    DEBUGLN(F("[Config] Verifying DeviceConfig"));
+    RNG_DEBUGLN(F("[Config] Verifying DeviceConfig"));
     return object["name"].is<const char*>() && load.verify(object["load"]) && out1.verify(object["out1"])
         && out2.verify(object["out2"]) && out3.verify(object["out3"]);
 }

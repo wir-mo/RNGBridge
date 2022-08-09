@@ -173,29 +173,25 @@ void Mqtt::setupLoadControl()
     mqtt.setCallback([&](char* topic, uint8_t* data, unsigned int size) {
         data[size] = '\0';
 
-        Serial.print("Received: ");
-        Serial.println(topic);
-        Serial.println((char*)(data));
-
         const bool enable = strstr((char*)(data), "true") != nullptr;
         if (strstr(topic, "ol"))
         {
-            Serial.println("Control load");
+            // Serial.println("Control load");
             outputs.enableLoad(enable);
         }
         else if (strstr(topic, "o1"))
         {
-            Serial.println("Control out1");
+            // Serial.println("Control out1");
             outputs.enableOut1(enable);
         }
         else if (strstr(topic, "o2"))
         {
-            Serial.println("Control out2");
+            // Serial.println("Control out2");
             outputs.enableOut2(enable);
         }
         else if (strstr(topic, "o3"))
         {
-            Serial.println("Control out3");
+            // Serial.println("Control out3");
             outputs.enableOut3(enable);
         }
     });
@@ -296,7 +292,7 @@ void Mqtt::publishSwitchDiscovery(const String& name, const String& id, const St
 void Mqtt::subscribe(const String& topic)
 {
     const bool subscribed = mqtt.subscribe(topic.c_str());
-    DEBUGF("Subscribed %s %s\n", topic.c_str(), subscribed ? "successfully" : "unsuccessfully");
+    RNG_DEBUGF("Subscribed %s %s\n", topic.c_str(), subscribed ? "successfully" : "unsuccessfully");
 }
 
 bool Mqtt::publishJSON(const String& topic, const JsonDocument& json, const bool retain)

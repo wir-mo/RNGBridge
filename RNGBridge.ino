@@ -6,16 +6,28 @@
 #include "OTA.h"
 #include "OutputControl.h"
 #include "PVOutput.h"
+#include "RNGTime.h"
 #include "Renogy.h"
 
 // 60 requests per hour.
 // 300 requests per hour in donation mode.
+
+// pinout
+// D1 = LED
+// D2 = RS485 DE/!RE (direction)
+// D4 = Debug Serial
+// D5 = Out1
+// D6 = Out2
+// D7 = Out3
+// RX = RS232 RX = RS485 RO = RNG TX
+// TX = RS232 TX = RS485 DI = RNG RX
 
 constexpr static const uint8_t LED = D1;
 
 uint8_t lastSecond = 0; /// The last seconds value
 uint8_t secondsPassedRenogy = 0; /// amount of seconds passed
 
+RNGTime _time;
 Config config;
 Mqtt* mqtt;
 PVOutput* pvo;
@@ -27,10 +39,10 @@ OutputControl outputs(renogy, config.getDeviceConfig());
 
 void setup()
 {
-#ifdef DEBUG_SERIAL
-    DEBUG_SERIAL.begin(115200);
-    DEBUGLN();
-    DEBUGF("%s %S (SWV%s)\n", MODEL, HARDWARE_VERSION, SOFTWARE_VERSION);
+#ifdef RNG_DEBUG_SERIAL
+    RNG_DEBUG_SERIAL.begin(115200);
+    RNG_DEBUGLN();
+    RNG_DEBUGF("%s %S (SWV%s)\n", MODEL, HARDWARE_VERSION, SOFTWARE_VERSION);
 #endif
     // Signal startup
     pinMode(LED, OUTPUT);
@@ -56,7 +68,7 @@ void setup()
     if (netwConfig.clientEnabled)
     {
         // Check for software update at startup
-        ota = new OTA(SOFTWARE_VERSION, gui);
+        ota = new OTA(SOFTWARE_VERSION, gui, _time);
         ota->checkForUpdate();
 
         // MQTT setup
@@ -76,7 +88,7 @@ void setup()
         const PVOutputConfig& pvoConfig = config.getPvoutputConfig();
         if (pvoConfig.enabled)
         {
-            pvo = new PVOutput(pvoConfig);
+            pvo = new PVOutput(pvoConfig, _time);
             pvo->setListener([](const String& status) { gui.updatePVOutputStatus(status); });
             pvo->start();
         }
@@ -117,8 +129,8 @@ void setup()
 
 void loop()
 {
-    const uint32_t time = millis();
-    const uint32_t timeS = time / 1000;
+    // const uint32_t time = millis();
+    const uint32_t timeS = millis() / 1000;
     const uint8_t currentSecond = timeS % 60;
 
     if (currentSecond != lastSecond)
@@ -127,10 +139,12 @@ void loop()
         digitalWrite(LED, HIGH);
         lastSecond = currentSecond;
 
+        _time.loop();
+
         if (currentSecond % 5 == 0)
         {
-            DEBUG(F("[System] Uptime: "));
-            DEBUGLN(timeS);
+            RNG_DEBUG(F("[System] Uptime: "));
+            RNG_DEBUGLN(timeS);
         }
 
         ++secondsPassedRenogy;
@@ -151,12 +165,12 @@ void loop()
             pvo->loop();
         }
 
-        // Check for software updates every day
+        // Check for software updates every day at midnight
         if (ota)
         {
-            ota->update();
+            ota->loop();
 
-            if (timeS % 86400 == 0)
+            if (_time.getEpochTime() % 86400 == 0)
             {
                 ota->checkForUpdate();
             }

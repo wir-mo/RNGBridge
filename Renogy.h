@@ -43,9 +43,21 @@ public:
         // Maybe make configurable with updateBaudrate(baud);
 
         // Renogy Device ID = 255 (was 1)
+        // _modbus.begin(0x01, serial);
         _modbus.begin(0xFF, serial);
         // Maybe make configurable with begin(x, Serial);
         // TODO Maybe need to check each device ID to find correct one
+
+        // D2 = RS485 DE/!RE (direction)
+        pinMode(D2, OUTPUT);
+        _modbus.preTransmission([]() {
+            // delay(100);
+            digitalWrite(D2, HIGH);
+        });
+        _modbus.postTransmission([]() {
+            digitalWrite(D2, LOW);
+            // delay(100);
+        });
     }
 
     Renogy(Renogy&&) = delete;
@@ -63,7 +75,10 @@ public:
     ///@param listener Listener or null
     void setListener(DataListener listener);
 
+    void readModel();
+
 private:
     ModbusMaster _modbus;
     DataListener _listener;
+    String model = "";
 }; // class Renogy

@@ -3,44 +3,37 @@
 #include <ArduinoJson.h>
 #include <ESP8266HTTPClient.h>
 #include <WiFiClientSecure.h>
-#include <time.h>
 
 #include "Constants.h"
 #include "GUI.h"
+#include "RNGTime.h"
 
 class OTA
 {
 public:
-    OTA(const char* versionTag, GUI& gui);
+    OTA(const char* versionTag, GUI& gui, RNGTime& time);
 
     String getNewSoftwareVersion();
 
     void checkForUpdate()
     {
-        if (mState == State::IDLE)
+        if (_state == State::IDLE)
         {
-            DEBUGLN(F("[OTA] Syncing time"));
-            mState = State::SYNC_TIME;
+            _state = State::CHECK_FOR_VERSION;
         }
     }
 
-    void update();
-
-private:
-    void updateTime();
+    void loop();
 
 private:
     enum State
     {
         IDLE,
-        SYNC_TIME,
-        SYNCED_TIME,
         CHECK_FOR_VERSION,
-    } mState;
+    } _state
+        = State::IDLE;
 
 private:
-    constexpr static const char* GHOTA_NTP1 = "pool.ntp.org";
-    constexpr static const char* GHOTA_NTP2 = "time.nist.gov";
     constexpr static const char* GHOTA_HOST = "api.github.com";
     constexpr static const uint16_t GHOTA_PORT = 443;
     constexpr static const char* GHOTA_CONTENT_TYPE = "application/octet-stream";
@@ -52,5 +45,6 @@ private:
 
     const char* _versionTag;
 
-    GUI& gui;
+    GUI& _gui;
+    RNGTime& _time;
 };
