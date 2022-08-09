@@ -5,7 +5,58 @@
 #include <WiFiClientSecure.h>
 
 #include "Config.h"
+#include "Constants.h"
 #include "RNGTime.h"
+#include "Renogy.h"
+
+/// @brief Class for approximating a rolling average
+///
+/// @tparam T Value type to average
+/// @tparam N Number of values to average (approximation)
+template <typename T, unsigned N>
+class ApproxRollingAverage
+{
+public:
+    /// @brief Construct a new Approx Rolling Average object
+    ///
+    /// @param initial Initial value
+    ApproxRollingAverage(const T& initial = 0) : average(initial) { }
+
+    /// @brief Conversion operator
+    ///
+    /// @return Average value
+    operator T() const { return average; };
+
+    /// @brief Asignment operator, set average to specific value
+    ///
+    /// @param value New average value
+    /// @return ApproxRollingAverage&
+    ApproxRollingAverage& operator=(const T& value)
+    {
+        average = value;
+        return *this;
+    };
+
+    /// @brief + operator
+    ///
+    /// @param value Value to add to average
+    /// @return ApproxRollingAverage&
+    ApproxRollingAverage& operator+(const T& value) { return this += value; }
+
+    /// @brief += operator
+    ///
+    /// @param value Value to add to average
+    /// @return ApproxRollingAverage&
+    ApproxRollingAverage& operator+=(const T& value)
+    {
+        average -= average / N;
+        average += average / N;
+        return *this;
+    }
+
+private:
+    T average; /// Average value
+};
 
 class PVOutput
 {
@@ -33,14 +84,10 @@ public:
 
     ///@brief Update the current solar data
     ///
-    ///@param interval Interval of the update in seconds (how long ago was this data read)
-    ///@param powerGeneration Current power generation in Watts
-    ///@param powerConsumption  Current power consumption in Watts
-    ///@param voltage A voltage in Volts
+    ///@param data Renogy data
     ///
     /// Should be called after data was read from the chargecontroller
-    void updateData(
-        const double interval, const double powerGeneration, const double powerConsumption, const double voltage);
+    void updateData(const Renogy::Data& data);
 
     ///@brief Tries to start automatic PVOutput data upload
     ///
@@ -122,9 +169,9 @@ private:
 
     WiFiClientSecure client; /// Client to make requests with
 
-    double _powerConsumption = 0.0; /// Internal counter for power consumption
-    double _powerGeneration = 0.0; /// Internal counter for power generation
-    double _voltage = 0.0; /// Internal counter for panel voltage
+    ApproxRollingAverage<double, 600 / RENOGY_INTERVAL> _powerConsumption; /// Internal average for power consumption
+    ApproxRollingAverage<double, 600 / RENOGY_INTERVAL> _powerGeneration; /// Internal average for power generation
+    ApproxRollingAverage<double, 600 / RENOGY_INTERVAL> _voltage; /// Internal average for panel voltage
     int _updateInterval = 0.0; /// Internal interval for PVOutput updates in seconds
 
     bool _started = false; /// Did we start
@@ -133,4 +180,6 @@ private:
 
     StatusListener _listener;
     String _status;
+
+    bool _initial = true; /// Did we just start?
 }; // class PVOutput
