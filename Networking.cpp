@@ -1,5 +1,7 @@
 #include "Networking.h"
 
+#include "favicon.ico.gz.h"
+
 #include "RNGBridgeUI/cpp/build.html.gz.h"
 
 void Networking::initWifi()
@@ -79,6 +81,14 @@ void Networking::initServer(OutputControl& outputs)
 
     // Serve UI
     server.on("/", HTTP_GET, [this](AsyncWebServerRequest* r) { handleIndex(r); });
+
+    // Serve favicon
+    server.on("/favicon.ico", [](AsyncWebServerRequest* r) {
+        AsyncWebServerResponse* response
+            = r->beginResponse_P(200, "image/x-icon", favicon_ico_gz_start, favicon_ico_gz_size);
+        response->addHeader("Content-Encoding", "gzip");
+        r->send(response);
+    });
 
     // captive portal
     auto handleCaptivePortal = [this](AsyncWebServerRequest* request) { captivePortal(request); };
