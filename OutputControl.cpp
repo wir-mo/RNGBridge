@@ -8,9 +8,13 @@ OutputControl::OutputControl(Renogy& renogy, DeviceConfig& deviceConfig) : devic
     digitalWrite(PIN_OUTPUT1, LOW);
     digitalWrite(PIN_OUTPUT2, LOW);
     digitalWrite(PIN_OUTPUT3, LOW);
-    handleLoad = [&](bool enable) { renogy.enableLoad(enable); };
+    handleLoad = [&](bool enable) {
+        renogy.enableLoad(enable);
+        deviceConfig.load.lastState = enable;
+    };
     handleOut1 = [&](bool enable) {
         digitalWrite(PIN_OUTPUT1, enable);
+        deviceConfig.out1.lastState = enable;
         _status.out1 = enable;
         if (_listener)
         {
@@ -19,6 +23,7 @@ OutputControl::OutputControl(Renogy& renogy, DeviceConfig& deviceConfig) : devic
     };
     handleOut2 = [&](bool enable) {
         digitalWrite(PIN_OUTPUT2, enable);
+        deviceConfig.out2.lastState = enable;
         _status.out2 = enable;
         if (_listener)
         {
@@ -27,6 +32,7 @@ OutputControl::OutputControl(Renogy& renogy, DeviceConfig& deviceConfig) : devic
     };
     handleOut3 = [&](bool enable) {
         digitalWrite(PIN_OUTPUT3, enable);
+        deviceConfig.out3.lastState = enable;
         _status.out3 = enable;
         if (_listener)
         {
@@ -101,7 +107,7 @@ void OutputControl::handleOutput(OutputConfig& output, const Renogy::Data& data,
         const bool newState = !output.inverted;
         if (output.lastState != newState)
         {
-            output.lastState = newState;
+            // output.lastState = newState;
             enable(newState);
         }
     }
@@ -110,7 +116,7 @@ void OutputControl::handleOutput(OutputConfig& output, const Renogy::Data& data,
         const bool newState = output.inverted;
         if (output.lastState != newState)
         {
-            output.lastState = newState;
+            // output.lastState = newState;
             enable(newState);
         }
     }
