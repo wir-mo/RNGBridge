@@ -113,10 +113,10 @@ void Mqtt::loop()
 
 void Mqtt::updateRenogyStatus(const Renogy::Data& data)
 {
-    ++updateCount;
-    if (updateCount >= mqttConfig.interval)
+    const uint32_t timeS = millis() / 1000;
+    if (timeS - lastUpdate >= mqttConfig.interval)
     {
-        updateCount = 0;
+        lastUpdate = timeS;
 
         StaticJsonDocument<512> json;
 

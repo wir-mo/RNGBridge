@@ -164,11 +164,11 @@ void loop()
             pvo->loop();
         }
 
-        // Check for software updates every day at midnight
         if (ota)
         {
             ota->loop();
 
+            // Check for software updates every day at midnight
             if (_time.getEpochTime() % 86400 == 0)
             {
                 ota->checkForUpdate();
@@ -187,5 +187,5 @@ void loop()
 
     // handle wifi or whatever the esp is doing
     // yield();
-    delay(500);
+    delay(0);
 }

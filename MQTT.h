@@ -115,6 +115,6 @@ private:
     PubSubClient mqtt;
     Listener _listener;
     String _status;
-    uint16_t updateCount = 0; // counter used to determine when to send mqtt status message
+    uint32_t lastUpdate = 0; /// last time in seconds we updated
     OutputControl::Status outputStatus;
 }; // class MQTT

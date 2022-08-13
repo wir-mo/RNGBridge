@@ -50,7 +50,7 @@ public:
     ApproxRollingAverage& operator+=(const T& value)
     {
         average -= average / N;
-        average += average / N;
+        average += value / N;
         return *this;
     }
 
@@ -134,15 +134,19 @@ private:
     bool httpsGET(WiFiClientSecure& client, const char* url, const char* apiKey, const uint32_t sysID,
         const bool rateLimit = false);
 
-    ///@brief Send the generated power, consumed power and panel voltage data to PVOutput
+    ///@brief Send the generated energy, consumed energy and panel voltage data to PVOutput
     ///
-    ///@param powerGeneration The generated power in Watts
-    ///@param powerConsumption The consumed power in Watts
+    ///@param energyGeneration The generated energy in Wh
+    ///@param powerGeneration The generated power in W
+    ///@param energyConsumption The consumed energy in Wh
+    ///@param powerConsumption The consumed power in W
     ///@param voltage A voltage in Volts
+    ///@param temperature A temperature in °C
     ///@param tm The time to update for
     ///@return true If data was sent
     ///@return false If data was not sent
-    bool sendPowerData(const int powerGeneration, const int powerConsumption, const double voltage, const tm& tm);
+    bool sendPowerData(const int16_t energyGeneration, const uint16_t powerGeneration, const int16_t energyConsumption,
+        const uint16_t powerConsumption, const double temperature, const double voltage, const tm& tm);
 
     ///@brief Get rate limit
     ///
@@ -169,9 +173,13 @@ private:
 
     WiFiClientSecure client; /// Client to make requests with
 
-    ApproxRollingAverage<double, 600 / RENOGY_INTERVAL> _powerConsumption; /// Internal average for power consumption
-    ApproxRollingAverage<double, 600 / RENOGY_INTERVAL> _powerGeneration; /// Internal average for power generation
-    ApproxRollingAverage<double, 600 / RENOGY_INTERVAL> _voltage; /// Internal average for panel voltage
+    int16_t _energyGeneration; /// Energy generation in Wh
+    int16_t _energyConsumption; /// Energy consumption in Wh
+    ApproxRollingAverage<double, 60 / RENOGY_INTERVAL> _powerGeneration; /// Internal average for power generation in W
+    ApproxRollingAverage<double, 60 / RENOGY_INTERVAL>
+        _powerConsumption; /// Internal average for power consumption in W
+    ApproxRollingAverage<double, 60 / RENOGY_INTERVAL> _voltage; /// Internal average for voltage
+    ApproxRollingAverage<double, 60 / RENOGY_INTERVAL> _temperature; /// Internal average for temperature
     int _updateInterval = 0.0; /// Internal interval for PVOutput updates in seconds
 
     bool _started = false; /// Did we start
