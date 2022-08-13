@@ -5,6 +5,55 @@
 #include <WiFiClientSecure.h>
 #include <WiFiUdp.h>
 
+/// @brief Class for approximating a rolling average
+///
+/// @tparam T Value type to average
+/// @tparam N Number of values to average (approximation)
+template <typename T, unsigned N>
+class ApproxRollingAverage
+{
+public:
+    /// @brief Construct a new Approx Rolling Average object
+    ///
+    /// @param initial Initial value
+    ApproxRollingAverage(const T& initial = 0) : average(initial) { }
+
+    /// @brief Conversion operator
+    ///
+    /// @return Average value
+    operator T() const { return average; };
+
+    /// @brief Asignment operator, set average to specific value
+    ///
+    /// @param value New average value
+    /// @return ApproxRollingAverage&
+    ApproxRollingAverage& operator=(const T& value)
+    {
+        average = value;
+        return *this;
+    };
+
+    /// @brief + operator
+    ///
+    /// @param value Value to add to average
+    /// @return ApproxRollingAverage&
+    ApproxRollingAverage& operator+(const T& value) { return this += value; }
+
+    /// @brief += operator
+    ///
+    /// @param value Value to add to average
+    /// @return ApproxRollingAverage&
+    ApproxRollingAverage& operator+=(const T& value)
+    {
+        average -= average / N;
+        average += value / N;
+        return *this;
+    }
+
+private:
+    T average; /// Average value
+};
+
 namespace PVOutput
 {
     namespace Callback
@@ -18,15 +67,18 @@ namespace PVOutput
         /**
          * @brief Update the current solar data
          *
-         * @param interval Interval of the update in seconds (how long ago was this data read)
-         * @param powerGeneration Current power generation in Watts
-         * @param powerConsumption  Current power consumption in Watts
+         * @param energyGeneration Current energy generation in Wh
+         * @param powerGeneration Current power generation in W
+         * @param energyConsumption Current energy consumption in Wh
+         * @param powerConsumption Current power consumption in W
+         * @param temperature A temperature in °C
          * @param voltage A voltage in Volts
          *
          * Should be called after data was read from the chargecontroller
          */
-        extern void updateData(
-            const double interval, const double powerGeneration, const double powerConsumption, const double voltage);
+        extern void updateData(const int16_t energyGeneration, const double powerGeneration,
+            const int16_t energyConsumption, const double powerConsumption, const double temperature,
+            const double voltage);
     } // namespace Callback
 
     /**
@@ -104,15 +156,19 @@ namespace PVOutput
     /**
      * @brief Send the generated power, consumed power and panel voltage data to PVOutput
      *
-     * @param powerGeneration The generated power in Watts
-     * @param powerConsumption The consumed power in Watts
+     * @param energyGeneration The energy generation in Wh
+     * @param powerGeneration The power generation in W
+     * @param energyConsumption The energy consumption in Wh
+     * @param powerConsumption The power consumption in W
+     * @param temperature A temperature in °C
      * @param voltage A voltage in Volts
      * @param dataTime The time to update for
      * @return true If data was sent
      * @return false If data was not sent
      */
-    extern bool sendPowerData(
-        const int powerGeneration, const int powerConsumption, const double voltage, const time_t dataTime);
+    extern bool sendPowerData(const int16_t energyGeneration, const double powerGeneration,
+        const int16_t energyConsumption, const double powerConsumption, const double temperature, const double voltage,
+        const time_t dataTime);
 
     /**
      * @brief Get rate limit
@@ -136,10 +192,14 @@ namespace PVOutput
     extern WiFiUDP ntpUDP; //< UDP for \ref PVOutput::timeClient
     extern NTPClient timeClient; //< NTP client for current time
 
-    extern double _powerConsumption; //< Internal counter for power consumption
-    extern double _powerGeneration; //< Internal counter for power generation
-    extern double _voltage; //< Internal counter for panel voltage
+    extern int16_t _energyGeneration; /// Internal energy generation value
+    extern int16_t _energyConsumption; /// Internal energy consumption value
+    extern ApproxRollingAverage<double, 60 / 2> _powerGeneration; /// Internal average for power generation in W
+    extern ApproxRollingAverage<double, 60 / 2> _powerConsumption; /// Internal average for power consumption in W
+    extern ApproxRollingAverage<double, 60 / 2> _voltage; /// Internal average for voltage
+    extern ApproxRollingAverage<double, 60 / 2> _temperature; /// Internal average for temperature
     extern int _updateInterval; //< Internal interval for PVOutput updates in seconds
 
+    extern bool _initial; /// Is this the initial data?
     extern bool started; //< Did we start
 } // namespace PVOutput

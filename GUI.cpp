@@ -274,7 +274,7 @@ namespace GUI
         wifiStatusLabel
             = ESPUI.addControl(ControlType::Label, "Status", F("unknown"), ControlColor::Wetasphalt, wifiTab);
 
-        ESPUI.begin("RNG Bridge"); // Change with ui_title
+        ESPUI.begin("RNGBridge (v1.5.0)"); // Change with ui_title
 
         ESPUI.updateNumber(mqttPortNumber, Settings::settings.mqttPort);
         ESPUI.updateText(mqttTopic, Settings::settings.topic);

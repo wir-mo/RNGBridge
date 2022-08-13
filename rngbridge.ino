@@ -1,5 +1,6 @@
 #include <DNSServer.h>
 #include <ESP8266mDNS.h>
+#include <ESPAsyncWebServer.h>
 
 #include "Constants.h"
 #include "GUI.h"
@@ -7,6 +8,7 @@
 #include "PVOutput.h"
 #include "Renogy.h"
 #include "Settings.h"
+
 // 60 requests per hour.
 // 300 requests per hour in donation mode.
 
@@ -44,31 +46,31 @@ bool isIp(const String& str)
  * @brief Callback used for captive portal webserver
  *
  * @param request
- * @return true
- * @return false
  */
-bool captivePortal(AsyncWebServerRequest* request)
+void captivePortal(AsyncWebServerRequest* request)
 {
     if (ON_STA_FILTER(request))
     {
-        return false; // only serve captive in AP mode
+        // RNG_DEBUGLN(F("[Networking] Captive STA Filter"));
+        return; // only serve captive portal in AP mode
     }
-    String hostH;
     if (!request->hasHeader("Host"))
     {
-        return false;
+        // RNG_DEBUGLN(F("[Networking] Captive Host header missing"));
+        return;
     }
-    hostH = request->getHeader("Host")->value();
-
-    if (!isIp(hostH) && hostH.indexOf(FPSTR(HOSTNAME)) < 0)
+    const String hostHeader = request->getHeader("Host")->value();
+    if (isIp(hostHeader) || hostHeader.indexOf(HOSTNAME) >= 0)
     {
-        // Serial1.println(F("Captive portal"));
-        AsyncWebServerResponse* response = request->beginResponse(302);
-        response->addHeader(F("Location"), F("http://192.168.1.1"));
-        request->send(response);
-        return true;
+        // RNG_DEBUG(F("[Networking] Captive Host Filter: ");
+        // RNG_DEBUGLN(hostHeader);
+        return;
     }
-    return false;
+
+    // RNG_DEBUGLN(F("[Networking] Captive portal"));
+    AsyncWebServerResponse* response = request->beginResponse(302);
+    response->addHeader(F("Location"), F("http://192.168.4.1"));
+    request->send(response);
 }
 
 /**
@@ -77,12 +79,12 @@ bool captivePortal(AsyncWebServerRequest* request)
  */
 void initCaptivePortal()
 {
-    // auto handleCaptivePortal = [](AsyncWebServerRequest* request) { captivePortal(request); };
+    auto handleCaptivePortal = [](AsyncWebServerRequest* request) { captivePortal(request); };
     // Android captive portal. Maybe not needed. Might be handled by notFound handler.
     // ESPUI.server->on("/generate_204", HTTP_GET, handleCaptivePortal);
     // Microsoft captive portal. Maybe not needed. Might be handled by notFound handler.
     // ESPUI.server->on("/fwlink", HTTP_GET, handleCaptivePortal);
-    ESPUI.server->onNotFound(captivePortal);
+    ESPUI.server->onNotFound(handleCaptivePortal);
 
     // ESPUI.server->begin();
     dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
@@ -147,7 +149,7 @@ void loop()
         {
             secondsPassedRenogy = 0;
             // Read and process data every 2 seconds
-            Renogy::Callback::readAndProcessData(2000);
+            Renogy::Callback::readAndProcessData();
         }
 
         if (WIFI::connected)
@@ -167,11 +169,6 @@ void loop()
                 {
                     if (secondsPassedPVOutput)
                     {
-                        // Reset counters
-                        PVOutput::_powerGeneration = 0.0;
-                        PVOutput::_powerConsumption = 0.0;
-                        PVOutput::_voltage = 0.0;
-
                         secondsPassedPVOutput = 0;
                     }
                     PVOutput::start();

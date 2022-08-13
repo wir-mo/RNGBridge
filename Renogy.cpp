@@ -83,7 +83,7 @@ namespace Renogy
 {
     namespace Callback
     {
-        void readAndProcessData(const uint32_t delta)
+        void readAndProcessData()
         {
             // Read 30 registers starting at 0x0100)
             ModBus::modbus.clearResponseBuffer();
@@ -105,6 +105,9 @@ namespace Renogy
                 float panelCurrent = 0.01 * ModBus::readInt16BE(ModBus::modbus, 8);
                 int16_t panelPower = ModBus::readInt16BE(ModBus::modbus, 9);
 
+                int16_t generation = ModBus::readInt16BE(ModBus::modbus, 19);
+                int16_t consumption = ModBus::readInt16BE(ModBus::modbus, 20);
+
                 int8_t chargingState = ModBus::readInt8Lower(ModBus::modbus, 32);
                 // upper are street light status
                 int32_t errorState = ModBus::readInt32BE(ModBus::modbus, 33);
@@ -124,8 +127,8 @@ namespace Renogy
                 // Update PVOutput data if it is enabled
                 if (Settings::settings.pvOutput)
                 {
-                    PVOutput::Callback::updateData(
-                        delta / 1000.0, panelVoltage * panelCurrent, loadVoltage * loadCurrent, batteryVoltage);
+                    PVOutput::Callback::updateData(generation, panelVoltage * panelCurrent, consumption,
+                        loadVoltage * loadCurrent, batteryTemperature, batteryVoltage);
                 }
 
                 // update ui

@@ -10,13 +10,8 @@ namespace PVOutput
         void sendData()
         {
             // Send power data
-            const bool success
-                = sendPowerData(_powerGeneration, _powerConsumption, _voltage, timeClient.getEpochTime());
-
-            // Reset counters
-            _powerGeneration = 0.0;
-            _powerConsumption = 0.0;
-            _voltage = 0.0;
+            const bool success = sendPowerData(_energyGeneration, _powerGeneration, _energyConsumption,
+                _powerConsumption, _temperature, _voltage, timeClient.getEpochTime());
 
             // Update GUI
             if (success)
@@ -32,18 +27,25 @@ namespace PVOutput
             timeClient.update();
         }
 
-        void updateData(
-            const double interval, const double powerGeneration, const double powerConsumption, const double voltage)
+        void updateData(const int16_t energyGeneration, const double powerGeneration, const int16_t energyConsumption,
+            const double powerConsumption, const double temperature, const double voltage)
         {
-            // Only update if updateInterval is greater than zero, so we don't accidentally send wrong data and the data
-            // does not overflow
-            if (_updateInterval > 0)
+            if (_initial)
             {
-                const double factor = interval / _updateInterval;
-                _powerGeneration += factor * powerGeneration;
-                _powerConsumption += factor * powerConsumption;
-                _voltage += factor * voltage;
+                _initial = false;
+                _powerGeneration = powerGeneration;
+                _powerConsumption = powerConsumption;
+                _temperature = temperature;
+                _voltage = voltage;
+                return;
             }
+
+            _energyGeneration = energyGeneration;
+            _energyConsumption = energyConsumption;
+            _powerGeneration += powerGeneration;
+            _powerConsumption += powerConsumption;
+            _temperature += temperature;
+            _voltage += voltage;
         }
     } // namespace Callback
 
@@ -177,8 +179,8 @@ namespace PVOutput
         return connected;
     };
 
-    bool sendPowerData(
-        const int powerGeneration, const int powerConsumption, const double voltage, const time_t dataTime)
+    bool sendPowerData(const int16_t energyGeneration, const double powerGeneration, const int16_t energyConsumption,
+        const double powerConsumption, const double temperature, const double voltage, const time_t dataTime)
     {
         // TODO Maybe need to have a Setting for the timezone (+-hours from GMT)
         const int currentYear = year(dataTime);
@@ -188,9 +190,11 @@ namespace PVOutput
         const uint8_t currentMinute = minute(dataTime);
 
         // Generate URL with data
-        char data[80]; // 44 static + 8 + 4 + 18
-        sprintf_P(data, PSTR("/service/r2/addstatus.jsp?d=%04d%02d%02d&t=%02d:%02d&v2=%d&v4=%d&v6=%.1f"), currentYear,
-            currentMonth, currentDay, currentHour, currentMinute, powerGeneration, powerConsumption, voltage);
+        char data[128]; // 56 static + 8 + 4 + 36
+        sprintf_P(data,
+            PSTR("/service/r2/addstatus.jsp?d=%04d%02d%02d&t=%02d:%02d&v1=%d&v2=%d&v3=%d&v4=%d&v5=%.1f&v6=%.1f"),
+            currentYear, currentMonth, currentDay, currentHour, currentMinute, energyGeneration, powerGeneration,
+            energyConsumption, powerConsumption, temperature, voltage);
 
         // Make request
         bool success = httpsGET(data);
@@ -285,10 +289,18 @@ namespace PVOutput
     WiFiUDP ntpUDP;
     NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 0, 60000);
 
-    double _powerConsumption = 0;
-    double _powerGeneration = 0;
-    double _voltage = 0;
+    int16_t _energyGeneration = 0;
+    int16_t _energyConsumption = 0;
+    ApproxRollingAverage<double, 60 / 2> _powerGeneration
+        = ApproxRollingAverage<double, 60 / 2>(); /// Internal average for power generation in W
+    ApproxRollingAverage<double, 60 / 2> _powerConsumption
+        = ApproxRollingAverage<double, 60 / 2>(); /// Internal average for power consumption in W
+    ApproxRollingAverage<double, 60 / 2> _voltage
+        = ApproxRollingAverage<double, 60 / 2>(); /// Internal average for voltage
+    ApproxRollingAverage<double, 60 / 2> _temperature
+        = ApproxRollingAverage<double, 60 / 2>(); /// Internal average for temperature
     int _updateInterval = 0;
 
+    bool _initial = true;
     bool started = false;
 } // namespace PVOutput

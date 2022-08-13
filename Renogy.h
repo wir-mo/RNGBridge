@@ -10,10 +10,8 @@ namespace Renogy
     {
         /**
          * @brief Read and process the modbus data
-         *
-         * @param delta The time since the last time this function was called in ms
          */
-        extern void readAndProcessData(const uint32_t delta);
+        extern void readAndProcessData();
 
     } // namespace Callback
 
