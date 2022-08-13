@@ -12,6 +12,8 @@ public:
     struct Data
     {
         int32_t errorState = 0; /// Controller error state
+        int16_t generation = 0.0f; /// Power generation in Wh
+        int16_t consumption = 0.0f; /// Power consumption in Wh
         uint8_t batteryCharge = 0; /// Battery Charge in % [0-100]
         int8_t batteryTemperature = 0; /// Battery temperature in degrees C
         int8_t chargingState = 0; /// Controller charging state

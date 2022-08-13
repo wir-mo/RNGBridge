@@ -14,7 +14,8 @@ void PVOutput::sendData()
 {
     // Send power data
     struct tm time = _time.getTmTime();
-    const bool success = sendPowerData(_powerGeneration, _powerConsumption, _voltage, time);
+    const bool success = sendPowerData(
+        _energyGeneration, _powerGeneration, _energyConsumption, _powerConsumption, _temperature, _voltage, time);
 
     // Update status
     if (success)
@@ -38,15 +39,34 @@ void PVOutput::updateData(const Renogy::Data& data)
     if (_initial)
     {
         _initial = false;
-        _powerGeneration = data.panelVoltage * data.panelCurrent;
-        _powerConsumption = data.loadVoltage * data.loadCurrent;
+        _powerGeneration = data.panelCurrent * data.panelVoltage;
+        _powerConsumption = data.loadCurrent * data.loadVoltage;
+        _temperature = data.batteryTemperature;
         _voltage = data.batteryVoltage;
         return;
     }
 
-    _powerGeneration += data.panelVoltage * data.panelCurrent;
-    _powerConsumption += data.loadVoltage * data.loadCurrent;
+    _powerGeneration += data.panelCurrent * data.panelVoltage;
+    _powerConsumption += data.loadCurrent * data.loadVoltage;
+    _energyGeneration = data.generation;
+    _energyConsumption = data.consumption;
+    _temperature += data.batteryTemperature;
     _voltage += data.batteryVoltage;
+
+    // String debug = "+";
+    // debug += _powerGeneration;
+    // debug += "W(";
+    // debug += _energyGeneration;
+    // debug += "Wh), -";
+    // debug += _powerConsumption;
+    // debug += "W(";
+    // debug += _energyConsumption;
+    // debug += "Wh), ";
+    // debug += _voltage;
+    // debug += "V, ";
+    // debug += _temperature;
+    // debug += "°C";
+    // updateStatus(debug);
 }
 
 void PVOutput::start()
@@ -158,7 +178,9 @@ bool PVOutput::httpsGET(
     return connected;
 };
 
-bool PVOutput::sendPowerData(const int powerGeneration, const int powerConsumption, const double voltage, const tm& tm)
+bool PVOutput::sendPowerData(const int16_t energyGeneration, const uint16_t powerGeneration,
+    const int16_t energyConsumption, const uint16_t powerConsumption, const double temperature, const double voltage,
+    const tm& tm)
 {
     const int currentYear = tm.tm_year;
     const uint8_t currentMonth = tm.tm_mon;
@@ -166,10 +188,21 @@ bool PVOutput::sendPowerData(const int powerGeneration, const int powerConsumpti
     const uint8_t currentHour = tm.tm_hour;
     const uint8_t currentMinute = tm.tm_min;
 
+    // v1 Energy Generation Wh (10000)
+    // v2 Power Generation W (2000)
+    // v3 Energy Consumption Wh (10000)
+    // v4 Power Consumption W (2000)
+    // v5 Temperature °C (23.4)
+    // v6 Voltage V (239.2)
+    // c1 Cumulative Flag (1)
+    // n Net Flag (1)
+
     // Generate URL with data
-    char data[80]; // 44 static + 8 + 4 + 18
-    sprintf_P(data, PSTR("/service/r2/addstatus.jsp?d=%04d%02d%02d&t=%02d:%02d&v2=%d&v4=%d&v6=%.1f"), currentYear,
-        currentMonth, currentDay, currentHour, currentMinute, powerGeneration, powerConsumption, voltage);
+    char data[128]; // 56 static + 8 + 4 + 36
+    sprintf_P(data,
+        PSTR("/service/r2/addstatus.jsp?d=%04d%02d%02d&t=%02d:%02d&v1=%d&v2=%d&v3=%d&v4=%d&v5=%.1f&v6=%.1f"),
+        currentYear, currentMonth, currentDay, currentHour, currentMinute, energyGeneration, powerGeneration,
+        energyConsumption, powerConsumption, temperature, voltage);
 
     // Make request
     bool success = httpsGET(data);

@@ -234,6 +234,9 @@ void Renogy::readAndProcessData()
         _data.panelCurrent = 0.01f * ModBus::readInt16BE(_modbus, 8);
         // _data.panelPower = ModBus::readInt16BE(_modbus, 9);
 
+        _data.generation = ModBus::readInt16BE(_modbus, 19);
+        _data.consumption = ModBus::readInt16BE(_modbus, 20);
+
         _data.loadEnabled = ModBus::readInt8Upper(_modbus, 32) & 0x80;
         _data.chargingState = ModBus::readInt8Lower(_modbus, 32);
 
