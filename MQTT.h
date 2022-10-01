@@ -5,24 +5,23 @@
 #include <PubSubClient.h>
 
 #include "Config.h"
+#include "Observerable.h"
 #include "OutputControl.h"
 #include "Renogy.h"
+
 
 // Quality Of Service (QOS)
 // At most once (0)
 // At least once (1)
 // Exactly once (2)
 
-class Mqtt
+class Mqtt : public Observerable<String>
 {
-public:
-    typedef std::function<void(const String&)> Listener;
-
 public:
     Mqtt(const MqttConfig& mqttConfig, OutputControl& outputs)
         : mqttConfig(mqttConfig), outputs(outputs), mqtt(espClient)
     {
-        _status = "Enabled";
+        notify("Enabled");
         // mqtt.setBufferSize(512);
         mqtt.setServer(mqttConfig.server.c_str(), mqttConfig.port);
     }
@@ -37,12 +36,7 @@ public:
 
     void updateRenogyStatus(const Renogy::Data& data);
 
-    void updateOutputStatus(const OutputControl::Status& status) { outputStatus = status; }
-
-    ///@brief Set a listener which receives status updates
-    ///
-    ///@param listener Listener or null
-    void setListener(Listener listener);
+    void updateOutputStatus(const OutputStatus& status) { outputStatus = status; }
 
 private:
     const String getDeviceID() { return String("rngbridge-") + deviceMAC; }
@@ -103,18 +97,11 @@ private:
     bool publish(const char* payload, bool retain = false);
     bool publish(const char* topic, const char* payload, bool retain = false);
 
-    ///@brief Update the internal status string and notify listener
-    ///
-    ///@param status New status
-    void updateStatus(const String& status);
-
 private:
     const MqttConfig& mqttConfig;
     OutputControl& outputs;
     WiFiClient espClient;
     PubSubClient mqtt;
-    Listener _listener;
-    String _status;
     uint32_t lastUpdate = 0; /// last time in seconds we updated
-    OutputControl::Status outputStatus;
+    OutputStatus outputStatus;
 }; // class MQTT

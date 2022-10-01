@@ -163,6 +163,7 @@ struct OutputConfig
 
 struct DeviceConfig
 {
+    uint8_t address; /// Address of the modbus client
     String name;
     OutputConfig load;
     OutputConfig out1;

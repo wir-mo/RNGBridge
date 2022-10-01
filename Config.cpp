@@ -432,13 +432,14 @@ void OutputConfig::setDefaultConfig()
 bool DeviceConfig::verify(const JsonObjectConst& object) const
 {
     RNG_DEBUGLN(F("[Config] Verifying DeviceConfig"));
-    return object["name"].is<const char*>() && load.verify(object["load"]) && out1.verify(object["out1"])
-        && out2.verify(object["out2"]) && out3.verify(object["out3"]);
+    return object["address"].is<uint8_t>() && object["name"].is<const char*>() && load.verify(object["load"])
+        && out1.verify(object["out1"]) && out2.verify(object["out2"]) && out3.verify(object["out3"]);
 }
 
 void DeviceConfig::fromJson(const JsonObjectConst& object)
 {
     constexpr const char* emptyString = "";
+    address = object["address"];
     name = object["name"] | emptyString;
     load.fromJson(object["load"]);
     out1.fromJson(object["out1"]);
@@ -448,6 +449,7 @@ void DeviceConfig::fromJson(const JsonObjectConst& object)
 
 void DeviceConfig::toJson(JsonObject& object) const
 {
+    object["address"] = address;
     object["name"] = name;
     load.toJson(object["load"]);
     out1.toJson(object["out1"]);
@@ -462,6 +464,7 @@ bool DeviceConfig::tryUpdate(const JsonObjectConst& object)
         return false;
     }
     bool changed = false;
+    changed |= updateField(object, "address", address);
     changed |= updateField(object, "name", name);
     changed |= load.tryUpdate(object["load"]);
     changed |= out1.tryUpdate(object["out1"]);
@@ -472,6 +475,7 @@ bool DeviceConfig::tryUpdate(const JsonObjectConst& object)
 
 void DeviceConfig::setDefaultConfig()
 {
+    address = 0xFF;
     name = MODEL;
     load.setDefaultConfig();
     out1.setDefaultConfig();

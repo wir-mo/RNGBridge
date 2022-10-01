@@ -15,29 +15,20 @@ OutputControl::OutputControl(Renogy& renogy, DeviceConfig& deviceConfig) : devic
     handleOut1 = [&](bool enable) {
         digitalWrite(PIN_OUTPUT1, enable);
         deviceConfig.out1.lastState = enable;
-        _status.out1 = enable;
-        if (_listener)
-        {
-            _listener(_status);
-        }
+        _value.out1 = enable;
+        notify(_value);
     };
     handleOut2 = [&](bool enable) {
         digitalWrite(PIN_OUTPUT2, enable);
         deviceConfig.out2.lastState = enable;
-        _status.out2 = enable;
-        if (_listener)
-        {
-            _listener(_status);
-        }
+        _value.out2 = enable;
+        notify(_value);
     };
     handleOut3 = [&](bool enable) {
         digitalWrite(PIN_OUTPUT3, enable);
         deviceConfig.out3.lastState = enable;
-        _status.out3 = enable;
-        if (_listener)
-        {
-            _listener(_status);
-        }
+        _value.out3 = enable;
+        notify(_value);
     };
 }
 
@@ -67,15 +58,6 @@ void OutputControl::update(const Renogy::Data& data)
     handleOutput(deviceConfig.out1, data, handleOut1);
     handleOutput(deviceConfig.out2, data, handleOut2);
     handleOutput(deviceConfig.out3, data, handleOut3);
-}
-
-void OutputControl::setListener(StatusListener listener)
-{
-    _listener = listener;
-    if (_listener)
-    {
-        _listener(_status);
-    }
 }
 
 void OutputControl::handleOutput(OutputConfig& output, const Renogy::Data& data, std::function<void(bool)> enable)

@@ -6,8 +6,10 @@
 
 #include "Config.h"
 #include "Constants.h"
+#include "Observerable.h"
 #include "RNGTime.h"
 #include "Renogy.h"
+
 
 /// @brief Class for approximating a rolling average
 ///
@@ -58,11 +60,8 @@ private:
     T average; /// Average value
 };
 
-class PVOutput
+class PVOutput : public Observerable<String>
 {
-public:
-    typedef std::function<void(const String&)> StatusListener;
-
 public:
     PVOutput(const PVOutputConfig& config, RNGTime& time) : _config(config), _time(time)
     {
@@ -99,11 +98,6 @@ public:
     /// Uploads data to PVOutput and resets counters
     /// Should be called once every second.
     void loop();
-
-    ///@brief Set a listener which receives status updates
-    ///
-    ///@param listener Listener or null
-    void setListener(StatusListener listener);
 
 private:
     ///@brief Make an HTTP GET request to the given url
@@ -160,11 +154,6 @@ private:
     ///@return uint8_t The interval in minutes
     uint8_t getStatusInterval();
 
-    ///@brief Update the internal status string and notify listener
-    ///
-    ///@param status New status
-    void updateStatus(const String& status);
-
 private:
     static const char* HOST PROGMEM; /// Host to make rrequests to aka pvoutput.org
 
@@ -185,9 +174,6 @@ private:
     bool _started = false; /// Did we start
 
     uint16_t _secondsPassed = 0; /// amount of seconds passed
-
-    StatusListener _listener;
-    String _status;
 
     bool _initial = true; /// Did we just start?
 }; // class PVOutput

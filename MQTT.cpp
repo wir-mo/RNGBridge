@@ -17,7 +17,7 @@ void Mqtt::connect()
         publish((mqttConfig.topic + "/lwt").c_str(), CONNECTED, true);
 
         // Update status
-        updateStatus(FPSTR(CONNECTED));
+        notify(FPSTR(CONNECTED));
 
         setupLoadControl();
 
@@ -81,14 +81,14 @@ void Mqtt::connect()
     else
     {
         // Update status
-        updateStatus(F("Could not connect"));
+        notify(F("Could not connect"));
     }
 }
 
 void Mqtt::disconnect()
 {
     mqtt.disconnect();
-    updateStatus(FPSTR(DISCONNECTED));
+    notify(FPSTR(DISCONNECTED));
 }
 
 void Mqtt::loop()
@@ -96,17 +96,17 @@ void Mqtt::loop()
     mqtt.loop();
     if (!mqtt.connected())
     {
-        if (_status.startsWith("C"))
+        if (_value.startsWith("C"))
         {
-            updateStatus(FPSTR(DISCONNECTED));
+            notify(FPSTR(DISCONNECTED));
         }
         connect();
     }
     else
     {
-        if (_status.startsWith("D"))
+        if (_value.startsWith("D"))
         {
-            updateStatus(FPSTR(CONNECTED));
+            notify(FPSTR(CONNECTED));
         }
     }
 }
@@ -149,15 +149,6 @@ void Mqtt::updateRenogyStatus(const Renogy::Data& data)
 
         const String topic = mqttConfig.topic + "/state";
         publishJSON(topic, json, true);
-    }
-}
-
-void Mqtt::setListener(Listener listener)
-{
-    _listener = listener;
-    if (_listener)
-    {
-        _listener(_status);
     }
 }
 
@@ -318,13 +309,4 @@ bool Mqtt::publish(const char* payload, bool retain)
 bool Mqtt::publish(const char* topic, const char* payload, bool retain)
 {
     return mqtt.publish(topic, reinterpret_cast<const uint8_t*>(payload), strlen(payload), retain);
-}
-
-void Mqtt::updateStatus(const String& status)
-{
-    _status = status;
-    if (_listener)
-    {
-        _listener(_status);
-    }
 }

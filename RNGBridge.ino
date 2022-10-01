@@ -76,7 +76,7 @@ void setup()
         if (mqttConfig.enabled)
         {
             mqtt = new Mqtt(mqttConfig, outputs);
-            mqtt->setListener([](const String& status) { gui.updateMQTTStatus(status); });
+            mqtt->observe([](const String& status) { gui.updateMQTTStatus(status); });
             mqtt->connect();
         }
         else
@@ -89,7 +89,7 @@ void setup()
         if (pvoConfig.enabled)
         {
             pvo = new PVOutput(pvoConfig, _time);
-            pvo->setListener([](const String& status) { gui.updatePVOutputStatus(status); });
+            pvo->observe([](const String& status) { gui.updatePVOutputStatus(status); });
             pvo->start();
         }
         else
@@ -114,7 +114,7 @@ void setup()
         gui.updateRenogyStatus(data);
     });
 
-    outputs.setListener([](const OutputControl::Status status) {
+    outputs.observe([](const OutputStatus status) {
         gui.updateOutputStatus(status);
         if (mqtt)
         {
@@ -128,7 +128,6 @@ void setup()
 
 void loop()
 {
-    // const uint32_t time = millis();
     const uint32_t timeS = millis() / 1000;
     const uint8_t currentSecond = timeS % 60;
 
