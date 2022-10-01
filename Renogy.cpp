@@ -101,7 +101,7 @@ namespace ModBus
 // 0x0121 (4) 33 - controller fault and warning information
 //            - 32 bit value of flags
 //
-//                B31: Reserved
+//            E16 B31: Fan alarm
 //            E15 B30: Charge MOS short circuit
 //            E14 B29: Anti-reverse MOS short circuit
 //            E13 B28: Solar panel reversly connected

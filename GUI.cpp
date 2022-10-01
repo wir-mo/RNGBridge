@@ -42,7 +42,7 @@ void GUI::updatePVOutputStatus(const String& status)
     _status["pvosta"] = status;
 }
 
-void GUI::updateOutputStatus(const OutputControl::Status& status)
+void GUI::updateOutputStatus(const OutputStatus& status)
 {
     auto output = _status["o"];
     output["o1"] = status.out1;

@@ -31,7 +31,7 @@
 
 // Note version is made up of
 // Major Changes . New Features . Bugfixes (aka major.minor.bug)
-constexpr static const char* SOFTWARE_VERSION = "2.8.0";
+constexpr static const char* SOFTWARE_VERSION = "2.9.0";
 constexpr static const char* HARDWARE_VERSION = "V2";
 constexpr static const char* MODEL = "RNGBridge";
 
@@ -60,12 +60,12 @@ namespace RNGBridge
     // #endif
     //         }
 
-    //         //         void debug(const char* t)
-    //         //         {
-    //         // #ifdef RNG_DEBUG_SERIAL
-    //         //             RNG_DEBUG_SERIAL.print(t);
-    //         // #endif
-    //         //         }
+    //         void debug(const char* t)
+    //         {
+    // #ifdef RNG_DEBUG_SERIAL
+    //             RNG_DEBUG_SERIAL.print(t);
+    // #endif
+    //         }
     //     } // namespace Logger
 
 } // namespace RNGBridge

@@ -19,7 +19,7 @@ public:
 
     void updatePVOutputStatus(const String& status);
 
-    void updateOutputStatus(const OutputControl::Status& status);
+    void updateOutputStatus(const OutputStatus& status);
 
     void updateOtaStatus(const String& status);
 

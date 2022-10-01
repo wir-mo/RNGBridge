@@ -25,12 +25,12 @@ void PVOutput::sendData()
         const uint8_t currentMinute = time.tm_min;
         sprintf_P(temp, PSTR("Sent data (%02d:%02d)"), currentHour, currentMinute);
         RNG_DEBUGF("[PVO] %s", temp);
-        updateStatus(String(temp));
+        notify(String(temp));
     }
     else
     {
         RNG_DEBUGLN(F("[PVO] Could not send power data"));
-        updateStatus(F("Could not send power data"));
+        notify(F("Could not send power data"));
     }
 }
 
@@ -66,13 +66,13 @@ void PVOutput::updateData(const Renogy::Data& data)
     // debug += "V, ";
     // debug += _temperature;
     // debug += "°C";
-    // updateStatus(debug);
+    // notify(debug);
 }
 
 void PVOutput::start()
 {
     RNG_DEBUGLN(F("[PVO] Starting"));
-    updateStatus(F("Starting"));
+    notify(F("Starting"));
     // Try to get the status interval which can't be 0
     const uint8_t interval = getStatusInterval();
     if (interval > 0)
@@ -84,7 +84,7 @@ void PVOutput::start()
 
         // Set status running
         RNG_DEBUGLN(F("[PVO] Running"));
-        updateStatus(F("Running"));
+        notify(F("Running"));
     }
     else
     {
@@ -92,7 +92,7 @@ void PVOutput::start()
 
         // Set status error
         RNG_DEBUGLN(F("[PVO] Could not get update interval, retrying"));
-        updateStatus(F("Could not get update interval, retrying"));
+        notify(F("Could not get update interval, retrying"));
     }
 }
 
@@ -114,15 +114,6 @@ void PVOutput::loop()
             _secondsPassed = 0;
         }
         start();
-    }
-}
-
-void PVOutput::setListener(StatusListener listener)
-{
-    _listener = listener;
-    if (_listener)
-    {
-        _listener(_status);
     }
 }
 
@@ -289,13 +280,4 @@ uint8_t PVOutput::getStatusInterval()
     // Release HEAP
     client.stop();
     return interval;
-}
-
-void PVOutput::updateStatus(const String& status)
-{
-    _status = status;
-    if (_listener)
-    {
-        _listener(_status);
-    }
 }
