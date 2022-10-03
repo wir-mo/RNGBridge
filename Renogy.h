@@ -8,7 +8,7 @@
 class Renogy
 {
 public:
-    ///@brief Contains data retreived from charge controller
+    /// @brief Contains data retreived from charge controller
     struct Data
     {
         int32_t errorState = 0; /// Controller error state
@@ -31,25 +31,21 @@ public:
         bool loadEnabled = false; /// Load output enabled state, true=enabled, false=disabled
     } _data;
 
-    ///@brief Callback definition for data listener
+    /// @brief Callback definition for data listener
     typedef std::function<void(const Data&)> DataListener;
 
 public:
-    ///@brief Construct a new Renogy object
-    ///
-    ///@param serial Hardware Serial for ModBus communication
-    Renogy(HardwareSerial& serial)
+    /// @brief Construct a new Renogy object
+    /// @param serial Hardware Serial for ModBus communication
+    /// @param address Modbus device address
+    Renogy(HardwareSerial& serial, const uint8_t address)
     {
         serial.setTimeout(100);
         // Modbus at 9600 baud
         serial.begin(9600);
         // Maybe make configurable with updateBaudrate(baud);
 
-        // Renogy Device ID = 255 (was 1)
-        // _modbus.begin(0x01, serial);
-        _modbus.begin(0xFF, serial);
-        // Maybe make configurable with begin(x, Serial);
-        // TODO Maybe need to check each device ID to find correct one
+        _modbus.begin(address, serial);
 
         // D2 = RS485 DE/!RE (direction)
         pinMode(D2, OUTPUT);
@@ -65,17 +61,17 @@ public:
 
     Renogy(Renogy&&) = delete;
 
-    ///@brief Read and process the modbus data
+    /// @brief Read and process the modbus data
     void readAndProcessData();
 
-    ///@brief Enable or disable the load output of the controller
+    /// @brief Enable or disable the load output of the controller
     ///
-    ///@param enable True to enable, false to disable load output
+    /// @param enable True to enable, false to disable load output
     void enableLoad(const bool enable);
 
-    ///@brief Set a listener which receives @ref Renogy::Data updates
+    /// @brief Set a listener which receives @ref Renogy::Data updates
     ///
-    ///@param listener Listener or null
+    /// @param listener Listener or null
     void setListener(DataListener listener);
 
     void readModel();
