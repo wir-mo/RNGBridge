@@ -1,3 +1,5 @@
+// #include <DoubleResetDetector.h>
+
 #include "Config.h"
 #include "Constants.h"
 #include "GUI.h"
@@ -27,15 +29,16 @@ constexpr static const uint8_t LED = D1;
 uint8_t lastSecond = 0; /// The last seconds value
 uint8_t secondsPassedRenogy = 0; /// amount of seconds passed
 
+// DoubleResetDetector* drd;
 RNGTime _time;
 Config config;
 Mqtt* mqtt;
 PVOutput* pvo;
 OTA* ota;
+Renogy* renogy;
+OutputControl* outputs;
 Networking networking(config);
 GUI gui(networking);
-Renogy renogy(Serial);
-OutputControl outputs(renogy, config.getDeviceConfig());
 
 void setup()
 {
@@ -52,9 +55,24 @@ void setup()
     wifi_get_macaddr(STATION_IF, mac);
     sniprintf(deviceMAC, sizeof(deviceMAC), "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
+    // drd = new DoubleResetDetector(0, 0);
+    // RNG_DEBUGLN("[DRD] Check");
+    // if (drd->detectDoubleReset())
+    // {
+    //     RNG_DEBUGLN("[DRD] Detected double reset, resetting config");
+    //     config.initConfig();
+    //     config.setDefaultConfig();
+    //     config.saveConfig();
+    // }
+    // else
+    // {
     config.initConfig();
+    // }
 
-    networking.init(outputs);
+    DeviceConfig& deviceConfig = config.getDeviceConfig();
+    renogy = new Renogy(Serial, deviceConfig.address);
+    outputs = new OutputControl(*renogy, config.getDeviceConfig());
+    networking.init(*outputs);
     // Last will of mqtt won't work this way
     // networking.setRebootHandler([]() {
     //     if (mqtt)
@@ -75,7 +93,7 @@ void setup()
         const MqttConfig& mqttConfig = config.getMqttConfig();
         if (mqttConfig.enabled)
         {
-            mqtt = new Mqtt(mqttConfig, outputs);
+            mqtt = new Mqtt(mqttConfig, *outputs);
             mqtt->observe([](const String& status) { gui.updateMQTTStatus(status); });
             mqtt->connect();
         }
@@ -98,8 +116,7 @@ void setup()
         }
     }
 
-    DeviceConfig& deviceConfig = config.getDeviceConfig();
-    renogy.setListener([&](const Renogy::Data& data) {
+    renogy->setListener([&](const Renogy::Data& data) {
         if (mqtt)
         {
             mqtt->updateRenogyStatus(data);
@@ -109,18 +126,21 @@ void setup()
             pvo->updateData(data);
         }
 
-        outputs.update(data);
+        outputs->update(data);
 
         gui.updateRenogyStatus(data);
     });
 
-    outputs.observe([](const OutputStatus status) {
+    outputs->observe([](const OutputStatus status) {
         gui.updateOutputStatus(status);
         if (mqtt)
         {
             mqtt->updateOutputStatus(status);
         }
     });
+
+    // drd->stop();
+    // delete drd;
 
     // Signal setup done
     digitalWrite(LED, LOW);
@@ -150,7 +170,7 @@ void loop()
         {
             secondsPassedRenogy = 0;
             // Read and process data every 2 seconds
-            renogy.readAndProcessData();
+            renogy->readAndProcessData();
         }
 
         if (mqtt)

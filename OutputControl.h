@@ -6,7 +6,6 @@
 #include "Observerable.h"
 #include "Renogy.h"
 
-
 /// @brief Current output status
 struct OutputStatus
 {
