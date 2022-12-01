@@ -280,7 +280,7 @@ bool MqttConfig::verify(const JsonObjectConst& object) const
     return object["enabled"].is<bool>() && object["hadisco"].is<bool>() && object["server"].is<const char*>()
         && object["port"].is<uint16_t>() && object["id"].is<const char*>() && object["user"].is<const char*>()
         && object["password"].is<const char*>() && object["topic"].is<const char*>() && object["interval"].is<uint8_t>()
-        && object["hadiscotopic"].is<const char*>();
+        && object["hadiscotopic"].is<const char*>() && object["split"].is<bool>();
 }
 
 void MqttConfig::fromJson(const JsonObjectConst& object)
@@ -296,6 +296,7 @@ void MqttConfig::fromJson(const JsonObjectConst& object)
     password = object["password"] | emptyString;
     topic = object["topic"] | emptyString;
     interval = object["interval"];
+    split = object["split"];
 }
 
 void MqttConfig::toJson(JsonObject& object) const
@@ -310,6 +311,7 @@ void MqttConfig::toJson(JsonObject& object) const
     object["password"] = password;
     object["topic"] = topic;
     object["interval"] = interval;
+    object["split"] = split;
 }
 
 bool MqttConfig::tryUpdate(const JsonObjectConst& object)
@@ -329,6 +331,7 @@ bool MqttConfig::tryUpdate(const JsonObjectConst& object)
     changed |= updateField(object, "password", password);
     changed |= updateField(object, "topic", topic);
     changed |= updateField(object, "interval", interval);
+    changed |= updateField(object, "split", split);
     return changed;
 }
 
@@ -341,6 +344,7 @@ void MqttConfig::setDefaultConfig()
     id = MODEL;
     topic = "/rng";
     interval = 1;
+    split = false;
 }
 
 bool PVOutputConfig::verify(const JsonObjectConst& object) const

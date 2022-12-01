@@ -10,10 +10,10 @@
 
 #define SIMULATED_DEMO_DATA 1
 #define CONST_DEMO_DATA 2
-//#define DEMO_MODE SIMULATED_DEMO_DATA // Enable demo mode with dummy data
+// #define DEMO_MODE SIMULATED_DEMO_DATA // Enable demo mode with dummy data
 #define RNG_DEBUG_SERIAL Serial1
 // #define RNG_DEBUG_SERIAL Serial
-//#define DEBUG_CONFIG // Uncomment to dump config on startup
+// #define DEBUG_CONFIG // Uncomment to dump config on startup
 
 #ifdef RNG_DEBUG_SERIAL
 #define RNG_DEBUG(s) RNG_DEBUG_SERIAL.print(s)
@@ -31,7 +31,7 @@
 
 // Note version is made up of
 // Major Changes . New Features . Bugfixes (aka major.minor.bug)
-constexpr static const char* SOFTWARE_VERSION = "2.9.1";
+constexpr static const char* SOFTWARE_VERSION = "2.10.0";
 constexpr static const char* HARDWARE_VERSION = "V2";
 constexpr static const char* MODEL = "RNGBridge";
 
