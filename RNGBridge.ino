@@ -44,6 +44,7 @@ void setup()
 {
 #ifdef RNG_DEBUG_SERIAL
     RNG_DEBUG_SERIAL.begin(115200);
+    // RNG_DEBUG_SERIAL.setDebugOutput(true);
     RNG_DEBUGLN();
     RNG_DEBUGF("%s %S (SWV%s)\n", MODEL, HARDWARE_VERSION, SOFTWARE_VERSION);
 #endif

@@ -41,6 +41,7 @@ struct MqttConfig
     uint8_t interval; /// Interval in seconds at which mqtt messages are published
     bool enabled;
     bool hadiscovery; /// Should one or more discovery messages be sent to haDiscoveryTopic
+    bool split; /// Should data be split into separate topics
     String server;
     String id;
     String user;

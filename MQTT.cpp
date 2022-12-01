@@ -149,6 +149,27 @@ void Mqtt::updateRenogyStatus(const Renogy::Data& data)
 
         const String topic = mqttConfig.topic + "/state";
         publishJSON(topic, json, true);
+
+        if (mqttConfig.split)
+        {
+            publish((mqttConfig.topic + "/battery/charge").c_str(), String(data.batteryCharge).c_str(), false);
+            publish((mqttConfig.topic + "/battery/voltage").c_str(), String(data.batteryVoltage).c_str(), false);
+            publish((mqttConfig.topic + "/battery/current").c_str(), String(data.batteryCurrent).c_str(), false);
+            publish(
+                (mqttConfig.topic + "/battery/temperature").c_str(), String(data.batteryTemperature).c_str(), false);
+
+            publish((mqttConfig.topic + "/load").c_str(), String(data.loadEnabled).c_str(), false);
+            publish((mqttConfig.topic + "/load/voltage").c_str(), String(data.loadVoltage).c_str(), false);
+            publish((mqttConfig.topic + "/load/current").c_str(), String(data.loadCurrent).c_str(), false);
+
+            publish((mqttConfig.topic + "/panel/voltage").c_str(), String(data.panelVoltage).c_str(), false);
+            publish((mqttConfig.topic + "/panel/current").c_str(), String(data.panelCurrent).c_str(), false);
+
+            publish((mqttConfig.topic + "/controller/state").c_str(), String(data.chargingState).c_str(), false);
+            publish((mqttConfig.topic + "/controller/error").c_str(), String(data.errorState).c_str(), false);
+            publish((mqttConfig.topic + "/controller/temperature").c_str(), String(data.controllerTemperature).c_str(),
+                false);
+        }
     }
 }
 
