@@ -32,6 +32,11 @@ void Mqtt::connect()
             publishSensorDiscovery("Battery Temperature", "battem", "temperature", "°C", "measurement",
                 "{{value_json.b.te}}", "mdi:battery");
 
+            publishSensorDiscovery(
+                "Generation", "engen", "energy", "Wh", "total_increasing", "{{value_json.b.ge}}", "mdi:plus");
+            publishSensorDiscovery(
+                "Consumption", "encon", "energy", "Wh", "total_increasing", "{{value_json.b.co}}", "mdi:minus");
+
             // Load related
             publishSensorDiscovery("Load Voltage", "loavol", "voltage", "V", "measurement",
                 "{{value_json.l.vo|round(1)}}", "mdi:alpha-l-box-outline");
@@ -125,6 +130,8 @@ void Mqtt::updateRenogyStatus(const Renogy::Data& data)
         battery["vo"] = data.batteryVoltage;
         battery["cu"] = data.batteryCurrent;
         battery["te"] = data.batteryTemperature;
+        battery["co"] = data.consumption;
+        battery["ge"] = data.generation;
 
         auto load = json["l"];
         load["vo"] = data.loadVoltage;
@@ -157,8 +164,9 @@ void Mqtt::updateRenogyStatus(const Renogy::Data& data)
             publish((mqttConfig.topic + "/battery/current").c_str(), String(data.batteryCurrent).c_str(), false);
             publish(
                 (mqttConfig.topic + "/battery/temperature").c_str(), String(data.batteryTemperature).c_str(), false);
+            publish((mqttConfig.topic + "/battery/consumption").c_str(), String(data.consumption).c_str(), false);
+            publish((mqttConfig.topic + "/battery/generation").c_str(), String(data.generation).c_str(), false);
 
-            publish((mqttConfig.topic + "/load").c_str(), String(data.loadEnabled).c_str(), false);
             publish((mqttConfig.topic + "/load/voltage").c_str(), String(data.loadVoltage).c_str(), false);
             publish((mqttConfig.topic + "/load/current").c_str(), String(data.loadCurrent).c_str(), false);
 
@@ -214,6 +222,7 @@ void Mqtt::addDeviceInfo(JsonDocument& json, const String& deviceID)
     dev["mdl"] = String(MODEL) + " " + HARDWARE_VERSION;
     dev["name"] = deviceID;
     dev["sw"] = SOFTWARE_VERSION;
+    dev["cu"] = String("http://") + WiFi.localIP().toString();
 
     dev.createNestedArray("ids").add(deviceID);
 }
