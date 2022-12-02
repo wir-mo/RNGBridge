@@ -136,7 +136,7 @@ static InputType StringToInputType(const String& str)
 struct OutputConfig
 {
     InputType inputType;
-    bool inverted;
+    bool inverted; /// Output state should be inverted
     float min;
     float max;
     bool lastState = false;

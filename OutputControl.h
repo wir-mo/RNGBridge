@@ -53,7 +53,7 @@ private:
     /// @param output Output configuration with setpoints
     /// @param data Current renogy state data
     /// @param enable Callback function for turning output on (passing true) or off (passing false)
-    void handleOutput(OutputConfig& output, const Renogy::Data& data, std::function<void(bool)> enable);
+    void handleOutput(OutputConfig& output, const Renogy::Data& data, std::function<void(const bool)> enable);
 
 private:
     constexpr static const uint8_t PIN_OUTPUT1 = D5; /// pin definition for first output control
@@ -62,8 +62,8 @@ private:
 
     DeviceConfig& deviceConfig; /// Reference to device config including output config
 
-    std::function<void(bool)> handleLoad; /// callback to control renogy load output
-    std::function<void(bool)> handleOut1; /// callback to control RNGBridge output 1
-    std::function<void(bool)> handleOut2; /// callback to control RNGBridge output 2
-    std::function<void(bool)> handleOut3; /// callback to control RNGBridge output 3
+    std::function<void(const bool)> handleLoad; /// callback to control renogy load output
+    std::function<void(const bool)> handleOut1; /// callback to control RNGBridge output 1
+    std::function<void(const bool)> handleOut2; /// callback to control RNGBridge output 2
+    std::function<void(const bool)> handleOut3; /// callback to control RNGBridge output 3
 };

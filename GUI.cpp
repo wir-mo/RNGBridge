@@ -13,6 +13,8 @@ void GUI::updateRenogyStatus(const Renogy::Data& data)
     battery["vo"] = data.batteryVoltage;
     battery["cu"] = data.batteryCurrent;
     battery["te"] = data.batteryTemperature;
+    battery["ge"] = data.generation;
+    battery["co"] = data.consumption;
 
     auto load = _status["l"];
     load["vo"] = data.loadVoltage;
