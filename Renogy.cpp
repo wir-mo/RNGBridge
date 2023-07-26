@@ -124,7 +124,7 @@ uint8_t batteryCharge = 0;
 bool batteryDirection = true;
 #endif
 
-float batterySocToVolts(const float soc)
+constexpr float batterySocToVolts(const float soc)
 {
     return 0.000004 * soc * soc * soc - 0.000848 * soc * soc + 0.061113 * soc + 10.6099;
 }
