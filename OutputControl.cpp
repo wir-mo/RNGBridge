@@ -54,13 +54,14 @@ void OutputControl::enableOut3(const bool enable)
 
 void OutputControl::update(const Renogy::Data& data)
 {
-    handleOutput(deviceConfig.load, data, handleLoad);
-    handleOutput(deviceConfig.out1, data, handleOut1);
-    handleOutput(deviceConfig.out2, data, handleOut2);
-    handleOutput(deviceConfig.out3, data, handleOut3);
+    handleOutput("Load", deviceConfig.load, data, handleLoad);
+    handleOutput("Out1", deviceConfig.out1, data, handleOut1);
+    handleOutput("Out2", deviceConfig.out2, data, handleOut2);
+    handleOutput("Out3", deviceConfig.out3, data, handleOut3);
 }
 
-void OutputControl::handleOutput(OutputConfig& output, const Renogy::Data& data, std::function<void(const bool)> enable)
+void OutputControl::handleOutput(
+    const char* tag, OutputConfig& output, const Renogy::Data& data, std::function<void(const bool)> enable)
 {
     if (output.inputType == InputType::disabled)
     {
@@ -84,6 +85,8 @@ void OutputControl::handleOutput(OutputConfig& output, const Renogy::Data& data,
         break;
     }
 
+    RNG_DEBUGF("[OutputControl][%s] min %.2f, max %.2f, value %.2f\n", tag, output.min, output.max, value);
+
     if (value >= output.max)
     {
         const bool newState = !output.inverted;
@@ -91,6 +94,7 @@ void OutputControl::handleOutput(OutputConfig& output, const Renogy::Data& data,
         {
             // output.lastState = newState;
             enable(newState);
+            RNG_DEBUGF("[OutputControl][%s] %.2f>=%.2f turned %s\n", tag, value, output.max, newState ? "on" : "off");
         }
     }
     else if (value < output.min)
@@ -100,6 +104,7 @@ void OutputControl::handleOutput(OutputConfig& output, const Renogy::Data& data,
         {
             // output.lastState = newState;
             enable(newState);
+            RNG_DEBUGF("[OutputControl][%s] %.2f<%.2f turned %s\n", tag, value, output.min, newState ? "on" : "off");
         }
     }
 }
