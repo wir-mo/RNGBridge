@@ -50,10 +50,12 @@ public:
 private:
     /// @brief Handle output control for a given output
     ///
+    /// @param tag Debug tag
     /// @param output Output configuration with setpoints
     /// @param data Current renogy state data
     /// @param enable Callback function for turning output on (passing true) or off (passing false)
-    void handleOutput(OutputConfig& output, const Renogy::Data& data, std::function<void(const bool)> enable);
+    void handleOutput(
+        const char* tag, OutputConfig& output, const Renogy::Data& data, std::function<void(const bool)> enable);
 
 private:
     constexpr static const uint8_t PIN_OUTPUT1 = D5; /// pin definition for first output control
