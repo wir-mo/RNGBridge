@@ -1,5 +1,6 @@
 #include "Networking.h"
 
+#include "GUI.h"
 #include "favicon.ico.gz.h"
 
 #include "RNGBridgeUI/cpp/build.html.gz.h"
@@ -294,7 +295,7 @@ void Networking::handleRenogyApi(AsyncWebServerRequest* request, JsonVariant& js
 
 void Networking::handleStateApiGet(AsyncWebServerRequest* request)
 {
-    request->send(200, "application/json", statusMessage);
+    request->send(200, "application/json", GUI::status);
 }
 
 bool Networking::isIp(const String& str)
@@ -330,6 +331,12 @@ void Networking::update()
     if (WiFi.isConnected())
     {
         RNGBridge::rssi = RNGBridge::rssi * 0.7f + WiFi.RSSI() * 0.3f;
+    }
+
+    if (es.count())
+    {
+        es.send(GUI::status.c_str(), "status");
+        // RNG_DEBUGF("[Networking] AVG ES packages %d\n", es.avgPacketsWaiting());
     }
 }
 
@@ -367,12 +374,11 @@ bool Networking::captivePortal(AsyncWebServerRequest* request)
 
 bool Networking::handleClientFailsafe()
 {
-    unsigned long start = millis();
+    const unsigned long start = millis();
     while (WiFi.status() != WL_CONNECTED)
     {
-
         RNG_DEBUG('.');
-        delay(1000);
+        delay(0);
         if (millis() - start > 15000)
         {
             RNG_DEBUGLN(F("\n[Networking] Failed, enabling AP"));

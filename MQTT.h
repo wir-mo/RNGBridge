@@ -9,7 +9,6 @@
 #include "OutputControl.h"
 #include "Renogy.h"
 
-
 // Quality Of Service (QOS)
 // At most once (0)
 // At least once (1)
@@ -35,8 +34,6 @@ public:
     void loop();
 
     void updateRenogyStatus(const Renogy::Data& data);
-
-    void updateOutputStatus(const OutputStatus& status) { outputStatus = status; }
 
 private:
     const String getDeviceID() { return String("rngbridge-") + deviceMAC; }
@@ -96,6 +93,15 @@ private:
     bool publish(const String& payload, bool retain = false);
     bool publish(const char* payload, bool retain = false);
     bool publish(const char* topic, const char* payload, bool retain = false);
+    bool publishLarge(const char* topic, const char* payload, bool retain = false)
+    {
+        if (mqtt.beginPublish(topic, strlen(payload), retain))
+        {
+            mqtt.write(reinterpret_cast<const uint8_t*>(payload), strlen(payload));
+            return mqtt.endPublish();
+        }
+        return false;
+    }
 
 private:
     const MqttConfig& mqttConfig;
@@ -103,5 +109,4 @@ private:
     WiFiClient espClient;
     PubSubClient mqtt;
     uint32_t lastUpdate = 0; /// last time in seconds we updated
-    OutputStatus outputStatus;
 }; // class MQTT

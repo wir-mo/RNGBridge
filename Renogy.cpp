@@ -21,6 +21,11 @@ namespace ModBus
         return modbus.getResponseBuffer(startAddress);
     }
 
+    int16_t readUInt16BE(ModbusMaster& modbus, const uint8_t startAddress)
+    {
+        return modbus.getResponseBuffer(startAddress);
+    }
+
     int16_t readInt16LE(ModbusMaster& modbus, const uint8_t startAddress)
     {
         const uint16_t reg = readInt16BE(modbus, startAddress);
@@ -236,6 +241,8 @@ void Renogy::readAndProcessData()
 
         _data.generation = ModBus::readInt16BE(_modbus, 19);
         _data.consumption = ModBus::readInt16BE(_modbus, 20);
+
+        _data.total = ModBus::readInt32BE(_modbus, 28);
 
         _data.loadEnabled = ModBus::readInt8Upper(_modbus, 32) & 0x80;
         _data.chargingState = ModBus::readInt8Lower(_modbus, 32);

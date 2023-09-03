@@ -38,7 +38,7 @@ OTA* ota;
 Renogy* renogy;
 OutputControl* outputs;
 Networking networking(config);
-GUI gui(networking);
+GUI gui;
 
 void setup()
 {
@@ -118,10 +118,6 @@ void setup()
     }
 
     renogy->setListener([&](const Renogy::Data& data) {
-        if (mqtt)
-        {
-            mqtt->updateRenogyStatus(data);
-        }
         if (pvo)
         {
             pvo->updateData(data);
@@ -130,15 +126,14 @@ void setup()
         outputs->update(data);
 
         gui.updateRenogyStatus(data);
-    });
 
-    outputs->observe([](const OutputStatus status) {
-        gui.updateOutputStatus(status);
         if (mqtt)
         {
-            mqtt->updateOutputStatus(status);
+            mqtt->updateRenogyStatus(data);
         }
     });
+
+    outputs->observe([](const OutputStatus status) { gui.updateOutputStatus(status); });
 
     // drd->stop();
     // delete drd;

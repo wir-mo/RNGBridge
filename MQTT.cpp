@@ -123,39 +123,8 @@ void Mqtt::updateRenogyStatus(const Renogy::Data& data)
     {
         lastUpdate = timeS;
 
-        StaticJsonDocument<512> json;
-
-        auto battery = json["b"];
-        battery["ch"] = data.batteryCharge;
-        battery["vo"] = data.batteryVoltage;
-        battery["cu"] = data.batteryCurrent;
-        battery["te"] = data.batteryTemperature;
-        battery["co"] = data.consumption;
-        battery["ge"] = data.generation;
-
-        auto load = json["l"];
-        load["vo"] = data.loadVoltage;
-        load["cu"] = data.loadCurrent;
-
-        auto panel = json["p"];
-        panel["vo"] = data.panelVoltage;
-        panel["cu"] = data.panelCurrent;
-
-        auto controller = json["c"];
-        controller["st"] = data.chargingState;
-        controller["er"] = data.errorState;
-        controller["te"] = data.controllerTemperature;
-
-        auto output = json["o"];
-        output["l"] = data.loadEnabled;
-        output["o1"] = outputStatus.out1;
-        output["o2"] = outputStatus.out2;
-        output["o3"] = outputStatus.out3;
-
-        json["rssi"] = RNGBridge::rssi;
-
         const String topic = mqttConfig.topic + "/state";
-        publishJSON(topic, json, true);
+        publishLarge(topic.c_str(), GUI::status.c_str(), true);
 
         if (mqttConfig.split)
         {
