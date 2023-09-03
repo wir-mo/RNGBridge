@@ -42,8 +42,8 @@ public:
     Renogy(HardwareSerial& serial, const uint8_t address)
     {
         serial.setTimeout(100);
-        // Modbus at 9600 baud
-        serial.begin(9600);
+        // Modbus at 115200 baud
+        serial.begin(115200);
         // Maybe make configurable with updateBaudrate(baud);
 
         _modbus.begin(address, serial);
