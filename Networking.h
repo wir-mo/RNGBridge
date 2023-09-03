@@ -88,16 +88,6 @@ public:
     /// Should be called once every second
     void update();
 
-    void sendTestMessage(const String& message)
-    {
-        statusMessage = message;
-        if (es.count())
-        {
-            es.send(message.c_str(), "status");
-            // RNG_DEBUGF("[Networking] AVG ES packages %d\n", es.avgPacketsWaiting());
-        }
-    }
-
     ///@brief Set a handler for rebooting the ESP upon being called
     ///
     ///@param handler RebootHandler
@@ -137,7 +127,6 @@ private:
     RebootHandler _rebootHandler; /// Handler for restarting ESP and gracefully shutting down stuff
     // uint16_t reconnectBackoff = 1;
     // uint32_t lastReconnect = 0;
-    String statusMessage = "";
 
     Config& config;
 }; // namespace Networking

@@ -1,10 +1,8 @@
 #include "GUI.h"
 
-#include <Updater.h>
-
 #include "Constants.h"
-#include "MQTT.h"
-#include "PVOutput.h"
+
+String GUI::status = "";
 
 void GUI::updateRenogyStatus(const Renogy::Data& data)
 {
@@ -15,6 +13,7 @@ void GUI::updateRenogyStatus(const Renogy::Data& data)
     battery["te"] = data.batteryTemperature;
     battery["ge"] = data.generation;
     battery["co"] = data.consumption;
+    battery["to"] = data.total;
 
     auto load = _status["l"];
     load["vo"] = data.loadVoltage;
@@ -69,9 +68,7 @@ void GUI::updateHeap(const uint32_t heap)
 
 void GUI::update()
 {
-    String serialized = {};
     _status["rssi"] = RNGBridge::rssi;
-    serialized.reserve(measureJson(_status));
-    serializeJson(_status, serialized);
-    _networking.sendTestMessage(serialized);
+    status.clear();
+    serializeJson(_status, status);
 }

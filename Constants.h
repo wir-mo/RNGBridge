@@ -31,7 +31,7 @@
 
 // Note version is made up of
 // Major Changes . New Features . Bugfixes (aka major.minor.bug)
-constexpr static const char* SOFTWARE_VERSION = "2.11.0";
+constexpr static const char* SOFTWARE_VERSION = "2.12.0";
 constexpr static const char* HARDWARE_VERSION = "V2";
 constexpr static const char* MODEL = "RNGBridge";
 

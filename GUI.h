@@ -2,14 +2,13 @@
 
 #include <ArduinoJson.h>
 
-#include "Networking.h"
 #include "OutputControl.h"
 #include "Renogy.h"
 
 class GUI
 {
 public:
-    GUI(Networking& networking) : _networking(networking) { }
+    GUI() { }
 
     GUI(GUI&&) = delete;
 
@@ -29,7 +28,9 @@ public:
 
     void update();
 
+public:
+    static String status;
+
 private:
-    Networking& _networking;
     StaticJsonDocument<1024> _status = {};
 };
