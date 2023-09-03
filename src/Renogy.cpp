@@ -71,72 +71,111 @@ namespace ModBus
     }
 } // namespace ModBus
 
-// 0x0100 (2) 00 - Battery capacity SOC (state of charge)
-// 0x0101 (2) 01 - Battery voltage * 0.1
-// 0x0102 (2) 02 - Charging current to battery * 0.01
-// 0x0103 (2) 03 - Upper byte controller temperature bit 7 sign, bits 0 - 6 value
-//            03 - Lower byte battery temperature bit 7 sign, bits 0 - 6 value
-// 0x0104 (2) 04 - Street light (load) voltage  * 0.1
-// 0x0105 (2) 05 - Street light (load) current * 0.01
-// 0x0106 (2) 06 - Street light (load) power actual value
-// 0x0107 (2) 07 - Solar panel voltage  * 0.1
-// 0x0108 (2) 08 - Solar panel current * 0.01
-// 0x0109 (2) 09 - Charging Power actual value
-// 0x010A (2) 10 - light on/off command (write only 0 for off, 1 for on)
-// 0x010B (2) 11 - Battery min voltage of current day * 0.1
-// 0x010C (2) 12 - Battery max voltage of current day * 0.1
-// 0x010D (2) 13 - max charging current of current day * 0.01
-// 0x010E (2) 14 - max discharging current of current day * 0.01
-// 0x010F (2) 15 - max charging power of the current day actual value
-// 0x0110 (2) 16 - max discharging power of the current day actual value
-// 0x0111 (2) 17 - charging amp hours of the current day actual value
-// 0x0112 (2) 18 - discharging amp hours of the current day actual value
-// 0x0113 (2) 19 - power generation of the current day Wh
-// 0x0114 (2) 20 - power consumption of the current day Wh
+// 0x3100 (2) B1  - PV array input voltage * 0.01 (V)
+// 0x3101 (2) B2  - PV array input current * 0.01 (A)
+// 0x3102 (2) B3  - PV array input power L * 0.01 (W)
+// 0x3103 (2) B4  - PV array input power H * 0.01 (W)
 //
-// Historical Information
+// 0x3104 (2) B5  - Battery input voltage * 0.01 (V)
+// 0x3105 (2) B6  - Battery input current * 0.01 (A)
+// 0x3106 (2) B7  - Battery charging power L * 0.01 (W)
+// 0x3107 (2) B8  - Battery charging power H * 0.01 (W)
 //
-// 0x0115 (2) 21 - total number of operating days
-// 0x0116 (2) 22 - total number of battery over-discharges
-// 0x0117 (2) 23 - total number of battery full discharges
-// 0x0118 (4) 24 - total charging amp-hrs of the battery actual value
-// 0x011A (4) 26 - total discharging amp-hrs of the battery actual value
-// 0x011C (4) 28 - cumulative power generation Wh
-// 0x011E (4) 30 - cumulative power consumption Wh
+// 0x310C (2) B13 - Load voltage * 0.01 (V)
+// 0x310D (2) B14 - Load current * 0.01 (A)
+// 0x310E (2) B15 - Load power L * 0.01 (W)
+// 0x310F (2) B16 - Load power H * 0.01 (W)
 //
-// 0x0120 (2) 32 - charging state in 8 lower bits.
-//            00H: charging deactivated
-//            01H: charging activated
-//            02H: mppt charging mode
-//            03H: equalizing charging mode
-//            04H: boost charging mode
-//            05H: floating charging mode
-//            06H: current limiting (overpower)
+// 0x3110 (2) B17 - Battery temperature * 0.01 (°C)
+// 0x3111 (2) B18 - Controller temperature * 0.01 (°C)
 //
-//            - upper 8 bits are street light (load output) status and brightness.
-//            00H - 06H: brightness value
-//            07H: light on (1) or off (0)
+// 0x311A (2) B27 - Battery SOC * 0.01 (%)
+// 0x311B (2) B28 - Remote battery temperature * 0.01 (°C)
 //
-// 0x0121 (4) 33 - controller fault and warning information
-//            - 32 bit value of flags
+// 0x311D (2) B30 - System voltage * 0.01 (V)
 //
-//            E16 B31: Fan alarm
-//            E15 B30: Charge MOS short circuit
-//            E14 B29: Anti-reverse MOS short circuit
-//            E13 B28: Solar panel reversly connected
-//            E12 B27: Solar panel working point over-voltage
-//            E11 B26: Solar panel counter current
-//            E10 B25: Photovoltaic input side over voltage
-//            E09 B24: Photovoltaic input side short circuit
-//            E08 B23: Photovoltaic input overpower
-//            E07 B22: Ambient temperature too high
-//            E06 B21: Controller temperature too high
-//            E05 B20: Load overpower or load over-current
-//            E04 B19: Load short circuit
-//            E03 B18: Battery under-voltage warning
-//            E02 B17: Battery over-voltage
-//            E01 B16: battery over-discharge
-//                B0-B15: Reserved
+// 0x3200 (2) C1  - Battery status
+//            - lower 4 bits (0-3)
+//            00H: normal
+//            01H: overvolt
+//            02H: undervolt
+//            03H: low volt disconnect
+//            04H: fault
+//
+//            - lower 4 bits (4-7)
+//            00H: normal
+//            01H: overtemp (higher than warning setting)
+//            02H: low temp (lower than warning setting)
+//
+//            - bit 8
+//            00H: normal
+//            01H: abnormal
+//
+//            - bit 15
+//            00H: normal
+//            01H: wrong identification for rated voltage
+//
+// 0x3201 (2) C2  - Charger status
+//            - D00
+//            00H: standby
+//            01H: running
+//
+//            - D01
+//            00H: normal
+//            01H: fault
+//
+//            - D02 - D03
+//            00H: no charging
+//            01H: float
+//            02H: boost
+//            03H: equalization
+//
+//            - D04: pv input short
+//
+//            - D07: load mosfet short
+//            - D08: load short
+//            - D09: load over current
+//            - D10: input over current
+//            - D11: anti reverse mosfet short
+//            - D12: charging or anti reverse mosfet short
+//            - D13: charging mosfet short
+//
+//            - D14 - D15: input voltage status
+//            00H: normal
+//            01H: no power connected
+//            02H: higher volt input
+//            03H: input volt error
+//
+// 0x3201 (2) C7  - Discharger status
+//            - D00
+//            00H: standby
+//            01H: running
+//
+//            - D01
+//            00H: normal
+//            01H: fault
+//
+//            - D04: output overpressure
+//            - D05: boost overpressure
+//            - D06: high voltage side short circuit
+//            - D07: input overpressure
+//            - D08: output voltage abnormal
+//            - D09: unable to stop discharging
+//            - D10: unable to discharge
+//            - D11: short circuit
+//
+//            - D12 - D13: output power
+//            00H: light load
+//            01H: moderate
+//            02H: rated
+//            03H: overload
+//
+//            - D14 - D15: input voltage status
+//            00H: normal
+//            01H: low
+//            02H: high
+//            03H: no access, input voltage error
+//
 
 #ifdef DEMO_MODE
 uint8_t batteryCharge = 0;
@@ -270,9 +309,10 @@ void Renogy::readAndProcessData()
     }
 
 #else
-    // Read 34 registers starting at 0x0100)
+    // Read 29 registers starting at 0x3100)
     _modbus.clearResponseBuffer();
-    const uint8_t result = _modbus.readHoldingRegisters(0x0100, 34);
+    const uint8_t result = _modbus.readInputRegisters(0x3100, 17);
+    // const uint8_t result = _modbus.readHoldingRegisters(0x3100, 26);
 
     if (result != _modbus.ku8MBSuccess)
     {
@@ -280,37 +320,37 @@ void Renogy::readAndProcessData()
         return;
     }
 
-    _data.batteryCharge = ModBus::readInt16BE(_modbus, 0);
-    _data.batteryVoltage = 0.1f * ModBus::readInt16BE(_modbus, 1);
-    _data.batteryCurrent = 0.01f * ModBus::readInt16BE(_modbus, 2);
-    _data.controllerTemperature = ModBus::readInt8Upper(_modbus, 3);
-    if (_data.controllerTemperature & 0x80)
-    {
-        _data.controllerTemperature = -(_data.controllerTemperature & 0x7f);
-    }
-    _data.batteryTemperature = ModBus::readInt8Lower(_modbus, 3);
-    if (_data.batteryTemperature & 0x80)
-    {
-        _data.batteryTemperature = -(_data.batteryTemperature & 0x7f);
-    }
+    // _data.batteryCharge = 0.01f * ModBus::readInt16BE(_modbus, 26);
+    _data.batteryVoltage = 0.01f * ModBus::readInt16BE(_modbus, 4);
+    _data.batteryCurrent = 0.01f * ModBus::readInt16BE(_modbus, 5);
+    _data.controllerTemperature = 0.01f * ModBus::readInt16BE(_modbus, 17);
+    _data.batteryTemperature = 0.01f * ModBus::readInt16BE(_modbus, 16);
 
-    _data.loadVoltage = 0.1f * ModBus::readInt16BE(_modbus, 4);
-    _data.loadCurrent = 0.01f * ModBus::readInt16BE(_modbus, 5);
+    _data.loadVoltage = 0.01f * ModBus::readInt16BE(_modbus, 12);
+    _data.loadCurrent = 0.01f * ModBus::readInt16BE(_modbus, 13);
     // _data.loadPower = ModBus::readInt16BE(_modbus, 6);
 
-    _data.panelVoltage = 0.1f * ModBus::readInt16BE(_modbus, 7);
-    _data.panelCurrent = 0.01f * ModBus::readInt16BE(_modbus, 8);
+    _data.panelVoltage = 0.01f * ModBus::readInt16BE(_modbus, 0);
+    _data.panelCurrent = 0.01f * ModBus::readInt16BE(_modbus, 1);
     // _data.panelPower = ModBus::readInt16BE(_modbus, 9);
 
-    _data.generation = ModBus::readInt16BE(_modbus, 19);
-    _data.consumption = ModBus::readInt16BE(_modbus, 20);
+    /// @todo
+    // Read 29 registers starting at 0x3100)
+    // _modbus.clearResponseBuffer();
+    // const uint8_t result = _modbus.readInputRegisters(0x3100, 29);
 
-    _data.total = ModBus::readInt32BE(_modbus, 28);
+    // if (result != _modbus.ku8MBSuccess)
+    // {
+    //     RNG_DEBUGF("[Renogy] Could not read registers: %d\n", result);
+    //     return;
+    // }
+    // _data.generation = ModBus::readInt16BE(_modbus, 19);
+    // _data.consumption = ModBus::readInt16BE(_modbus, 20);
 
-    _data.loadEnabled = ModBus::readInt8Upper(_modbus, 32) & 0x80;
-    _data.chargingState = ModBus::readInt8Lower(_modbus, 32);
+    // _data.loadEnabled = ModBus::readInt8Upper(_modbus, 32) & 0x80;
+    // _data.chargingState = ModBus::readInt8Lower(_modbus, 32);
 
-    _data.errorState = ModBus::readInt32BE(_modbus, 33);
+    // _data.errorState = ModBus::readInt32BE(_modbus, 33);
 
     // update listener
     if (_listener)
@@ -318,10 +358,10 @@ void Renogy::readAndProcessData()
         _listener(_data);
     }
 
-    if (model.isEmpty())
-    {
-        readModel();
-    }
+    // if (model.isEmpty())
+    // {
+    //     readModel();
+    // }
 #endif
 }
 
