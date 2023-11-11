@@ -40,7 +40,7 @@ namespace ModBus
 
     int32_t readInt32LE(ModbusMaster& modbus, const uint8_t startAddress)
     {
-        uint32_t reg = readInt32BE(modbus, startAddress);
+        const uint32_t reg = readInt32BE(modbus, startAddress);
         return ((reg << 8) & 0xFF00FF00) | ((reg >> 8) & 0x00FF00FF);
     }
 
@@ -77,8 +77,8 @@ namespace ModBus
 // 0x0110 (2) 16 - max discharging power of the current day actual value
 // 0x0111 (2) 17 - charging amp hours of the current day actual value
 // 0x0112 (2) 18 - discharging amp hours of the current day actual value
-// 0x0113 (2) 19 - power generation of the current day actual value
-// 0x0114 (2) 20 - power consumption of the current day actual value
+// 0x0113 (2) 19 - power generation of the current day Wh
+// 0x0114 (2) 20 - power consumption of the current day Wh
 //
 // Historical Information
 //
@@ -87,8 +87,8 @@ namespace ModBus
 // 0x0117 (2) 23 - total number of battery full discharges
 // 0x0118 (4) 24 - total charging amp-hrs of the battery actual value
 // 0x011A (4) 26 - total discharging amp-hrs of the battery actual value
-// 0x011C (4) 28 - cumulative power generation actual value
-// 0x011E (4) 30 - cumulative power consumption actual value
+// 0x011C (4) 28 - cumulative power generation Wh
+// 0x011E (4) 30 - cumulative power consumption Wh
 //
 // 0x0120 (2) 32 - charging state in 8 lower bits.
 //            00H: charging deactivated
