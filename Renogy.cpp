@@ -229,7 +229,15 @@ void Renogy::readAndProcessData()
         _data.batteryVoltage = 0.1f * ModBus::readInt16BE(_modbus, 1);
         _data.batteryCurrent = 0.01f * ModBus::readInt16BE(_modbus, 2);
         _data.controllerTemperature = ModBus::readInt8Upper(_modbus, 3);
+        if (_data.controllerTemperature & 0x80)
+        {
+            _data.controllerTemperature = -(_data.controllerTemperature & 0x7f);
+        }
         _data.batteryTemperature = ModBus::readInt8Lower(_modbus, 3);
+        if (_data.batteryTemperature & 0x80)
+        {
+            _data.batteryTemperature = -(_data.batteryTemperature & 0x7f);
+        }
 
         _data.loadVoltage = 0.1f * ModBus::readInt16BE(_modbus, 4);
         _data.loadCurrent = 0.01f * ModBus::readInt16BE(_modbus, 5);
