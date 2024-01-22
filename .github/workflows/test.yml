@@ -41,7 +41,7 @@ jobs:
         run: |
           arduino-cli core update-index --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
           arduino-cli core install esp8266:esp8266@2.7.4 --additional-urls https://arduino.esp8266.com/stable/package_esp8266com_index.json
-          arduino-cli lib install ArduinoJson
+          arduino-cli lib install ArduinoJson@6.21.5
           arduino-cli lib install --git-url https://github.com/me-no-dev/ESPAsyncTCP.git
           arduino-cli lib install --git-url https://github.com/me-no-dev/ESPAsyncWebServer.git
           arduino-cli lib install --git-url https://github.com/knolleary/pubsubclient.git
