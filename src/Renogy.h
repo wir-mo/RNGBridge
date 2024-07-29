@@ -5,31 +5,42 @@
 #include <HardwareSerial.h>
 #include <ModbusMaster.h>
 
+// 5001 - 5016 - cell voltage * 0.1 in V
+// 5018 - 5034 - cell temperature * 0.1 in °C
+// 5035 - bms temperature * 0.1 in °C
+// 5037 - 5038 - ambient temperature * 0.1 in °C
+// 5040 - 5041 - heater temperature * 0.1 in °C
+// 5042 - current * 0.01 in A
+// 5043 - voltage * 0.1 in V
+// 5044 - 5045 - remaining capacity * 0.001 in Ah
+// 5046 - 5047 - total capacity * 0.001 in Ah
+// 5048 - cycle number
+// 5049 - charge voltage limit * 0.1 in V
+// 5050 - discharge voltage limit * 0.1 in V
+// 5050 - charge current limit * 0.01 in A
+// 5050 - discharge current limit * 0.01 in A
+
 class Renogy
 {
 public:
     /// @brief Contains data retreived from charge controller
     struct Data
     {
-        int32_t errorState = 0; /// Controller error state
-        int32_t total = 0; /// Total power generation in Wh
-        int16_t generation = 0; /// Power generation in Wh
-        int16_t consumption = 0; /// Power consumption in Wh
-        uint8_t batteryCharge = 0; /// Battery Charge in % [0-100]
-        int8_t batteryTemperature = 0; /// Battery temperature in degrees C
-        int8_t chargingState = 0; /// Controller charging state
-        int8_t controllerTemperature = 0; /// Controller temperature in degrees C
-
-        float loadVoltage = 0.0f; /// Load output voltage in Volt
-        float loadCurrent = 0.0f; /// Load output current in Ampere
-
-        float batteryVoltage = 0.0f; /// Batery voltage in Volt
-        float batteryCurrent = 0.0f; /// Battery current in Ampere
-
-        float panelVoltage = 0.0f; /// Solar panel voltage in Volt
-        float panelCurrent = 0.0f; /// Solar panel current in Ampere
-
-        bool loadEnabled = false; /// Load output enabled state, true=enabled, false=disabled
+        uint16_t cycles = 0; /// cycle count
+        uint16_t cellCount = 0; /// amount of cells
+        float cellVoltage[16] = {0}; /// cell voltages
+        float cellTemperature[16] = {0}; /// cell temperatures
+        float ambientTemperature[2] = {0}; /// ambient temperatures
+        float heaterTemperature[2] = {0}; /// heater temperatures
+        float bmsTemperature = 0; /// bms temperature
+        float current = 0; /// current
+        float voltage = 0; /// voltage
+        float remaining = 0; /// remaining capacity
+        float total = 0; /// total capacity
+        float chargeVoltageLimit = 0; /// charge voltage limit
+        float dischargeVoltageLimit = 0; /// discharge voltage limit
+        float chargeCurrentLimit = 0; /// charge current limit
+        float dischargeCurrentLimit = 0; /// discharge current limit
     } _data;
 
     /// @brief Callback definition for data listener
