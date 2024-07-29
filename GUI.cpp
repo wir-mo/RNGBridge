@@ -39,7 +39,6 @@ void GUI::updateMQTTStatus(const String& status)
 
 void GUI::updatePVOutputStatus(const String& status)
 {
-    _status.garbageCollect();
     _status["pvosta"] = status;
 }
 
