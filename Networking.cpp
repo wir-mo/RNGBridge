@@ -378,7 +378,7 @@ bool Networking::handleClientFailsafe()
     while (WiFi.status() != WL_CONNECTED)
     {
         RNG_DEBUG('.');
-        delay(0);
+        delay(250);
         if (millis() - start > 15000)
         {
             RNG_DEBUGLN(F("\n[Networking] Failed, enabling AP"));
