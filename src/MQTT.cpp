@@ -24,57 +24,91 @@ void Mqtt::connect()
         if (mqttConfig.hadiscovery)
         {
             // Battery related
-            publishSensorDiscovery("Battery SOC", "batsoc", "battery", "%", "measurement", "{{value_json.b.ch}}");
-            publishSensorDiscovery("Battery Voltage", "batvol", "voltage", "V", "measurement",
-                "{{value_json.b.vo|round(1)}}", "mdi:battery");
-            publishSensorDiscovery("Battery Current", "batcur", "current", "A", "measurement",
-                "{{value_json.b.cu|round(1)}}", "mdi:battery");
-            publishSensorDiscovery("Battery Temperature", "battem", "temperature", "°C", "measurement",
-                "{{value_json.b.te}}", "mdi:battery");
+            publishSensorDiscovery("Cell 1 Voltage", "c1v", "voltage", "V", "measurement", "{{value_json.c1.vo}}");
+            publishSensorDiscovery(
+                "Cell 1 Temperature", "c1t", "temperature", "°C", "measurement", "{{value_json.c1.te}}");
+            publishSensorDiscovery("Cell 2 Voltage", "c2v", "voltage", "V", "measurement", "{{value_json.c2.vo}}");
+            publishSensorDiscovery(
+                "Cell 2 Temperature", "c2t", "temperature", "°C", "measurement", "{{value_json.c2.te}}");
+            publishSensorDiscovery("Cell 3 Voltage", "c3v", "voltage", "V", "measurement", "{{value_json.c3.vo}}");
+            publishSensorDiscovery(
+                "Cell 3 Temperature", "c3t", "temperature", "°C", "measurement", "{{value_json.c3.te}}");
+            publishSensorDiscovery("Cell 4 Voltage", "c4v", "voltage", "V", "measurement", "{{value_json.c4.vo}}");
+            publishSensorDiscovery(
+                "Cell 4 Temperature", "c4t", "temperature", "°C", "measurement", "{{value_json.c4.te}}");
+            publishSensorDiscovery("Cell 5 Voltage", "c5v", "voltage", "V", "measurement", "{{value_json.c5.vo}}");
+            publishSensorDiscovery(
+                "Cell 5 Temperature", "c5t", "temperature", "°C", "measurement", "{{value_json.c5.te}}");
+            publishSensorDiscovery("Cell 6 Voltage", "c6v", "voltage", "V", "measurement", "{{value_json.c6.vo}}");
+            publishSensorDiscovery(
+                "Cell 6 Temperature", "c6t", "temperature", "°C", "measurement", "{{value_json.c6.te}}");
+            publishSensorDiscovery("Cell 7 Voltage", "c7v", "voltage", "V", "measurement", "{{value_json.c7.vo}}");
+            publishSensorDiscovery(
+                "Cell 7 Temperature", "c7t", "temperature", "°C", "measurement", "{{value_json.c7.te}}");
+            publishSensorDiscovery("Cell 8 Voltage", "c8v", "voltage", "V", "measurement", "{{value_json.c8.vo}}");
+            publishSensorDiscovery(
+                "Cell 8 Temperature", "c8t", "temperature", "°C", "measurement", "{{value_json.c8.te}}");
+            publishSensorDiscovery("Cell 9 Voltage", "c9v", "voltage", "V", "measurement", "{{value_json.c9.vo}}");
+            publishSensorDiscovery(
+                "Cell 9 Temperature", "c9t", "temperature", "°C", "measurement", "{{value_json.c9.te}}");
+            publishSensorDiscovery("Cell 10 Voltage", "c10v", "voltage", "V", "measurement", "{{value_json.c10.vo}}");
+            publishSensorDiscovery(
+                "Cell 10 Temperature", "c10t", "temperature", "°C", "measurement", "{{value_json.c10.te}}");
+            publishSensorDiscovery("Cell 11 Voltage", "c11v", "voltage", "V", "measurement", "{{value_json.c11.vo}}");
+            publishSensorDiscovery(
+                "Cell 11 Temperature", "c11t", "temperature", "°C", "measurement", "{{value_json.c11.te}}");
+            publishSensorDiscovery("Cell 12 Voltage", "c12v", "voltage", "V", "measurement", "{{value_json.c12.vo}}");
+            publishSensorDiscovery(
+                "Cell 12 Temperature", "c12t", "temperature", "°C", "measurement", "{{value_json.c12.te}}");
+            publishSensorDiscovery("Cell 13 Voltage", "c13v", "voltage", "V", "measurement", "{{value_json.c13.vo}}");
+            publishSensorDiscovery(
+                "Cell 13 Temperature", "c13t", "temperature", "°C", "measurement", "{{value_json.c13.te}}");
+            publishSensorDiscovery("Cell 14 Voltage", "c14v", "voltage", "V", "measurement", "{{value_json.c14.vo}}");
+            publishSensorDiscovery(
+                "Cell 14 Temperature", "c14t", "temperature", "°C", "measurement", "{{value_json.c14.te}}");
+            publishSensorDiscovery("Cell 15 Voltage", "c15v", "voltage", "V", "measurement", "{{value_json.c15.vo}}");
+            publishSensorDiscovery(
+                "Cell 15 Temperature", "c15t", "temperature", "°C", "measurement", "{{value_json.c15.te}}");
+            publishSensorDiscovery("Cell 16 Voltage", "c16v", "voltage", "V", "measurement", "{{value_json.c16.vo}}");
+            publishSensorDiscovery(
+                "Cell 16 Temperature", "c16t", "temperature", "°C", "measurement", "{{value_json.c16.te}}");
 
             publishSensorDiscovery(
-                "Generation", "engen", "energy", "Wh", "total_increasing", "{{value_json.b.ge}}", "mdi:plus");
+                "Ambient Temperature 1", "a1te", "temperature", "°C", "measurement", "{{value_json.a1te}}");
             publishSensorDiscovery(
-                "Consumption", "encon", "energy", "Wh", "total_increasing", "{{value_json.b.co}}", "mdi:minus");
+                "Ambient Temperature 2", "a2te", "temperature", "°C", "measurement", "{{value_json.a2te}}");
 
-            // Load related
-            publishSensorDiscovery("Load Voltage", "loavol", "voltage", "V", "measurement",
-                "{{value_json.l.vo|round(1)}}", "mdi:alpha-l-box-outline");
-            publishSensorDiscovery("Load Current", "loacur", "current", "A", "measurement",
-                "{{value_json.l.cu|round(1)}}", "mdi:alpha-l-box-outline");
-            publishSensorDiscovery("Load Power", "loapow", "power", "W", "measurement",
-                "{{(value_json.l.vo*value_json.l.cu)|round(1)}}", "mdi:alpha-l-box-outline");
+            publishSensorDiscovery(
+                "Heater 1 Temperature", "h1te", "temperature", "°C", "measurement", "{{value_json.h1te}}");
+            publishSensorDiscovery(
+                "Heater 2 Temperature", "h2te", "temperature", "°C", "measurement", "{{value_json.h2te}}");
 
-            // Panel related
-            publishSensorDiscovery("Panel Voltage", "panvol", "voltage", "V", "measurement",
-                "{{value_json.p.vo|round(1)}}", "mdi:solar-panel");
-            publishSensorDiscovery("Panel Current", "pancur", "current", "A", "measurement",
-                "{{value_json.p.cu|round(1)}}", "mdi:solar-panel");
-            publishSensorDiscovery("Panel Power", "panpow", "power", "W", "measurement",
-                "{{(value_json.p.vo*value_json.p.cu)|round(1)}}", "mdi:solar-panel");
+            publishSensorDiscovery(
+                "BMS Temperature", "bmste", "temperature", "°C", "measurement", "{{value_json.bmste}}");
 
-            // Controller related
-            publishSensorDiscovery("Controller State", "consta",
-                "{{['Unknown',"
-                "'Deactivated',"
-                "'Activated',"
-                "'MPPT',"
-                "'Equalizing',"
-                "'Boost',"
-                "'Floating',"
-                "'Overpower'][value_json.c.st|int(-1)+1]}}",
-                "mdi:server");
-            publishSensorDiscovery("Controller Error", "conerr", "{{value_json.c.er}}", "mdi:server");
-            publishSensorDiscovery("Controller Temperature", "contem", "temperature", "°C", "measurement",
-                "{{value_json.c.te}}", "mdi:server");
+            publishSensorDiscovery("Cycles", "cy", "none", "cycles", "measurement", "{{value_json.cy}}");
+
+            publishSensorDiscovery("Current", "cu", "current", "A", "measurement", "{{value_json.cu}}");
+            publishSensorDiscovery("Voltage", "vo", "voltage", "V", "measurement", "{{value_json.vo}}");
+
+            publishSensorDiscovery("Remaining", "rem", "energy", "Wh", "measurement", "{{value_json.rem}}");
+            publishSensorDiscovery("Total", "tot", "energy", "Wh", "measurement", "{{value_json.tot}}");
+
+            publishSensorDiscovery(
+                "Charge Voltage Limit", "chlimvo", "voltage", "V", "measurement", "{{value_json.chlim.vo}}");
+            publishSensorDiscovery(
+                "Charge Current Limit", "chlimcu", "current", "A", "measurement", "{{value_json.chlim.cu}}");
+
+            publishSensorDiscovery(
+                "Discharge Voltage Limit", "dchlimvo", "voltage", "V", "measurement", "{{value_json.dchlim.vo}}");
+            publishSensorDiscovery(
+                "Discharge Current Limit", "dchlimcu", "current", "A", "measurement", "{{value_json.dchlim.cu}}");
 
             // Telemetry
             publishSensorDiscovery("RSSI", "rssi", "signal_strength", "dBm", "measurement", "{{value_json.rssi}}");
 
-            // Output (incl. load)
+            // Output
             // TODO command_topic
-            publishSwitchDiscovery(
-                "Load", "ol", "{{'true' if value_json.o.l else 'false'}}", "mdi:alpha-l-box-outline");
             publishSwitchDiscovery(
                 "Out 1", "o1", "{{'true' if value_json.o.o1 else 'false'}}", "mdi:numeric-1-box-outline");
             publishSwitchDiscovery(
@@ -128,24 +162,38 @@ void Mqtt::updateRenogyStatus(const Renogy::Data& data)
 
         if (mqttConfig.split)
         {
-            publish((mqttConfig.topic + "/battery/charge").c_str(), String(data.batteryCharge).c_str(), false);
-            publish((mqttConfig.topic + "/battery/voltage").c_str(), String(data.batteryVoltage).c_str(), false);
-            publish((mqttConfig.topic + "/battery/current").c_str(), String(data.batteryCurrent).c_str(), false);
-            publish(
-                (mqttConfig.topic + "/battery/temperature").c_str(), String(data.batteryTemperature).c_str(), false);
-            publish((mqttConfig.topic + "/battery/consumption").c_str(), String(data.consumption).c_str(), false);
-            publish((mqttConfig.topic + "/battery/generation").c_str(), String(data.generation).c_str(), false);
-
-            publish((mqttConfig.topic + "/load/voltage").c_str(), String(data.loadVoltage).c_str(), false);
-            publish((mqttConfig.topic + "/load/current").c_str(), String(data.loadCurrent).c_str(), false);
-
-            publish((mqttConfig.topic + "/panel/voltage").c_str(), String(data.panelVoltage).c_str(), false);
-            publish((mqttConfig.topic + "/panel/current").c_str(), String(data.panelCurrent).c_str(), false);
-
-            publish((mqttConfig.topic + "/controller/state").c_str(), String(data.chargingState).c_str(), false);
-            publish((mqttConfig.topic + "/controller/error").c_str(), String(data.errorState).c_str(), false);
-            publish((mqttConfig.topic + "/controller/temperature").c_str(), String(data.controllerTemperature).c_str(),
-                false);
+            publish((mqttConfig.topic + "/cell/1/v").c_str(), String(data.cellVoltage[0]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/1/t").c_str(), String(data.cellTemperature[0]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/2/v").c_str(), String(data.cellVoltage[1]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/2/t").c_str(), String(data.cellTemperature[1]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/3/v").c_str(), String(data.cellVoltage[2]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/3/t").c_str(), String(data.cellTemperature[2]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/4/v").c_str(), String(data.cellVoltage[3]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/4/t").c_str(), String(data.cellTemperature[3]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/5/v").c_str(), String(data.cellVoltage[4]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/5/t").c_str(), String(data.cellTemperature[4]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/6/v").c_str(), String(data.cellVoltage[5]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/6/t").c_str(), String(data.cellTemperature[5]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/7/v").c_str(), String(data.cellVoltage[6]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/7/t").c_str(), String(data.cellTemperature[6]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/8/v").c_str(), String(data.cellVoltage[7]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/8/t").c_str(), String(data.cellTemperature[7]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/9/v").c_str(), String(data.cellVoltage[8]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/9/t").c_str(), String(data.cellTemperature[8]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/10/v").c_str(), String(data.cellVoltage[9]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/10/t").c_str(), String(data.cellTemperature[9]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/11/v").c_str(), String(data.cellVoltage[10]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/11/t").c_str(), String(data.cellTemperature[10]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/12/v").c_str(), String(data.cellVoltage[11]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/12/t").c_str(), String(data.cellTemperature[11]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/13/v").c_str(), String(data.cellVoltage[12]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/13/t").c_str(), String(data.cellTemperature[12]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/14/v").c_str(), String(data.cellVoltage[13]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/14/t").c_str(), String(data.cellTemperature[13]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/15/v").c_str(), String(data.cellVoltage[14]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/15/t").c_str(), String(data.cellTemperature[14]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/16/v").c_str(), String(data.cellVoltage[15]).c_str(), false);
+            publish((mqttConfig.topic + "/cell/16/t").c_str(), String(data.cellTemperature[15]).c_str(), false);
         }
     }
 }

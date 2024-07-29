@@ -7,7 +7,7 @@
 #include "Networking.h"
 #include "OTA.h"
 #include "OutputControl.h"
-#include "PVOutput.h"
+// #include "PVOutput.h"
 #include "RNGTime.h"
 #include "Renogy.h"
 
@@ -33,7 +33,7 @@ uint8_t secondsPassedRenogy = 0; /// amount of seconds passed
 RNGTime _time;
 Config config;
 Mqtt* mqtt;
-PVOutput* pvo;
+// PVOutput* pvo;
 OTA* ota;
 Renogy* renogy;
 OutputControl* outputs;
@@ -104,24 +104,24 @@ void setup()
         }
 
         // PVOutput setup
-        const PVOutputConfig& pvoConfig = config.getPvoutputConfig();
-        if (pvoConfig.enabled)
-        {
-            pvo = new PVOutput(pvoConfig, _time);
-            pvo->observe([](const String& status) { gui.updatePVOutputStatus(status); });
-            pvo->start();
-        }
-        else
-        {
-            gui.updatePVOutputStatus("Disabled");
-        }
+        // const PVOutputConfig& pvoConfig = config.getPvoutputConfig();
+        // if (pvoConfig.enabled)
+        // {
+        //     pvo = new PVOutput(pvoConfig, _time);
+        //     pvo->observe([](const String& status) { gui.updatePVOutputStatus(status); });
+        //     pvo->start();
+        // }
+        // else
+        // {
+        //     gui.updatePVOutputStatus("Disabled");
+        // }
     }
 
     renogy->setListener([&](const Renogy::Data& data) {
-        if (pvo)
-        {
-            pvo->updateData(data);
-        }
+        // if (pvo)
+        // {
+        //     pvo->updateData(data);
+        // }
 
         outputs->update(data);
 
@@ -174,10 +174,10 @@ void loop()
             mqtt->loop();
         }
 
-        if (pvo)
-        {
-            pvo->loop();
-        }
+        // if (pvo)
+        // {
+        //     pvo->loop();
+        // }
 
         if (ota)
         {

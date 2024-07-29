@@ -2,7 +2,6 @@
 
 #include "Constants.h"
 #include "MQTT.h"
-#include "PVOutput.h"
 
 namespace ModBus
 {
@@ -138,6 +137,24 @@ namespace ModBus
 //            E01 B16: battery over-discharge
 //                B0-B15: Reserved
 
+// Smart Battery
+// 5000                  - cell count
+// 5001 - 5016 ( 0 - 15) - cell voltage * 0.1 in V
+// 5018 - 5033 (17 - 32) - cell temperature * 0.1 in °C
+// 5035        (34)      - bms temperature * 0.1 in °C
+// 5037 - 5038 (36 - 37) - ambient temperature * 0.1 in °C
+// 5040 - 5041 (39 - 40) - heater temperature * 0.1 in °C
+// 5042        (41)      - current * 0.01 in A
+// 5043        (42)      - voltage * 0.1 in V
+// 5044 - 5045 (43 - 44) - remaining capacity * 0.001 in Ah
+// 5046 - 5047 (45 - 46) - total capacity * 0.001 in Ah
+// 5048        (47)      - cycle number
+// 5049        (48)      - charge voltage limit * 0.1 in V
+// 5050        (49)      - discharge voltage limit * 0.1 in V
+// 5051        (50)      - charge current limit * 0.01 in A
+// 5052        (51)      - discharge current limit * 0.01 in A
+// SOC = remaining capacity / total capacity
+
 #ifdef DEMO_MODE
 uint8_t batteryCharge = 0;
 bool batteryDirection = true;
@@ -270,47 +287,87 @@ void Renogy::readAndProcessData()
     }
 
 #else
-    // Read 34 registers starting at 0x0100)
+    // Read 34 registers starting at 5000
     _modbus.clearResponseBuffer();
-    const uint8_t result = _modbus.readHoldingRegisters(0x0100, 34);
 
+    uint8_t result = _modbus.readHoldingRegisters(5000, 34);
     if (result != _modbus.ku8MBSuccess)
     {
-        RNG_DEBUGF("[Renogy] Could not read registers: %s (0x%02X)\n", mbResultToString(result), result);
+        RNG_DEBUGF("[Renogy] Could not read registers (5000): %s (0x%02X)\n", mbResultToString(result), result);
         return;
     }
 
-    _data.batteryCharge = ModBus::readInt16BE(_modbus, 0);
-    _data.batteryVoltage = 0.1f * ModBus::readInt16BE(_modbus, 1);
-    _data.batteryCurrent = 0.01f * ModBus::readInt16BE(_modbus, 2);
-    _data.controllerTemperature = ModBus::readInt8Upper(_modbus, 3);
-    if (_data.controllerTemperature & 0x80)
+    // RNG_DEBUGF("Data dump: 0x");
+    // for (uint8_t i = 0; i < 52; ++i)
+    // {
+    //     RNG_DEBUGF("%04" PRIx16, _modbus.getResponseBuffer(i));
+    // }
+    // RNG_DEBUGLN();
+
+    _data.cellCount = ModBus::readUInt16BE(_modbus, 0);
+    _data.cellVoltage[0] = 0.1f * ModBus::readUInt16BE(_modbus, 1);
+    _data.cellVoltage[1] = 0.1f * ModBus::readUInt16BE(_modbus, 2);
+    _data.cellVoltage[2] = 0.1f * ModBus::readUInt16BE(_modbus, 3);
+    _data.cellVoltage[3] = 0.1f * ModBus::readUInt16BE(_modbus, 4);
+    _data.cellVoltage[4] = 0.1f * ModBus::readUInt16BE(_modbus, 5);
+    _data.cellVoltage[5] = 0.1f * ModBus::readUInt16BE(_modbus, 6);
+    _data.cellVoltage[6] = 0.1f * ModBus::readUInt16BE(_modbus, 7);
+    _data.cellVoltage[7] = 0.1f * ModBus::readUInt16BE(_modbus, 8);
+    _data.cellVoltage[8] = 0.1f * ModBus::readUInt16BE(_modbus, 9);
+    _data.cellVoltage[9] = 0.1f * ModBus::readUInt16BE(_modbus, 10);
+    _data.cellVoltage[10] = 0.1f * ModBus::readUInt16BE(_modbus, 11);
+    _data.cellVoltage[11] = 0.1f * ModBus::readUInt16BE(_modbus, 12);
+    _data.cellVoltage[12] = 0.1f * ModBus::readUInt16BE(_modbus, 13);
+    _data.cellVoltage[13] = 0.1f * ModBus::readUInt16BE(_modbus, 14);
+    _data.cellVoltage[14] = 0.1f * ModBus::readUInt16BE(_modbus, 15);
+    _data.cellVoltage[15] = 0.1f * ModBus::readUInt16BE(_modbus, 16);
+
+    _data.cellTemperature[0] = 0.1f * ModBus::readUInt16BE(_modbus, 18);
+    _data.cellTemperature[1] = 0.1f * ModBus::readUInt16BE(_modbus, 19);
+    _data.cellTemperature[2] = 0.1f * ModBus::readUInt16BE(_modbus, 20);
+    _data.cellTemperature[3] = 0.1f * ModBus::readUInt16BE(_modbus, 21);
+    _data.cellTemperature[4] = 0.1f * ModBus::readUInt16BE(_modbus, 22);
+    _data.cellTemperature[5] = 0.1f * ModBus::readUInt16BE(_modbus, 23);
+    _data.cellTemperature[6] = 0.1f * ModBus::readUInt16BE(_modbus, 24);
+    _data.cellTemperature[7] = 0.1f * ModBus::readUInt16BE(_modbus, 25);
+    _data.cellTemperature[8] = 0.1f * ModBus::readUInt16BE(_modbus, 26);
+    _data.cellTemperature[9] = 0.1f * ModBus::readUInt16BE(_modbus, 27);
+    _data.cellTemperature[10] = 0.1f * ModBus::readUInt16BE(_modbus, 28);
+    _data.cellTemperature[11] = 0.1f * ModBus::readUInt16BE(_modbus, 29);
+    _data.cellTemperature[12] = 0.1f * ModBus::readUInt16BE(_modbus, 30);
+    _data.cellTemperature[13] = 0.1f * ModBus::readUInt16BE(_modbus, 31);
+    _data.cellTemperature[14] = 0.1f * ModBus::readUInt16BE(_modbus, 32);
+    _data.cellTemperature[15] = 0.1f * ModBus::readUInt16BE(_modbus, 33);
+
+    delay(100);
+    // Read another 18 registers starting at 5035
+    result = _modbus.readHoldingRegisters(5035, 18);
+    if (result != _modbus.ku8MBSuccess)
     {
-        _data.controllerTemperature = -(_data.controllerTemperature & 0x7f);
+        RNG_DEBUGF("[Renogy] Could not read registers (5035): %s (0x%02X)\n", mbResultToString(result), result);
+        return;
     }
-    _data.batteryTemperature = ModBus::readInt8Lower(_modbus, 3);
-    if (_data.batteryTemperature & 0x80)
-    {
-        _data.batteryTemperature = -(_data.batteryTemperature & 0x7f);
-    }
+    _data.bmsTemperature = 0.1f * ModBus::readUInt16BE(_modbus, 0);
 
-    _data.loadVoltage = 0.1f * ModBus::readInt16BE(_modbus, 4);
-    _data.loadCurrent = 0.01f * ModBus::readInt16BE(_modbus, 5);
-    // _data.loadPower = ModBus::readInt16BE(_modbus, 6);
+    _data.ambientTemperature[0] = 0.1f * ModBus::readUInt16BE(_modbus, 2);
+    _data.ambientTemperature[1] = 0.1f * ModBus::readUInt16BE(_modbus, 3);
 
-    _data.panelVoltage = 0.1f * ModBus::readInt16BE(_modbus, 7);
-    _data.panelCurrent = 0.01f * ModBus::readInt16BE(_modbus, 8);
-    // _data.panelPower = ModBus::readInt16BE(_modbus, 9);
+    _data.heaterTemperature[0] = 0.1f * ModBus::readUInt16BE(_modbus, 5);
+    _data.heaterTemperature[1] = 0.1f * ModBus::readUInt16BE(_modbus, 6);
 
-    _data.generation = ModBus::readInt16BE(_modbus, 19);
-    _data.consumption = ModBus::readInt16BE(_modbus, 20);
+    _data.current = 0.01f * ModBus::readInt16BE(_modbus, 7);
+    _data.voltage = 0.1f * ModBus::readUInt16BE(_modbus, 8);
 
-    _data.total = ModBus::readInt32BE(_modbus, 28);
+    _data.remaining = 0.001f * ModBus::readUInt32BE(_modbus, 9);
+    _data.total = 0.001f * ModBus::readUInt32BE(_modbus, 11);
 
-    _data.loadEnabled = ModBus::readInt8Upper(_modbus, 32) & 0x80;
-    _data.chargingState = ModBus::readInt8Lower(_modbus, 32);
+    _data.cycles = ModBus::readUInt16BE(_modbus, 13);
 
-    _data.errorState = ModBus::readInt32BE(_modbus, 33);
+    _data.chargeVoltageLimit = 0.1f * ModBus::readUInt16BE(_modbus, 14);
+    _data.dischargeVoltageLimit = 0.1f * ModBus::readUInt16BE(_modbus, 15);
+
+    _data.chargeCurrentLimit = 0.01f * ModBus::readUInt16BE(_modbus, 16);
+    _data.dischargeCurrentLimit = 0.01f * ModBus::readUInt16BE(_modbus, 17);
 
     // update listener
     if (_listener)
@@ -318,10 +375,10 @@ void Renogy::readAndProcessData()
         _listener(_data);
     }
 
-    if (model.isEmpty())
-    {
-        readModel();
-    }
+    // if (model.isEmpty())
+    // {
+    //     readModel();
+    // }
 #endif
 }
 

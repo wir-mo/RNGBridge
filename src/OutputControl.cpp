@@ -72,16 +72,16 @@ void OutputControl::handleOutput(
     switch (output.inputType)
     {
     case InputType::bsoc:
-        value = data.batteryCharge;
+        value = uint8_t(data.remaining / data.total) * 100;
         break;
     case InputType::bvoltage:
-        value = data.batteryVoltage;
+        value = data.voltage;
         break;
     case InputType::pvoltage:
-        value = data.panelVoltage;
+        // value = data.panelVoltage;
         break;
     case InputType::pcurrent:
-        value = data.panelCurrent;
+        // value = data.panelCurrent;
         break;
     }
 

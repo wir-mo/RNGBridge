@@ -39,19 +39,19 @@ void PVOutput::updateData(const Renogy::Data& data)
     if (_initial)
     {
         _initial = false;
-        _powerGeneration = data.panelCurrent * data.panelVoltage;
-        _powerConsumption = data.loadCurrent * data.loadVoltage;
-        _temperature = data.batteryTemperature;
-        _voltage = data.batteryVoltage;
+        // _powerGeneration = data.panelCurrent * data.panelVoltage;
+        // _powerConsumption = data.loadCurrent * data.loadVoltage;
+        _temperature = data.ambientTemperature[0];
+        _voltage = data.voltage;
         return;
     }
 
-    _powerGeneration += data.panelCurrent * data.panelVoltage;
-    _powerConsumption += data.loadCurrent * data.loadVoltage;
-    _energyGeneration = data.generation;
-    _energyConsumption = data.consumption;
-    _temperature += data.batteryTemperature;
-    _voltage += data.batteryVoltage;
+    // _powerGeneration += data.panelCurrent * data.panelVoltage;
+    // _powerConsumption += data.loadCurrent * data.loadVoltage;
+    // _energyGeneration = data.generation;
+    // _energyConsumption = data.consumption;
+    _temperature = data.ambientTemperature[0];
+    _voltage = data.voltage;
 
     // String debug = "+";
     // debug += _powerGeneration;
