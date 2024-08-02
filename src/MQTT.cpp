@@ -193,12 +193,12 @@ void Mqtt::addDeviceInfo(JsonDocument& json, const String& deviceID)
     dev["sw"] = SOFTWARE_VERSION;
     dev["cu"] = String("http://") + WiFi.localIP().toString();
 
-    dev.createNestedArray("ids").add(deviceID);
+    dev["ids"].to<JsonArray>().add(deviceID);
 }
 
 void Mqtt::publishSensorDiscovery(const String& name, const String& id, const String& valueTemplate, const String& icon)
 {
-    StaticJsonDocument<600> autoConfig;
+    JsonDocument autoConfig;
 
     const String deviceID = getDeviceID();
     addDeviceInfo(autoConfig, deviceID);
@@ -223,7 +223,7 @@ void Mqtt::publishSensorDiscovery(const String& name, const String& id, const St
 void Mqtt::publishSensorDiscovery(const String& name, const String& id, const String& deviceClass, const String& unit,
     const String& stateClass, const String& valueTemplate, const String& icon)
 {
-    StaticJsonDocument<600> autoConfig;
+    JsonDocument autoConfig;
 
     const String deviceID = getDeviceID();
     addDeviceInfo(autoConfig, deviceID);
@@ -251,7 +251,7 @@ void Mqtt::publishSensorDiscovery(const String& name, const String& id, const St
 
 void Mqtt::publishSwitchDiscovery(const String& name, const String& id, const String& valueTemplate, const String& icon)
 {
-    StaticJsonDocument<600> autoConfig;
+    JsonDocument autoConfig;
 
     const String deviceID = getDeviceID();
     addDeviceInfo(autoConfig, deviceID);

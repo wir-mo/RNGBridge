@@ -32,5 +32,5 @@ public:
     static String status;
 
 private:
-    StaticJsonDocument<1024> _status = {};
+    JsonDocument _status;
 };

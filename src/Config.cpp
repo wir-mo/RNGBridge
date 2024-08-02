@@ -106,7 +106,7 @@ void Config::saveConfig()
     RNG_DEBUGLN(F("[Config] Writing file"));
     File configFile = SPIFFS.open("/config.json", "w");
 
-    StaticJsonDocument<documentSizeConfig> json;
+    JsonDocument json;
     createJson(json);
 
     if (serializeJson(json, configFile) == 0)
@@ -126,13 +126,13 @@ void Config::saveConfig()
 
 void Config::createJson(JsonDocument& output)
 {
-    JsonObject wifi = output.createNestedObject("wifi");
+    JsonObject wifi = output["wifi"].to<JsonObject>();
     networkConfig.toJson(wifi);
-    JsonObject mqtt = output.createNestedObject("mqtt");
+    JsonObject mqtt = output["mqtt"].to<JsonObject>();
     mqttConfig.toJson(mqtt);
-    JsonObject pvo = output.createNestedObject("pvo");
+    JsonObject pvo = output["pvo"].to<JsonObject>();
     pvoutputConfig.toJson(pvo);
-    JsonObject dev = output.createNestedObject("dev");
+    JsonObject dev = output["dev"].to<JsonObject>();
     deviceConfig.toJson(dev);
 }
 
@@ -145,7 +145,7 @@ void Config::readConfig()
     {
         RNG_DEBUGLN(F("[Config] Opened file"));
 
-        StaticJsonDocument<documentSizeConfig> json;
+        JsonDocument json;
 
         DeserializationError error = deserializeJson(json, configFile);
         if (error)

@@ -30,10 +30,10 @@ String OTA::getNewSoftwareVersion()
     client.find("\r\n\r\n");
 
     // Filter to reduce size of resulting doc
-    StaticJsonDocument<32> filter;
+    JsonDocument filter;
     filter["tag_name"] = true;
     filter["prerelease"] = true;
-    StaticJsonDocument<256> doc;
+    JsonDocument doc;
     const DeserializationError error = deserializeJson(doc, client, DeserializationOption::Filter(filter));
 
     client.stop();

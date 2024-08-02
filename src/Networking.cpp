@@ -45,7 +45,7 @@ void Networking::initServer(OutputControl& outputs)
     es.onConnect([this](AsyncEventSourceClient* client) {
         RNG_DEBUGF("[Networking] ES[%s] connect\n", client->client()->remoteIP().toString().c_str());
 
-        StaticJsonDocument<1024> output;
+        JsonDocument output;
         auto&& obj = output.to<JsonObject>();
 
         getStatusJsonString(obj);
@@ -115,17 +115,17 @@ void Networking::init(OutputControl& outputs)
 
 void Networking::getStatusJsonString(JsonObject& output)
 {
-    auto&& networking = output.createNestedObject("network");
+    auto&& networking = output["network"].to<JsonObject>();
 
     bool client_enabled = config.getNetworkConfig().clientEnabled;
 
-    auto&& wifi_client = networking.createNestedObject("wifi_client");
+    auto&& wifi_client = networking["wifi_client"].to<JsonObject>();
     wifi_client["status"] = client_enabled ? (WiFi.isConnected() ? "connected" : "enabled") : "disabled";
     wifi_client["ip"] = WiFi.localIP().toString();
     wifi_client["netmask"] = WiFi.subnetMask().toString();
     wifi_client["dns"] = WiFi.dnsIP().toString();
 
-    auto&& wifi_ap = networking.createNestedObject("wifi_ap");
+    auto&& wifi_ap = networking["wifi_ap"].to<JsonObject>();
     wifi_ap["status"] = client_enabled ? "disabled" : "enabled";
     wifi_ap["ip"] = WiFi.softAPIP().toString();
 }
@@ -189,7 +189,7 @@ void Networking::handleConfigApiGet(AsyncWebServerRequest* request)
 {
     String buffer;
     buffer.reserve(512);
-    StaticJsonDocument<1024> document;
+    JsonDocument document;
     config.createJson(document);
 
     auto&& wifi = document["wifi"];
