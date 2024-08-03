@@ -348,10 +348,11 @@ void Renogy::readAndProcessData()
         return;
     }
     _data.bmsTemperature = 0.1f * ModBus::readUInt16BE(_modbus, 0);
-
+    // # of ambient temperatures ModBus::readUInt16BE(_modbus, 1);
     _data.ambientTemperature[0] = 0.1f * ModBus::readUInt16BE(_modbus, 2);
     _data.ambientTemperature[1] = 0.1f * ModBus::readUInt16BE(_modbus, 3);
 
+    // # of heater temperatures ModBus::readUInt16BE(_modbus, 4);
     _data.heaterTemperature[0] = 0.1f * ModBus::readUInt16BE(_modbus, 5);
     _data.heaterTemperature[1] = 0.1f * ModBus::readUInt16BE(_modbus, 6);
 
