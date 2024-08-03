@@ -16,32 +16,47 @@ namespace ModBus
         return ((modbus.getResponseBuffer(startAddress) >> 8) & 0xFF);
     }
 
+    uint16_t readUInt16BE(ModbusMaster& modbus, const uint8_t startAddress)
+    {
+        return modbus.getResponseBuffer(startAddress);
+    }
+
     int16_t readInt16BE(ModbusMaster& modbus, const uint8_t startAddress)
     {
         return modbus.getResponseBuffer(startAddress);
     }
 
-    int16_t readUInt16BE(ModbusMaster& modbus, const uint8_t startAddress)
-    {
-        return modbus.getResponseBuffer(startAddress);
-    }
-
-    int16_t readInt16LE(ModbusMaster& modbus, const uint8_t startAddress)
+    uint16_t readUInt16LE(ModbusMaster& modbus, const uint8_t startAddress)
     {
         const uint16_t reg = readInt16BE(modbus, startAddress);
         return ((reg << 8) & 0xFF00) | ((reg >> 8) & 0x00FF);
     }
 
+    int16_t readInt16LE(ModbusMaster& modbus, const uint8_t startAddress)
+    {
+        return readUInt16LE(modbus, startAddress);
+    }
+
+    uint32_t readUInt32BE(ModbusMaster& modbus, const uint8_t startAddress)
+    {
+        return ((modbus.getResponseBuffer(startAddress) & 0xFFFF) << 16)
+            | (modbus.getResponseBuffer(1 + startAddress) & 0xFFFF);
+    }
+
     int32_t readInt32BE(ModbusMaster& modbus, const uint8_t startAddress)
     {
-        return (modbus.getResponseBuffer(2 + startAddress) & 0xFFFF)
-            | ((modbus.getResponseBuffer(startAddress) & 0xFFFF) << 16);
+        return readUInt32BE(modbus, startAddress);
+    }
+
+    uint32_t readUInt32LE(ModbusMaster& modbus, const uint8_t startAddress)
+    {
+        const uint32_t reg = readInt32BE(modbus, startAddress);
+        return ((reg << 8) & 0xFF00FF00) | ((reg >> 8) & 0x00FF00FF);
     }
 
     int32_t readInt32LE(ModbusMaster& modbus, const uint8_t startAddress)
     {
-        const uint32_t reg = readInt32BE(modbus, startAddress);
-        return ((reg << 8) & 0xFF00FF00) | ((reg >> 8) & 0x00FF00FF);
+        return readUInt32LE(modbus, startAddress);
     }
 
     String readString(ModbusMaster& modbus, const uint8_t startAddress, const uint8_t registers)
@@ -54,7 +69,6 @@ namespace ModBus
         }
         return str;
     }
-
 } // namespace ModBus
 
 // 0x0100 (2) 00 - Battery capacity SOC (state of charge)
