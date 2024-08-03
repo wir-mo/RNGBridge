@@ -148,6 +148,43 @@ constexpr float batterySocToVolts(const float soc)
     return 0.000004 * soc * soc * soc - 0.000848 * soc * soc + 0.061113 * soc + 10.6099;
 }
 
+constexpr const char* mbResultToString(const uint8_t result)
+{
+    if (result == ModbusMaster::ku8MBIllegalFunction)
+    {
+        return "IllegalFunction";
+    }
+    if (result == ModbusMaster::ku8MBIllegalDataAddress)
+    {
+        return "IllegalDataAddress";
+    }
+    if (result == ModbusMaster::ku8MBIllegalDataValue)
+    {
+        return "IllegalDataValue";
+    }
+    if (result == ModbusMaster::ku8MBSlaveDeviceFailure)
+    {
+        return "SalveDeviceFailure";
+    }
+    if (result == ModbusMaster::ku8MBInvalidSlaveID)
+    {
+        return "InvalidSlaveID";
+    }
+    if (result == ModbusMaster::ku8MBInvalidFunction)
+    {
+        return "InvalidFunction";
+    }
+    if (result == ModbusMaster::ku8MBResponseTimedOut)
+    {
+        return "ResponseTimedOut";
+    }
+    if (result == ModbusMaster::ku8MBInvalidCRC)
+    {
+        return "InvalidCRC";
+    }
+    return "Unknown";
+}
+
 void Renogy::readAndProcessData()
 {
 #if DEMO_MODE == SIMULATED_DEMO_DATA
@@ -237,54 +274,53 @@ void Renogy::readAndProcessData()
     _modbus.clearResponseBuffer();
     const uint8_t result = _modbus.readHoldingRegisters(0x0100, 34);
 
-    if (result == _modbus.ku8MBSuccess)
+    if (result != _modbus.ku8MBSuccess)
     {
-        _data.batteryCharge = ModBus::readInt16BE(_modbus, 0);
-        _data.batteryVoltage = 0.1f * ModBus::readInt16BE(_modbus, 1);
-        _data.batteryCurrent = 0.01f * ModBus::readInt16BE(_modbus, 2);
-        _data.controllerTemperature = ModBus::readInt8Upper(_modbus, 3);
-        if (_data.controllerTemperature & 0x80)
-        {
-            _data.controllerTemperature = -(_data.controllerTemperature & 0x7f);
-        }
-        _data.batteryTemperature = ModBus::readInt8Lower(_modbus, 3);
-        if (_data.batteryTemperature & 0x80)
-        {
-            _data.batteryTemperature = -(_data.batteryTemperature & 0x7f);
-        }
-
-        _data.loadVoltage = 0.1f * ModBus::readInt16BE(_modbus, 4);
-        _data.loadCurrent = 0.01f * ModBus::readInt16BE(_modbus, 5);
-        // _data.loadPower = ModBus::readInt16BE(_modbus, 6);
-
-        _data.panelVoltage = 0.1f * ModBus::readInt16BE(_modbus, 7);
-        _data.panelCurrent = 0.01f * ModBus::readInt16BE(_modbus, 8);
-        // _data.panelPower = ModBus::readInt16BE(_modbus, 9);
-
-        _data.generation = ModBus::readInt16BE(_modbus, 19);
-        _data.consumption = ModBus::readInt16BE(_modbus, 20);
-
-        _data.total = ModBus::readInt32BE(_modbus, 28);
-
-        _data.loadEnabled = ModBus::readInt8Upper(_modbus, 32) & 0x80;
-        _data.chargingState = ModBus::readInt8Lower(_modbus, 32);
-
-        _data.errorState = ModBus::readInt32BE(_modbus, 33);
-
-        // update listener
-        if (_listener)
-        {
-            _listener(_data);
-        }
-
-        if (model.isEmpty())
-        {
-            readModel();
-        }
+        RNG_DEBUGF("[Renogy] Could not read registers: %s (0x%02X)\n", mbResultToString(result), result);
+        return;
     }
-    else
+
+    _data.batteryCharge = ModBus::readInt16BE(_modbus, 0);
+    _data.batteryVoltage = 0.1f * ModBus::readInt16BE(_modbus, 1);
+    _data.batteryCurrent = 0.01f * ModBus::readInt16BE(_modbus, 2);
+    _data.controllerTemperature = ModBus::readInt8Upper(_modbus, 3);
+    if (_data.controllerTemperature & 0x80)
     {
-        RNG_DEBUGF("[Renogy] Could not read registers: %d\n", result);
+        _data.controllerTemperature = -(_data.controllerTemperature & 0x7f);
+    }
+    _data.batteryTemperature = ModBus::readInt8Lower(_modbus, 3);
+    if (_data.batteryTemperature & 0x80)
+    {
+        _data.batteryTemperature = -(_data.batteryTemperature & 0x7f);
+    }
+
+    _data.loadVoltage = 0.1f * ModBus::readInt16BE(_modbus, 4);
+    _data.loadCurrent = 0.01f * ModBus::readInt16BE(_modbus, 5);
+    // _data.loadPower = ModBus::readInt16BE(_modbus, 6);
+
+    _data.panelVoltage = 0.1f * ModBus::readInt16BE(_modbus, 7);
+    _data.panelCurrent = 0.01f * ModBus::readInt16BE(_modbus, 8);
+    // _data.panelPower = ModBus::readInt16BE(_modbus, 9);
+
+    _data.generation = ModBus::readInt16BE(_modbus, 19);
+    _data.consumption = ModBus::readInt16BE(_modbus, 20);
+
+    _data.total = ModBus::readInt32BE(_modbus, 28);
+
+    _data.loadEnabled = ModBus::readInt8Upper(_modbus, 32) & 0x80;
+    _data.chargingState = ModBus::readInt8Lower(_modbus, 32);
+
+    _data.errorState = ModBus::readInt32BE(_modbus, 33);
+
+    // update listener
+    if (_listener)
+    {
+        _listener(_data);
+    }
+
+    if (model.isEmpty())
+    {
+        readModel();
     }
 #endif
 }
