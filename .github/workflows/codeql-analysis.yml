@@ -68,17 +68,18 @@ jobs:
     #   echo "Run, Build Application using script"
     #   ./location_of_script_within_repo/buildscript.sh
 
-    - name: Set up Python
-      uses: actions/setup-python@v1
+    # Setup python
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
-    - name: Install dependencies
-      run: |
-          python -m pip install --upgrade pip
-          pip install platformio
+    # Install platformio
+    - name: Install PlatformIO Core
+      run: pip install --upgrade platformio
 
-    - name: Run PlatformIO
-      working-directory: firmware
-      run: platformio run
+    # Build
+    - name: Build PlatformIO Project
+      run: pio run
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
