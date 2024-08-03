@@ -28,19 +28,19 @@ public:
     {
         uint16_t cycles = 0; /// cycle count
         uint16_t cellCount = 0; /// amount of cells
-        float cellVoltage[16] = {0}; /// cell voltages
-        float cellTemperature[16] = {0}; /// cell temperatures
-        float ambientTemperature[2] = {0}; /// ambient temperatures
-        float heaterTemperature[2] = {0}; /// heater temperatures
-        float bmsTemperature = 0; /// bms temperature
-        float current = 0; /// current
-        float voltage = 0; /// voltage
-        float remaining = 0; /// remaining capacity
-        float total = 0; /// total capacity
-        float chargeVoltageLimit = 0; /// charge voltage limit
-        float dischargeVoltageLimit = 0; /// discharge voltage limit
-        float chargeCurrentLimit = 0; /// charge current limit
-        float dischargeCurrentLimit = 0; /// discharge current limit
+        float cellVoltage[16] = {0}; /// cell voltages in V
+        float cellTemperature[16] = {0}; /// cell temperatures in °C
+        float ambientTemperature[2] = {0}; /// ambient temperatures in °C
+        float heaterTemperature[2] = {0}; /// heater temperatures in °C
+        float bmsTemperature = 0; /// bms temperature in °C
+        float current = 0; /// current in A
+        float voltage = 0; /// voltage in V
+        float remaining = 0; /// remaining capacity in Ah
+        float total = 0; /// total capacity in Ah
+        float chargeVoltageLimit = 0; /// charge voltage limit in V
+        float dischargeVoltageLimit = 0; /// discharge voltage limit in V
+        float chargeCurrentLimit = 0; /// charge current limit in A
+        float dischargeCurrentLimit = 0; /// discharge current limit in A
     } _data;
 
     /// @brief Callback definition for data listener
