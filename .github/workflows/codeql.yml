@@ -87,21 +87,22 @@ jobs:
     # to build your code.
     # ℹ️ Command-line programs to run using the OS shell.
     # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-    - if: matrix.build-mode == 'manual'
-      shell: bash
-      run: |
-        # Setup python
-        - uses: actions/setup-python@v5
-          with:
-            python-version: '3.11'
-  
-        # Install platformio
-        - name: Install PlatformIO Core
-          run: pip install --upgrade platformio
+    # - if: matrix.build-mode == 'manual'
+    #   shell: bash
+    #   run: |
+    
+    # Setup python
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
 
-        # Build
-        - name: Build PlatformIO Project
-          run: pio run
+    # Install platformio
+    - name: Install PlatformIO Core
+      run: pip install --upgrade platformio
+
+    # Build
+    - name: Build PlatformIO Project
+      run: pio run
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3
