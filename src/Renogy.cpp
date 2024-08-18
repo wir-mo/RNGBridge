@@ -309,48 +309,72 @@ void Renogy::readAndProcessData()
     }
 
 #else
-    // Read 29 registers starting at 0x3100)
+    // Read 18 registers starting at 0x3100
     _modbus.clearResponseBuffer();
-    const uint8_t result = _modbus.readInputRegisters(0x3100, 17);
-    // const uint8_t result = _modbus.readHoldingRegisters(0x3100, 26);
-
+    uint8_t result = _modbus.readInputRegisters(0x3100, 18);
     if (result != _modbus.ku8MBSuccess)
     {
-        RNG_DEBUGF("[Renogy] Could not read registers: %s (0x%02X)\n", mbResultToString(result), result);
+        RNG_DEBUGF("[Renogy] Could not read registers 0x3100: %s (0x%02X)\n", mbResultToString(result), result);
         return;
     }
 
-    // _data.batteryCharge = 0.01f * ModBus::readInt16BE(_modbus, 26);
+    _data.panelVoltage = 0.01f * ModBus::readInt16BE(_modbus, 0);
+    _data.panelCurrent = 0.01f * ModBus::readInt16BE(_modbus, 1);
+    // _data.panelPower = 0.01f * ModBus::readInt32BE(_modbus, 2);
+
     _data.batteryVoltage = 0.01f * ModBus::readInt16BE(_modbus, 4);
     _data.batteryCurrent = 0.01f * ModBus::readInt16BE(_modbus, 5);
-    _data.controllerTemperature = 0.01f * ModBus::readInt16BE(_modbus, 17);
-    _data.batteryTemperature = 0.01f * ModBus::readInt16BE(_modbus, 16);
+    // _data.batteryPower = 0.01f * ModBus::readInt32BE(_modbus, 6);
 
     _data.loadVoltage = 0.01f * ModBus::readInt16BE(_modbus, 12);
     _data.loadCurrent = 0.01f * ModBus::readInt16BE(_modbus, 13);
-    // _data.loadPower = ModBus::readInt16BE(_modbus, 6);
+    // _data.loadPower = 0.01f * ModBus::readInt32BE(_modbus, 14);
 
-    _data.panelVoltage = 0.01f * ModBus::readInt16BE(_modbus, 0);
-    _data.panelCurrent = 0.01f * ModBus::readInt16BE(_modbus, 1);
-    // _data.panelPower = ModBus::readInt16BE(_modbus, 9);
+    _data.batteryTemperature = 0.01f * ModBus::readInt16BE(_modbus, 16);
+    _data.controllerTemperature = 0.01f * ModBus::readInt16BE(_modbus, 17);
 
-    /// @todo
-    // Read 29 registers starting at 0x3100)
-    // _modbus.clearResponseBuffer();
-    // const uint8_t result = _modbus.readInputRegisters(0x3100, 29);
+    // Read 1 register at 0x311A
+    _modbus.clearResponseBuffer();
+    result = _modbus.readInputRegisters(0x311A, 1);
+    if (result != _modbus.ku8MBSuccess)
+    {
+        RNG_DEBUGF("[Renogy] Could not read registers 0x311A: %s (0x%02X)\n", mbResultToString(result), result);
+        return;
+    }
+    _data.batteryCharge = 0.01f * ModBus::readInt16BE(_modbus, 0);
 
-    // if (result != _modbus.ku8MBSuccess)
-    // {
-    //     RNG_DEBUGF("[Renogy] Could not read registers: %d\n", result);
-    //     return;
-    // }
-    // _data.generation = ModBus::readInt16BE(_modbus, 19);
-    // _data.consumption = ModBus::readInt16BE(_modbus, 20);
-
-    // _data.loadEnabled = ModBus::readInt8Upper(_modbus, 32) & 0x80;
-    // _data.chargingState = ModBus::readInt8Lower(_modbus, 32);
-
+    // Read 3 registers starting at 0x3200
+    _modbus.clearResponseBuffer();
+    result = _modbus.readInputRegisters(0x3200, 3);
+    if (result != _modbus.ku8MBSuccess)
+    {
+        RNG_DEBUGF("[Renogy] Could not read registers 0x3200: %s (0x%02X)\n", mbResultToString(result), result);
+        return;
+    }
+    _data.chargingState = 0x3 & (ModBus::readInt8Lower(_modbus, 1) >> 2);
     // _data.errorState = ModBus::readInt32BE(_modbus, 33);
+
+    // Read 10 registers starting at 0x330A
+    _modbus.clearResponseBuffer();
+    result = _modbus.readInputRegisters(0x330A, 10);
+    if (result != _modbus.ku8MBSuccess)
+    {
+        RNG_DEBUGF("[Renogy] Could not read registers 0x330A: %s (0x%02X)\n", mbResultToString(result), result);
+        return;
+    }
+
+    _data.consumption = ModBus::readInt32BE(_modbus, 0);
+    _data.generation = ModBus::readInt32BE(_modbus, 8);
+
+    // Read 1 register at 0x02
+    _modbus.clearResponseBuffer();
+    result = _modbus.readCoils(0x02, 1);
+    if (result != _modbus.ku8MBSuccess)
+    {
+        RNG_DEBUGF("[Renogy] Could not read registers 0x02: %s (0x%02X)\n", mbResultToString(result), result);
+        return;
+    }
+    _data.loadEnabled = ModBus::readUInt16BE(_modbus, 0);
 
     // update listener
     if (_listener)
@@ -370,10 +394,11 @@ void Renogy::enableLoad(const bool enable)
 #ifdef DEMO_MODE
     _data.loadEnabled = enable;
 #else
-    const uint8_t result = _modbus.writeSingleRegister(0x010A, enable ? 0x01 : 0x00);
+    const uint8_t result = _modbus.writeSingleCoil(0x02, enable ? 0x01 : 0x00);
     if (result != _modbus.ku8MBSuccess)
     {
-        RNG_DEBUGF("[Renogy] Could not turn load %s: %d\n", enable ? "on" : "off", result);
+        RNG_DEBUGF(
+            "[Renogy] Could not turn load %s: %s (0x%02X)\n", enable ? "on" : "off", mbResultToString(result), result);
     }
 #endif
 }
