@@ -89,9 +89,10 @@ enum class InputType
     disabled,
     bsoc,
     bvoltage,
+    btemp,
     pvoltage,
     pcurrent,
-
+    ctemp,
 };
 
 static const String InputTypeToString(const InputType type)
@@ -102,10 +103,14 @@ static const String InputTypeToString(const InputType type)
         return "bsoc";
     case InputType::bvoltage:
         return "bvoltage";
+    case InputType::btemp:
+        return "btemp";
     case InputType::pvoltage:
         return "pvoltage";
     case InputType::pcurrent:
         return "pcurrent";
+    case InputType::ctemp:
+        return "ctemp";
     case InputType::disabled:
     default:
         return "disabled";
@@ -122,6 +127,10 @@ static InputType StringToInputType(const String& str)
     {
         return InputType::bvoltage;
     }
+    if (str.equals("btemp"))
+    {
+        return InputType::btemp;
+    }
     if (str.equals("pvoltage"))
     {
         return InputType::pvoltage;
@@ -129,6 +138,10 @@ static InputType StringToInputType(const String& str)
     if (str.equals("pcurrent"))
     {
         return InputType::pcurrent;
+    }
+    if (str.equals("ctemp"))
+    {
+        return InputType::ctemp;
     }
     return InputType::disabled;
 }

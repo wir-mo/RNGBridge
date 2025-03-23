@@ -77,11 +77,17 @@ void OutputControl::handleOutput(
     case InputType::bvoltage:
         value = data.batteryVoltage;
         break;
+    case InputType::btemp:
+        value = data.batteryTemperature;
+        break;
     case InputType::pvoltage:
         value = data.panelVoltage;
         break;
     case InputType::pcurrent:
         value = data.panelCurrent;
+        break;
+    case InputType::ctemp:
+        value = data.controllerTemperature;
         break;
     }
 
