@@ -45,7 +45,7 @@ String OTA::getNewSoftwareVersion()
         return "";
     }
 
-    if (!doc.containsKey("tag_name"))
+    if (!doc["tag_name"].is<String>())
     {
         // _lastError = "JSON didn't match expected structure. 'tag_name' missing.";
         RNG_DEBUGLN(F("[OTA] JSON missing tag_name"));

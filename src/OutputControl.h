@@ -4,7 +4,8 @@
 
 #include "Config.h"
 #include "Observerable.h"
-#include "Renogy.h"
+
+#include "device/RSDevice.h"
 
 /// @brief Current output status
 struct OutputStatus
@@ -21,14 +22,14 @@ class OutputControl : public Observerable<OutputStatus>
 public:
     /// @brief Construct a new Output Control object
     ///
-    /// @param renogy Renogy controller
+    /// @param device RS controller
     /// @param deviceConfig Device config including output configs
-    OutputControl(Renogy& renogy, DeviceConfig& deviceConfig);
+    OutputControl(RSDevice& device, DeviceConfig& deviceConfig);
 
     /// @brief Update output states depending on individual OutputConfig
     ///
-    /// @param data Latest Renogy data
-    void update(const Renogy::Data& data);
+    /// @param device Device for getting data
+    void update(const RSDevice& device);
 
     /// @brief Control renogy load output
     ///
@@ -52,10 +53,10 @@ private:
     ///
     /// @param tag Debug tag
     /// @param output Output configuration with setpoints
-    /// @param data Current renogy state data
+    /// @param device Device for getting data
     /// @param enable Callback function for turning output on (passing true) or off (passing false)
     void handleOutput(
-        const char* tag, OutputConfig& output, const Renogy::Data& data, std::function<void(const bool)> enable);
+        const char* tag, OutputConfig& output, const RSDevice& device, std::function<void(const bool)> enable);
 
 private:
     constexpr static const uint8_t PIN_OUTPUT1 = D5; /// pin definition for first output control

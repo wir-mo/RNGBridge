@@ -1,6 +1,6 @@
 #include "OutputControl.h"
 
-OutputControl::OutputControl(Renogy& renogy, DeviceConfig& deviceConfig) : deviceConfig(deviceConfig)
+OutputControl::OutputControl(RSDevice& renogy, DeviceConfig& deviceConfig) : deviceConfig(deviceConfig)
 {
     pinMode(PIN_OUTPUT1, OUTPUT);
     pinMode(PIN_OUTPUT2, OUTPUT);
@@ -52,44 +52,23 @@ void OutputControl::enableOut3(const bool enable)
     handleOut3(enable);
 }
 
-void OutputControl::update(const Renogy::Data& data)
+void OutputControl::update(const RSDevice& device)
 {
-    handleOutput("Load", deviceConfig.load, data, handleLoad);
-    handleOutput("Out1", deviceConfig.out1, data, handleOut1);
-    handleOutput("Out2", deviceConfig.out2, data, handleOut2);
-    handleOutput("Out3", deviceConfig.out3, data, handleOut3);
+    handleOutput("Load", deviceConfig.load, device, handleLoad);
+    handleOutput("Out1", deviceConfig.out1, device, handleOut1);
+    handleOutput("Out2", deviceConfig.out2, device, handleOut2);
+    handleOutput("Out3", deviceConfig.out3, device, handleOut3);
 }
 
 void OutputControl::handleOutput(
-    const char* tag, OutputConfig& output, const Renogy::Data& data, std::function<void(const bool)> enable)
+    const char* tag, OutputConfig& output, const RSDevice& device, std::function<void(const bool)> enable)
 {
     if (output.inputType == InputType::disabled)
     {
         return;
     }
 
-    float value = 0;
-    switch (output.inputType)
-    {
-    case InputType::bsoc:
-        value = data.batteryCharge;
-        break;
-    case InputType::bvoltage:
-        value = data.batteryVoltage;
-        break;
-    case InputType::btemp:
-        value = data.batteryTemperature;
-        break;
-    case InputType::pvoltage:
-        value = data.panelVoltage;
-        break;
-    case InputType::pcurrent:
-        value = data.panelCurrent;
-        break;
-    case InputType::ctemp:
-        value = data.controllerTemperature;
-        break;
-    }
+    const float value = device.getValueForType(output.inputType);
 
     RNG_DEBUGF("[OutputControl][%s] min %.2f, max %.2f, value %.2f\n", tag, output.min, output.max, value);
 

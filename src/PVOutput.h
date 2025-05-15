@@ -8,8 +8,6 @@
 #include "Constants.h"
 #include "Observerable.h"
 #include "RNGTime.h"
-#include "Renogy.h"
-
 
 /// @brief Class for approximating a rolling average
 ///
@@ -63,6 +61,17 @@ private:
 class PVOutput : public Observerable<String>
 {
 public:
+    struct Data
+    {
+        int16_t energyGenerated; /// Generated energy in Wh
+        int16_t energyConsumed; /// Consumed energy in Wh
+        float powerGeneration; /// Generated power in W
+        float powerConsumption; /// Consumed power in W
+        float temperature; /// Temperature in °C
+        float voltage; /// Voltage in V
+    };
+
+public:
     PVOutput(const PVOutputConfig& config, RNGTime& time) : _config(config), _time(time)
     {
         // We need to reduce the buffer sizes or we get issues with HEAP
@@ -86,7 +95,7 @@ public:
     ///@param data Renogy data
     ///
     /// Should be called after data was read from the chargecontroller
-    void updateData(const Renogy::Data& data);
+    void updateData(const Data& data);
 
     ///@brief Tries to start automatic PVOutput data upload
     ///

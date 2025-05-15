@@ -9,22 +9,29 @@
 #include "OutputControl.h"
 #include "PVOutput.h"
 #include "RNGTime.h"
-#include "Renogy.h"
+
+#include "device/Dummy.h"
+#include "device/Epever.h"
+#include "device/RSDevice.h"
+#include "device/Renogy.h"
+#include "device/RenogyBattery.h"
 
 // 60 requests per hour.
 // 300 requests per hour in donation mode.
 
 // pinout
-// D1 = LED
-// D2 = RS485 DE/!RE (direction)
+// D0 = LED
+// D1 = SCL (QWIIC)
+// D2 = SDA (QWIIC)
 // D4 = Debug Serial
 // D5 = Out1
 // D6 = Out2
 // D7 = Out3
+// D8 = RS485 DE/!RE (direction)
 // RX = RS232 RX = RS485 RO = RNG TX
 // TX = RS232 TX = RS485 DI = RNG RX
 
-constexpr static const uint8_t LED = D1;
+constexpr static const uint8_t LED = D0;
 
 uint8_t lastSecond = 0; /// The last seconds value
 uint8_t secondsPassedRenogy = 0; /// amount of seconds passed
@@ -35,7 +42,7 @@ Config config;
 Mqtt* mqtt;
 PVOutput* pvo;
 OTA* ota;
-Renogy* renogy;
+std::shared_ptr<RSDevice> rsDevice;
 OutputControl* outputs;
 Networking networking(config);
 GUI gui;
@@ -71,9 +78,29 @@ void setup()
     // }
 
     DeviceConfig& deviceConfig = config.getDeviceConfig();
-    renogy = new Renogy(Serial, deviceConfig.address);
-    outputs = new OutputControl(*renogy, config.getDeviceConfig());
-    networking.init(*outputs);
+    switch (deviceConfig.type)
+    {
+    case DeviceType::dummy:
+        rsDevice = std::make_shared<Dummy>();
+        break;
+    case DeviceType::renogy:
+        rsDevice = std::make_shared<Renogy>(Serial, deviceConfig.address);
+        break;
+    case DeviceType::renogyBattery:
+        rsDevice = std::make_shared<RenogyBattery>(Serial, deviceConfig.address);
+        break;
+    case DeviceType::epever:
+        rsDevice = std::make_shared<Epever>(Serial, deviceConfig.address);
+        break;
+
+    default:
+        break;
+    }
+    if (rsDevice)
+    {
+        outputs = new OutputControl(*rsDevice, deviceConfig);
+        networking.init(*outputs);
+    }
     // Last will of mqtt won't work this way
     // networking.setRebootHandler([]() {
     //     if (mqtt)
@@ -95,7 +122,7 @@ void setup()
         if (mqttConfig.enabled)
         {
             mqtt = new Mqtt(mqttConfig, *outputs);
-            mqtt->observe([](const String& status) { gui.updateMQTTStatus(status); });
+            // mqtt->observe([](const String& status) { gui.updateMQTTStatus(status); });
             mqtt->connect();
         }
         else
@@ -117,19 +144,23 @@ void setup()
         }
     }
 
-    renogy->setListener([&](const Renogy::Data& data) {
+    rsDevice->setListener([&]() {
         if (pvo)
         {
-            pvo->updateData(data);
+            // pvo->updateData(data);
         }
 
-        outputs->update(data);
+        outputs->update(*rsDevice);
 
-        gui.updateRenogyStatus(data);
+        rsDevice->updateUI(gui.json);
 
         if (mqtt)
         {
-            mqtt->updateRenogyStatus(data);
+            mqtt->publishData();
+            if (mqtt->splitData())
+            {
+                rsDevice->publishIndividualMqttData(*mqtt);
+            }
         }
     });
 
@@ -166,7 +197,7 @@ void loop()
         {
             secondsPassedRenogy = 0;
             // Read and process data every 2 seconds
-            renogy->readAndProcessData();
+            rsDevice->readAndProcessData();
         }
 
         if (mqtt)

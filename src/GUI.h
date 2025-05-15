@@ -3,7 +3,6 @@
 #include <ArduinoJson.h>
 
 #include "OutputControl.h"
-#include "Renogy.h"
 
 class GUI
 {
@@ -11,8 +10,6 @@ public:
     GUI() { }
 
     GUI(GUI&&) = delete;
-
-    void updateRenogyStatus(const Renogy::Data& data);
 
     void updateMQTTStatus(const String& status);
 
@@ -30,7 +27,5 @@ public:
 
 public:
     static String status;
-
-private:
-    JsonDocument _status;
+    JsonDocument json;
 };
