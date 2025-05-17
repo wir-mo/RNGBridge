@@ -71,17 +71,17 @@ public:
         uint8_t result = _modbus.readHoldingRegisters(5000, 34);
         if (result != _modbus.ku8MBSuccess)
         {
-            RNG_DEBUGF("[RenogyBattery] Could not read registers (5000): %s (0x%02X)\n", ModBus::resultToString(result),
+            RS_DEBUGF("[RenogyBattery] Could not read registers (5000): %s (0x%02X)\n", ModBus::resultToString(result),
                 result);
             return;
         }
 
-        // RNG_DEBUGF("Data dump: 0x");
+        // RS_DEBUGF("Data dump: 0x");
         // for (uint8_t i = 0; i < 52; ++i)
         // {
-        //     RNG_DEBUGF("%04" PRIx16, _modbus.getResponseBuffer(i));
+        //     RS_DEBUGF("%04" PRIx16, _modbus.getResponseBuffer(i));
         // }
-        // RNG_DEBUGLN();
+        // RS_DEBUGLN();
 
         _data.cellCount = ModBus::readUInt16BE(_modbus, 0);
         _data.cellVoltage[0] = 0.1f * ModBus::readUInt16BE(_modbus, 1);
@@ -123,7 +123,7 @@ public:
         result = _modbus.readHoldingRegisters(5035, 18);
         if (result != _modbus.ku8MBSuccess)
         {
-            RNG_DEBUGF("[RenogyBattery] Could not read registers (5035): %s (0x%02X)\n", ModBus::resultToString(result),
+            RS_DEBUGF("[RenogyBattery] Could not read registers (5035): %s (0x%02X)\n", ModBus::resultToString(result),
                 result);
             return;
         }
@@ -164,7 +164,7 @@ public:
         const uint8_t result = _modbus.writeSingleRegister(0x010A, enable ? 0x01 : 0x00);
         if (result != _modbus.ku8MBSuccess)
         {
-            RNG_DEBUGF("[RenogyBattery] Could not turn load %s: %s (0x%02X)\n", enable ? "on" : "off",
+            RS_DEBUGF("[RenogyBattery] Could not turn load %s: %s (0x%02X)\n", enable ? "on" : "off",
                 ModBus::resultToString(result), result);
         }
     }
@@ -459,13 +459,13 @@ private:
         if (result == _modbus.ku8MBSuccess)
         {
             model = ModBus::readString(_modbus, 0, 8);
-            RNG_DEBUGF("[RenogyBattery] Model: %s, SWV: %d, HWV: %d, S#: %d addr: %d, ProtV: %d\n", model.c_str(),
+            RS_DEBUGF("[RenogyBattery] Model: %s, SWV: %d, HWV: %d, S#: %d addr: %d, ProtV: %d\n", model.c_str(),
                 ModBus::readInt32BE(_modbus, 8), ModBus::readInt32BE(_modbus, 10), ModBus::readInt32BE(_modbus, 12),
                 ModBus::readInt8Lower(_modbus, 14), ModBus::readInt32BE(_modbus, 15));
         }
         else
         {
-            RNG_DEBUGF("[RenogyBattery] Could not read registers: %d\n", result);
+            RS_DEBUGF("[RenogyBattery] Could not read registers: %d\n", result);
         }
     }
 

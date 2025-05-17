@@ -115,7 +115,7 @@ public:
     bool splitData() const { return mqttConfig.split; }
 
 private:
-    const String getDeviceID() { return String("rngbridge-") + deviceMAC; }
+    const String getDeviceID() { return String("rsbridge-") + deviceMAC; }
     /// @brief Setup load control via MQTT
     ///
     /// Will subscribe control topics for each output and then register a callback for handling received messages

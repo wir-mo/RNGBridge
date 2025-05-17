@@ -71,7 +71,7 @@ public:
         uint8_t result = _modbus.readInputRegisters(0x3100, 18);
         if (result != _modbus.ku8MBSuccess)
         {
-            RNG_DEBUGF(
+            RS_DEBUGF(
                 "[Epever] Could not read registers 0x3100: %s (0x%02X)\n", ModBus::resultToString(result), result);
             return;
         }
@@ -96,7 +96,7 @@ public:
         result = _modbus.readInputRegisters(0x311A, 1);
         if (result != _modbus.ku8MBSuccess)
         {
-            RNG_DEBUGF(
+            RS_DEBUGF(
                 "[Epever] Could not read registers 0x311A: %s (0x%02X)\n", ModBus::resultToString(result), result);
             return;
         }
@@ -107,7 +107,7 @@ public:
         result = _modbus.readInputRegisters(0x3200, 3);
         if (result != _modbus.ku8MBSuccess)
         {
-            RNG_DEBUGF(
+            RS_DEBUGF(
                 "[Epever] Could not read registers 0x3200: %s (0x%02X)\n", ModBus::resultToString(result), result);
             return;
         }
@@ -119,7 +119,7 @@ public:
         result = _modbus.readInputRegisters(0x330A, 10);
         if (result != _modbus.ku8MBSuccess)
         {
-            RNG_DEBUGF(
+            RS_DEBUGF(
                 "[Epever] Could not read registers 0x330A: %s (0x%02X)\n", ModBus::resultToString(result), result);
             return;
         }
@@ -132,7 +132,7 @@ public:
         result = _modbus.readCoils(0x02, 1);
         if (result != _modbus.ku8MBSuccess)
         {
-            RNG_DEBUGF("[Epever] Could not read registers 0x02: %s (0x%02X)\n", ModBus::resultToString(result), result);
+            RS_DEBUGF("[Epever] Could not read registers 0x02: %s (0x%02X)\n", ModBus::resultToString(result), result);
             return;
         }
         _data.loadEnabled = ModBus::readUInt16BE(_modbus, 0);
@@ -154,13 +154,13 @@ public:
         if (result == _modbus.ku8MBSuccess)
         {
             model = ModBus::readString(_modbus, 0, 8);
-            RNG_DEBUGF("[Epever] Model: %s, SWV: %d, HWV: %d, S#: %d addr: %d, ProtV: %d\n", model.c_str(),
+            RS_DEBUGF("[Epever] Model: %s, SWV: %d, HWV: %d, S#: %d addr: %d, ProtV: %d\n", model.c_str(),
                 ModBus::readInt32BE(_modbus, 8), ModBus::readInt32BE(_modbus, 10), ModBus::readInt32BE(_modbus, 12),
                 ModBus::readInt8Lower(_modbus, 14), ModBus::readInt32BE(_modbus, 15));
         }
         else
         {
-            RNG_DEBUGF("[Epever] Could not read registers: %d\n", result);
+            RS_DEBUGF("[Epever] Could not read registers: %d\n", result);
         }
     }
 
@@ -172,7 +172,7 @@ public:
         const uint8_t result = _modbus.writeSingleCoil(0x02, enable ? 0x01 : 0x00);
         if (result != _modbus.ku8MBSuccess)
         {
-            RNG_DEBUGF("[Epever] Could not turn load %s: %s (0x%02X)\n", enable ? "on" : "off",
+            RS_DEBUGF("[Epever] Could not turn load %s: %s (0x%02X)\n", enable ? "on" : "off",
                 ModBus::resultToString(result), result);
         }
 #endif

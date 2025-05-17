@@ -8,7 +8,7 @@
 #include "OTA.h"
 #include "OutputControl.h"
 #include "PVOutput.h"
-#include "RNGTime.h"
+#include "RSTime.h"
 
 #include "device/Dummy.h"
 #include "device/Epever.h"
@@ -37,48 +37,29 @@ uint8_t lastSecond = 0; /// The last seconds value
 uint8_t secondsPassedRenogy = 0; /// amount of seconds passed
 
 // DoubleResetDetector* drd;
-RNGTime _time;
+RSTime _time;
 Config config;
-Mqtt* mqtt;
-PVOutput* pvo;
-OTA* ota;
+std::unique_ptr<Mqtt> mqtt;
+std::unique_ptr<PVOutput> pvo;
+std::unique_ptr<OTA> ota;
 std::shared_ptr<RSDevice> rsDevice;
-OutputControl* outputs;
+std::unique_ptr<OutputControl> outputs;
 Networking networking(config);
 GUI gui;
 
-void setup()
+void changeDeviceType(const DeviceType type)
 {
-#ifdef RNG_DEBUG_SERIAL
-    RNG_DEBUG_SERIAL.begin(115200);
-    // RNG_DEBUG_SERIAL.setDebugOutput(true);
-    RNG_DEBUGLN();
-    RNG_DEBUGF("%s %S (SWV%s)\n", MODEL, HARDWARE_VERSION, SOFTWARE_VERSION);
-#endif
-    // Signal startup
-    pinMode(LED, OUTPUT);
+    // signal device type change start
     digitalWrite(LED, HIGH);
 
-    uint8_t mac[6];
-    wifi_get_macaddr(STATION_IF, mac);
-    sniprintf(deviceMAC, sizeof(deviceMAC), "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-
-    // drd = new DoubleResetDetector(0, 0);
-    // RNG_DEBUGLN("[DRD] Check");
-    // if (drd->detectDoubleReset())
-    // {
-    //     RNG_DEBUGLN("[DRD] Detected double reset, resetting config");
-    //     config.initConfig();
-    //     config.setDefaultConfig();
-    //     config.saveConfig();
-    // }
-    // else
-    // {
-    config.initConfig();
-    // }
-
     DeviceConfig& deviceConfig = config.getDeviceConfig();
-    switch (deviceConfig.type)
+
+    // Delete shared pointer to device
+    rsDevice = nullptr;
+    // Clear the whole gui json
+    gui.json.clear();
+
+    switch (type)
     {
     case DeviceType::dummy:
         rsDevice = std::make_shared<Dummy>();
@@ -96,11 +77,16 @@ void setup()
     default:
         break;
     }
-    if (rsDevice)
+    gui.json["t"] = DeviceTypeToString(type);
+
+    if (!rsDevice)
     {
-        outputs = new OutputControl(*rsDevice, deviceConfig);
-        networking.init(*outputs);
+        return;
     }
+
+    outputs = std::make_unique<OutputControl>(*rsDevice, deviceConfig);
+    networking.init(*outputs);
+
     // Last will of mqtt won't work this way
     // networking.setRebootHandler([]() {
     //     if (mqtt)
@@ -114,14 +100,15 @@ void setup()
     if (netwConfig.clientEnabled)
     {
         // Check for software update at startup
-        ota = new OTA(SOFTWARE_VERSION, gui, _time);
-        ota->checkForUpdate();
-
-        // MQTT setup
+        if (!ota)
+        {
+            ota = std::make_unique<OTA>(SOFTWARE_VERSION, gui, _time);
+            ota->checkForUpdate();
+        }
         const MqttConfig& mqttConfig = config.getMqttConfig();
         if (mqttConfig.enabled)
         {
-            mqtt = new Mqtt(mqttConfig, *outputs);
+            mqtt = std::make_unique<Mqtt>(mqttConfig, *outputs);
             // mqtt->observe([](const String& status) { gui.updateMQTTStatus(status); });
             mqtt->connect();
         }
@@ -134,7 +121,7 @@ void setup()
         const PVOutputConfig& pvoConfig = config.getPvoutputConfig();
         if (pvoConfig.enabled)
         {
-            pvo = new PVOutput(pvoConfig, _time);
+            pvo = std::make_unique<PVOutput>(pvoConfig, _time);
             pvo->observe([](const String& status) { gui.updatePVOutputStatus(status); });
             pvo->start();
         }
@@ -147,6 +134,7 @@ void setup()
     rsDevice->setListener([&]() {
         if (pvo)
         {
+            // TODO where do we get the data from?
             // pvo->updateData(data);
         }
 
@@ -165,6 +153,42 @@ void setup()
     });
 
     outputs->observe([](const OutputStatus status) { gui.updateOutputStatus(status); });
+
+    // Signal device type change done
+    digitalWrite(LED, LOW);
+}
+
+void setup()
+{
+#ifdef RS_DEBUG_SERIAL
+    RS_DEBUG_SERIAL.begin(115200);
+    // RS_DEBUG_SERIAL.setDebugOutput(true);
+    RS_DEBUGLN();
+    RS_DEBUGF("%s (SWV%s)\n", MODEL, SOFTWARE_VERSION);
+#endif
+    // Signal startup
+    pinMode(LED, OUTPUT);
+    digitalWrite(LED, HIGH);
+
+    uint8_t mac[6];
+    wifi_get_macaddr(STATION_IF, mac);
+    sniprintf(deviceMAC, sizeof(deviceMAC), "%02X%02X%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
+    // drd = new DoubleResetDetector(0, 0);
+    // RS_DEBUGLN("[DRD] Check");
+    // if (drd->detectDoubleReset())
+    // {
+    //     RS_DEBUGLN("[DRD] Detected double reset, resetting config");
+    //     config.initConfig();
+    //     config.setDefaultConfig();
+    //     config.saveConfig();
+    // }
+    // else
+    // {
+    config.initConfig();
+    // }
+
+    changeDeviceType(config.getDeviceConfig().type);
 
     // drd->stop();
     // delete drd;
@@ -188,8 +212,8 @@ void loop()
 
         if (currentSecond % 5 == 0)
         {
-            RNG_DEBUG(F("[System] Uptime: "));
-            RNG_DEBUGLN(timeS);
+            RS_DEBUG(F("[System] Uptime: "));
+            RS_DEBUGLN(timeS);
         }
 
         ++secondsPassedRenogy;

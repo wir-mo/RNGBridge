@@ -75,7 +75,7 @@ public:
 
         if (result != _modbus.ku8MBSuccess)
         {
-            RNG_DEBUGF("[Renogy] Could not read registers: %s (0x%02X)\n", ModBus::resultToString(result), result);
+            RS_DEBUGF("[Renogy] Could not read registers: %s (0x%02X)\n", ModBus::resultToString(result), result);
             return;
         }
 
@@ -125,7 +125,7 @@ public:
         const uint8_t result = _modbus.writeSingleRegister(0x010A, enable ? 0x01 : 0x00);
         if (result != _modbus.ku8MBSuccess)
         {
-            RNG_DEBUGF("[Renogy] Could not turn load %s: %s (0x%02X)\n", enable ? "on" : "off",
+            RS_DEBUGF("[Renogy] Could not turn load %s: %s (0x%02X)\n", enable ? "on" : "off",
                 ModBus::resultToString(result), result);
         }
     }
@@ -272,13 +272,13 @@ private:
         if (result == _modbus.ku8MBSuccess)
         {
             model = ModBus::readString(_modbus, 0, 8);
-            RNG_DEBUGF("[Renogy] Model: %s, SWV: %d, HWV: %d, S#: %d addr: %d, ProtV: %d\n", model.c_str(),
+            RS_DEBUGF("[Renogy] Model: %s, SWV: %d, HWV: %d, S#: %d addr: %d, ProtV: %d\n", model.c_str(),
                 ModBus::readInt32BE(_modbus, 8), ModBus::readInt32BE(_modbus, 10), ModBus::readInt32BE(_modbus, 12),
                 ModBus::readInt8Lower(_modbus, 14), ModBus::readInt32BE(_modbus, 15));
         }
         else
         {
-            RNG_DEBUGF("[Renogy] Could not read registers: %d\n", result);
+            RS_DEBUGF("[Renogy] Could not read registers: %d\n", result);
         }
     }
 

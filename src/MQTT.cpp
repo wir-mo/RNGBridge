@@ -111,7 +111,7 @@ void Mqtt::addDeviceInfo(JsonDocument& json, const String& deviceID)
 {
     auto dev = json["dev"];
     dev["mf"] = "enwi";
-    dev["mdl"] = String(MODEL) + " " + HARDWARE_VERSION;
+    dev["mdl"] = MODEL;
     dev["name"] = deviceID;
     dev["sw"] = SOFTWARE_VERSION;
     dev["cu"] = String("http://") + WiFi.localIP().toString();
@@ -203,7 +203,7 @@ void Mqtt::publishSwitchDiscovery(const String& name, const String& id, const St
 void Mqtt::subscribe(const String& topic)
 {
     const bool subscribed = mqtt.subscribe(topic.c_str());
-    RNG_DEBUGF("Subscribed %s %s\n", topic.c_str(), subscribed ? "successfully" : "unsuccessfully");
+    RS_DEBUGF("Subscribed %s %s\n", topic.c_str(), subscribed ? "successfully" : "unsuccessfully");
 }
 
 bool Mqtt::publishJSON(const String& topic, const JsonDocument& json, const bool retain)
