@@ -2,8 +2,8 @@
 
 #include <ArduinoJson.h>
 
+#include "Constants.h"
 #include "OutputControl.h"
-#include "Renogy.h"
 
 class GUI
 {
@@ -12,25 +12,32 @@ public:
 
     GUI(GUI&&) = delete;
 
-    void updateRenogyStatus(const Renogy::Data& data);
+    void updateMQTTStatus(const String& status) { json["mqttsta"] = status; }
 
-    void updateMQTTStatus(const String& status);
+    void updatePVOutputStatus(const String& status) { json["pvosta"] = status; }
 
-    void updatePVOutputStatus(const String& status);
+    void updateOutputStatus(const OutputStatus& status)
+    {
+        auto output = json["o"];
+        output["o1"] = status.out1;
+        output["o2"] = status.out2;
+        output["o3"] = status.out3;
+    }
 
-    void updateOutputStatus(const OutputStatus& status);
+    void updateOtaStatus(const String& status) { json["otasta"] = status; }
 
-    void updateOtaStatus(const String& status);
+    void updateUptime(const uint32_t uptime) { json["up"] = uptime; }
 
-    void updateUptime(const uint32_t uptime);
+    void updateHeap(const uint32_t heap) { json["he"] = heap; }
 
-    void updateHeap(const uint32_t heap);
-
-    void update();
+    void update()
+    {
+        json["rssi"] = RSBridge::rssi;
+        status.clear();
+        serializeJson(json, status);
+    }
 
 public:
     static String status;
-
-private:
-    JsonDocument _status;
+    JsonDocument json;
 };

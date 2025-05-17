@@ -9,12 +9,12 @@ void Networking::initWifi()
 {
     if (isInitialized)
     {
-        RNG_DEBUGLN(F("[Networking] Wifi already initialized, should not be called again"));
+        RS_DEBUGLN(F("[Networking] Wifi already initialized, should not be called again"));
         return;
     }
     else if (WiFi.status() == WL_CONNECTED)
     {
-        RNG_DEBUGLN(F("[Networking] Wifi auto connected"));
+        RS_DEBUGLN(F("[Networking] Wifi auto connected"));
         isInitialized = true;
     }
 
@@ -27,12 +27,12 @@ void Networking::initWifi()
     //}
     if (wifi.clientEnabled && !isInitialized)
     {
-        RNG_DEBUGLN(F("[Networking] Init wifi client"));
+        RS_DEBUGLN(F("[Networking] Init wifi client"));
         startClient();
     }
     else if (wifi.apEnabled)
     {
-        RNG_DEBUGLN(F("[Networking] Init wifi AP"));
+        RS_DEBUGLN(F("[Networking] Init wifi AP"));
         startAccessPoint();
     }
 
@@ -43,7 +43,7 @@ void Networking::initServer(OutputControl& outputs)
 {
     // Handle EventSource
     es.onConnect([this](AsyncEventSourceClient* client) {
-        RNG_DEBUGF("[Networking] ES[%s] connect\n", client->client()->remoteIP().toString().c_str());
+        RS_DEBUGF("[Networking] ES[%s] connect\n", client->client()->remoteIP().toString().c_str());
 
         JsonDocument output;
         auto&& obj = output.to<JsonObject>();
@@ -101,7 +101,7 @@ void Networking::initServer(OutputControl& outputs)
 
     server.begin();
 
-    RNG_DEBUGLN(F("[Networking] Server setup"));
+    RS_DEBUGLN(F("[Networking] Server setup"));
 }
 
 void Networking::init(OutputControl& outputs)
@@ -135,7 +135,7 @@ void Networking::handleOTAUpload(
 {
     if (!index)
     {
-        RNG_DEBUGLN(F("[OTA] UploadStart"));
+        RS_DEBUGLN(F("[OTA] UploadStart"));
 // calculate sketch space required for the update, for ESP32 use the max constant
 #if defined(ESP32)
         if (!Update.begin(UPDATE_SIZE_UNKNOWN))
@@ -145,7 +145,7 @@ void Networking::handleOTAUpload(
 #endif
         {
             // start with max available size
-            Update.printError(RNG_DEBUG_SERIAL);
+            Update.printError(RS_DEBUG_SERIAL);
         }
 #if defined(ESP8266)
         Update.runAsync(true);
@@ -164,14 +164,14 @@ void Networking::handleOTAUpload(
         if (Update.end(true))
         {
             // true to set the size to the current progress
-            RNG_DEBUGLN(F("[OTA] Update Success, \nRebooting..."));
+            RS_DEBUGLN(F("[OTA] Update Success, \nRebooting..."));
             restartESP = true;
         }
-#ifdef RNG_DEBUG_SERIAL
+#ifdef RS_DEBUG_SERIAL
         else
         {
 
-            Update.printError(RNG_DEBUG_SERIAL);
+            Update.printError(RS_DEBUG_SERIAL);
         }
 #endif
     }
@@ -207,13 +207,13 @@ void Networking::handleConfigApiGet(AsyncWebServerRequest* request)
 
 void Networking::handleConfigApiPost(AsyncWebServerRequest* request, JsonVariant& json)
 {
-    RNG_DEBUGLN(F("[Networking] Received new config"));
+    RS_DEBUGLN(F("[Networking] Received new config"));
 
 #ifdef DEBUG_CONFIG
     String jsonstr;
     jsonstr.reserve(measureJsonPretty(json));
     serializeJsonPretty(json, jsonstr);
-    RNG_DEBUGLN(jsonstr);
+    RS_DEBUGLN(jsonstr);
 #endif
 
     JsonObject&& data = json.as<JsonObject>();
@@ -236,7 +236,7 @@ void Networking::handleConfigApiPost(AsyncWebServerRequest* request, JsonVariant
     }
     else
     {
-        RNG_DEBUGLN(F("[Networking] Config did not change"));
+        RS_DEBUGLN(F("[Networking] Config did not change"));
     }
 
     AsyncWebServerResponse* response = request->beginResponse(200, "text/plain", "OK");
@@ -330,13 +330,13 @@ void Networking::update()
 
     if (WiFi.isConnected())
     {
-        RNGBridge::rssi = RNGBridge::rssi * 0.7f + WiFi.RSSI() * 0.3f;
+        RSBridge::rssi = RSBridge::rssi * 0.7f + WiFi.RSSI() * 0.3f;
     }
 
     if (es.count())
     {
         es.send(GUI::status.c_str(), "status");
-        // RNG_DEBUGF("[Networking] AVG ES packages %d\n", es.avgPacketsWaiting());
+        // RS_DEBUGF("[Networking] AVG ES packages %d\n", es.avgPacketsWaiting());
     }
 }
 
@@ -349,23 +349,23 @@ bool Networking::captivePortal(AsyncWebServerRequest* request)
 {
     if (ON_STA_FILTER(request))
     {
-        // RNG_DEBUGLN(F("[Networking] Captive STA Filter"));
+        // RS_DEBUGLN(F("[Networking] Captive STA Filter"));
         return false; // only serve captive portal in AP mode
     }
     if (!request->hasHeader("Host"))
     {
-        // RNG_DEBUGLN(F("[Networking] Captive Host header missing"));
+        // RS_DEBUGLN(F("[Networking] Captive Host header missing"));
         return false;
     }
     const String hostHeader = request->getHeader("Host")->value();
     if (isIp(hostHeader) || hostHeader.indexOf(HOSTNAME) >= 0)
     {
-        // RNG_DEBUG(F("[Networking] Captive Host Filter: ");
-        // RNG_DEBUGLN(hostHeader);
+        // RS_DEBUG(F("[Networking] Captive Host Filter: ");
+        // RS_DEBUGLN(hostHeader);
         return false;
     }
 
-    RNG_DEBUGLN(F("[Networking] Captive portal"));
+    RS_DEBUGLN(F("[Networking] Captive portal"));
     AsyncWebServerResponse* response = request->beginResponse(302);
     response->addHeader(F("Location"), F("http://192.168.4.1"));
     request->send(response);
@@ -377,11 +377,11 @@ bool Networking::handleClientFailsafe()
     const unsigned long start = millis();
     while (WiFi.status() != WL_CONNECTED)
     {
-        RNG_DEBUG('.');
+        RS_DEBUG('.');
         delay(250);
         if (millis() - start > 15000)
         {
-            RNG_DEBUGLN(F("\n[Networking] Failed, enabling AP"));
+            RS_DEBUGLN(F("\n[Networking] Failed, enabling AP"));
 
             startAccessPoint(false);
             return false;
@@ -392,37 +392,37 @@ bool Networking::handleClientFailsafe()
 
 void Networking::startClient()
 {
-    RNG_DEBUGLN(F("[Networking] Using wifi in client mode"));
+    RS_DEBUGLN(F("[Networking] Using wifi in client mode"));
 
     const NetworkConfig& wifi = config.getNetworkConfig();
 
     if (!wifi.dhcpEnabled)
     {
-        RNG_DEBUGLN(F("[Networking] Using static ip"));
+        RS_DEBUGLN(F("[Networking] Using static ip"));
         if (!WiFi.config(wifi.clientIp, wifi.clientGateway, wifi.clientMask, wifi.clientDns))
         {
-            RNG_DEBUGLN(F("[Networking] STA Failed to configure"));
+            RS_DEBUGLN(F("[Networking] STA Failed to configure"));
         }
     }
     else
     {
-        RNG_DEBUGLN(F("[Networking] Using DHCP"));
+        RS_DEBUGLN(F("[Networking] Using DHCP"));
     }
 
     WiFi.persistent(true);
     WiFi.mode(WIFI_STA);
     WiFi.begin(wifi.clientSsid, wifi.clientPassword);
-    RNG_DEBUG(F("[Networking] Connecting to WiFi .."));
+    RS_DEBUG(F("[Networking] Connecting to WiFi .."));
 
     if (handleClientFailsafe())
     {
-        RNG_DEBUG(F("Connected: "));
-        RNG_DEBUGLN(WiFi.localIP());
+        RS_DEBUG(F("Connected: "));
+        RS_DEBUGLN(WiFi.localIP());
 
         WiFi.setAutoConnect(false);
         WiFi.setAutoReconnect(true);
 
-        RNGBridge::rssi = WiFi.RSSI();
+        RSBridge::rssi = WiFi.RSSI();
     }
 }
 
@@ -430,7 +430,7 @@ void Networking::startAccessPoint(bool persistent)
 {
     const NetworkConfig& wifi = config.getNetworkConfig();
 
-    RNG_DEBUGLN(F("[Networking] Using wifi in ap mode"));
+    RS_DEBUGLN(F("[Networking] Using wifi in ap mode"));
 
     WiFi.persistent(persistent);
 
@@ -440,16 +440,16 @@ void Networking::startAccessPoint(bool persistent)
     if (wifi.apPassword.length() == 0)
     {
         WiFi.softAP(wifi.apSsid);
-        RNG_DEBUGLN(F("[Networking] Starting open AP"));
+        RS_DEBUGLN(F("[Networking] Starting open AP"));
     }
     else
     {
         WiFi.softAP(wifi.apSsid, wifi.apPassword);
-        RNG_DEBUGLN(F("[Networking] Starting protected AP"));
+        RS_DEBUGLN(F("[Networking] Starting protected AP"));
     }
 
     // captive portal
-    RNG_DEBUGLN(F("[Networking] Starting DNS server"));
+    RS_DEBUGLN(F("[Networking] Starting DNS server"));
     dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
     dnsServer.start(53, "*", WiFi.softAPIP());
 }
