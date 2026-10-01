@@ -178,6 +178,20 @@ public:
 #endif
     }
 
+    bool supportsPVOutput() const override { return true; }
+
+    PVOutputData getPVOutputData() const override
+    {
+        return {
+            _data.generation,
+            _data.consumption,
+            _data.panelVoltage * _data.panelCurrent,
+            _data.loadVoltage * _data.loadCurrent,
+            static_cast<float>(_data.batteryTemperature),
+            _data.batteryVoltage,
+        };
+    }
+
     void updateUI(JsonDocument& json) const override
     {
         auto battery = json["b"];

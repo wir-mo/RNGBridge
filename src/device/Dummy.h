@@ -8,7 +8,6 @@
 #include "Constants.h"
 #include "MQTT.h"
 #include "Modbus.h"
-#include "PVOutput.h"
 #include "RSDevice.h"
 
 class Dummy : public RSDevice
@@ -129,6 +128,20 @@ public:
     }
 
     void enableLoad(const bool enable) override { _data.loadEnabled = enable; }
+
+    bool supportsPVOutput() const override { return true; }
+
+    PVOutputData getPVOutputData() const override
+    {
+        return {
+            _data.generation,
+            _data.consumption,
+            _data.panelVoltage * _data.panelCurrent,
+            _data.loadVoltage * _data.loadCurrent,
+            static_cast<float>(_data.batteryTemperature),
+            _data.batteryVoltage,
+        };
+    }
 
     void updateUI(JsonDocument& json) const override
     {

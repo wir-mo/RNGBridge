@@ -1,12 +1,24 @@
 #pragma once
 
 #include <functional>
+#include <stdint.h>
 #include <string>
 
 #include <ArduinoJson.h>
 
 #include "Config.h"
 #include "MqttInterface.h"
+
+/// Telemetry PVOutput needs from a charge controller.
+struct PVOutputData
+{
+    int16_t energyGenerated = 0; /// Generated energy in Wh
+    int16_t energyConsumed = 0; /// Consumed energy in Wh
+    float powerGeneration = 0.0f; /// Generated power in W
+    float powerConsumption = 0.0f; /// Consumed power in W
+    float temperature = 0.0f; /// Battery temperature in °C
+    float voltage = 0.0f; /// Battery voltage in V
+};
 
 // class Strategy
 // {
@@ -37,6 +49,10 @@ public:
     /// @brief Enable or disable the load output of the controller
     /// @param enable True to enable, false to disable load output
     virtual void enableLoad(const bool enable) = 0;
+    /// @brief Whether this device can supply the solar and load telemetry PVOutput needs.
+    virtual bool supportsPVOutput() const { return false; }
+    /// @brief Return the latest PVOutput-compatible controller telemetry.
+    virtual PVOutputData getPVOutputData() const { return {}; }
     virtual void updateUI(JsonDocument& json) const = 0;
     virtual void publishHaDiscovery(MqttInterface& publish) const = 0;
     virtual void publishIndividualMqttData(MqttInterface& publish) const = 0;

@@ -8,7 +8,6 @@
 #include "Constants.h"
 #include "MQTT.h"
 #include "Modbus.h"
-#include "PVOutput.h"
 #include "RSDevice.h"
 
 class Renogy : public RSDevice
@@ -128,6 +127,20 @@ public:
             RS_DEBUGF("[Renogy] Could not turn load %s: %s (0x%02X)\n", enable ? "on" : "off",
                 ModBus::resultToString(result), result);
         }
+    }
+
+    bool supportsPVOutput() const override { return true; }
+
+    PVOutputData getPVOutputData() const override
+    {
+        return {
+            _data.generation,
+            _data.consumption,
+            _data.panelVoltage * _data.panelCurrent,
+            _data.loadVoltage * _data.loadCurrent,
+            static_cast<float>(_data.batteryTemperature),
+            _data.batteryVoltage,
+        };
     }
 
     void updateUI(JsonDocument& json) const override

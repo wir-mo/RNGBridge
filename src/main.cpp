@@ -121,9 +121,16 @@ void changeDeviceType(const DeviceType type)
         const PVOutputConfig& pvoConfig = config.getPvoutputConfig();
         if (pvoConfig.enabled)
         {
-            pvo = std::make_unique<PVOutput>(pvoConfig, _time);
-            pvo->observe([](const String& status) { gui.updatePVOutputStatus(status); });
-            pvo->start();
+            if (rsDevice->supportsPVOutput())
+            {
+                pvo = std::make_unique<PVOutput>(pvoConfig, _time);
+                pvo->observe([](const String& status) { gui.updatePVOutputStatus(status); });
+                pvo->start();
+            }
+            else
+            {
+                gui.updatePVOutputStatus("Unsupported device");
+            }
         }
         else
         {
@@ -134,8 +141,7 @@ void changeDeviceType(const DeviceType type)
     rsDevice->setListener([&]() {
         if (pvo)
         {
-            // TODO where do we get the data from?
-            // pvo->updateData(data);
+            pvo->updateData(rsDevice->getPVOutputData());
         }
 
         outputs->update(*rsDevice);

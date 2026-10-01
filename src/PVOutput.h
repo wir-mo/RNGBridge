@@ -8,6 +8,7 @@
 #include "Constants.h"
 #include "Observerable.h"
 #include "RSTime.h"
+#include "device/RSDevice.h"
 
 #if defined(ESP32)
 #include <Update.h>
@@ -69,17 +70,6 @@ private:
 class PVOutput : public Observerable<String>
 {
 public:
-    struct Data
-    {
-        int16_t energyGenerated; /// Generated energy in Wh
-        int16_t energyConsumed; /// Consumed energy in Wh
-        float powerGeneration; /// Generated power in W
-        float powerConsumption; /// Consumed power in W
-        float temperature; /// Temperature in °C
-        float voltage; /// Voltage in V
-    };
-
-public:
     PVOutput(const PVOutputConfig& config, RSTime& time) : _config(config), _time(time)
     {
         // We need to reduce the buffer sizes or we get issues with HEAP
@@ -122,10 +112,10 @@ public:
 
     ///@brief Update the current solar data
     ///
-    ///@param data Renogy data
+    ///@param data Device-neutral charge-controller telemetry
     ///
     /// Should be called after data was read from the chargecontroller
-    void updateData(const Data& data)
+    void updateData(const PVOutputData& data)
     {
         if (_initial)
         {

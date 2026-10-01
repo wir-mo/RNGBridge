@@ -8,7 +8,6 @@
 #include "Constants.h"
 #include "MQTT.h"
 #include "Modbus.h"
-#include "PVOutput.h"
 #include "RSDevice.h"
 
 class RenogyBattery : public RSDevice
