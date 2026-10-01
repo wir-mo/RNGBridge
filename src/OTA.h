@@ -6,7 +6,7 @@
 
 #include "Constants.h"
 #include "GUI.h"
-#include "RNGTime.h"
+#include "RSTime.h"
 
 /// @brief Class for checking for software updates and in future for updating the software programatically
 class OTA
@@ -16,8 +16,8 @@ public:
     ///
     /// @param versionTag The tag of the current running software version
     /// @param gui Reference to GUI object
-    /// @param time Reference to RNGTime object
-    OTA(const char* versionTag, GUI& gui, RNGTime& time);
+    /// @param time Reference to RSTime object
+    OTA(const char* versionTag, GUI& gui, RSTime& time);
 
     /// @brief Get the version tag of the latest software version
     ///
@@ -53,12 +53,12 @@ private:
     constexpr static const char* GHOTA_CONTENT_TYPE = "application/octet-stream";
 
     constexpr static const char* GHOTA_USER = "enwi";
-    constexpr static const char* GHOTA_REPO = "RNGBridgeDoc";
-    constexpr static const char* GHOTA_FILE = "RNGBridge.ino.bin";
+    constexpr static const char* GHOTA_REPO = "RNGBridge";
+    constexpr static const char* GHOTA_FILE = "RSBridge.bin";
     constexpr static const bool GHOTA_ACCEPT_PRERELEASE = false;
 
     const char* _versionTag;
 
     GUI& _gui;
-    RNGTime& _time;
+    RSTime& _time;
 };

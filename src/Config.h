@@ -175,8 +175,57 @@ struct OutputConfig
     void setDefaultConfig();
 };
 
+enum class DeviceType
+{
+    none,
+    dummy,
+    renogy,
+    renogyBattery,
+    epever,
+};
+
+static const String DeviceTypeToString(const DeviceType type)
+{
+    switch (type)
+    {
+    case DeviceType::dummy:
+        return "dummy";
+    case DeviceType::renogy:
+        return "renogy";
+    case DeviceType::renogyBattery:
+        return "renogyBattery";
+    case DeviceType::epever:
+        return "epever";
+    // case DeviceType::None:
+    default:
+        return "none";
+    }
+}
+
+static DeviceType StringToDeviceType(const String& str)
+{
+    if (str.equals("renogy"))
+    {
+        return DeviceType::renogy;
+    }
+    if (str.equals("renogyBattery"))
+    {
+        return DeviceType::renogyBattery;
+    }
+    if (str.equals("epever"))
+    {
+        return DeviceType::epever;
+    }
+    if (str.equals("dummy"))
+    {
+        return DeviceType::dummy;
+    }
+    return DeviceType::none;
+}
+
 struct DeviceConfig
 {
+    DeviceType type; /// Type of the device
     uint8_t address; /// Address of the modbus client
     String name;
     OutputConfig load;

@@ -1,10 +1,10 @@
 #include "OTA.h"
 
-OTA::OTA(const char* versionTag, GUI& gui, RNGTime& time) : _versionTag(versionTag), _gui(gui), _time(time) { }
+OTA::OTA(const char* versionTag, GUI& gui, RSTime& time) : _versionTag(versionTag), _gui(gui), _time(time) { }
 
 String OTA::getNewSoftwareVersion()
 {
-    RNG_DEBUGLN(F("[OTA] Checking for new software version"));
+    RS_DEBUGLN(F("[OTA] Checking for new software version"));
 
     // updateTime(); // Clock needs to be set to perform certificate checks
 
@@ -16,7 +16,7 @@ String OTA::getNewSoftwareVersion()
     {
         client.stop();
         // _lastError = "Connection failed";
-        RNG_DEBUGLN(F("[OTA] Connection to GitHub failed"));
+        RS_DEBUGLN(F("[OTA] Connection to GitHub failed"));
         return "";
     }
 
@@ -41,14 +41,14 @@ String OTA::getNewSoftwareVersion()
     if (error)
     {
         // _lastError = "Failed to parse JSON."; // Error was: " + error.c_str();
-        RNG_DEBUGF("[OTA] Failed to parse JSON: %s\n", error.c_str());
+        RS_DEBUGF("[OTA] Failed to parse JSON: %s\n", error.c_str());
         return "";
     }
 
-    if (!doc.containsKey("tag_name"))
+    if (!doc["tag_name"].is<String>())
     {
         // _lastError = "JSON didn't match expected structure. 'tag_name' missing.";
-        RNG_DEBUGLN(F("[OTA] JSON missing tag_name"));
+        RS_DEBUGLN(F("[OTA] JSON missing tag_name"));
         return "";
     }
 
@@ -58,18 +58,18 @@ String OTA::getNewSoftwareVersion()
     if (strcmp(release_tag, _versionTag) == 0)
     {
         // _lastError = "Already running latest release.";
-        RNG_DEBUGLN(F("[OTA] Already running latest release"));
+        RS_DEBUGLN(F("[OTA] Already running latest release"));
         return "";
     }
 
     if (!GHOTA_ACCEPT_PRERELEASE && doc["prerelease"])
     {
         // _lastError = "Latest release is a pre-release and GHOTA_ACCEPT_PRERELEASE is set to false.";
-        RNG_DEBUGLN(F("[OTA] Latest release is a pre-release"));
+        RS_DEBUGLN(F("[OTA] Latest release is a pre-release"));
         return "";
     }
 
-    RNG_DEBUGF("[OTA] Found new release: %s\n", release_tag);
+    RS_DEBUGF("[OTA] Found new release: %s\n", release_tag);
     return release_tag;
 
     // JsonArray assets = doc["assets"];

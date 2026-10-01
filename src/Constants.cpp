@@ -7,7 +7,7 @@ const char* HOSTNAME PROGMEM = "rngbridge";
 
 char deviceMAC[13];
 
-namespace RNGBridge
+namespace RSBridge
 {
     int32_t rssi = 0; /// WiFi signal strength in dBm
-} // namespace RNGBridge
+} // namespace RSBridge
