@@ -198,7 +198,8 @@ void Networking::handleConfigApiGet(AsyncWebServerRequest* request)
     wifi["client_has_password"] = config.getNetworkConfig().clientPassword.length() != 0;
     wifi["ap_has_password"] = config.getNetworkConfig().apPassword.length() != 0;
     auto&& mqtt = document["mqtt"];
-    mqtt.remove("has_password");
+    mqtt.remove("password");
+    mqtt["has_password"] = config.getMqttConfig().password.length() != 0;
 
     serializeJson(document, buffer);
 

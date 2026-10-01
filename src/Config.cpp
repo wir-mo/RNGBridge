@@ -485,7 +485,10 @@ bool DeviceConfig::tryUpdate(const JsonObjectConst& object)
 
 void DeviceConfig::setDefaultConfig()
 {
-    type = DeviceType::none;
+    // A fresh device must boot into a usable configuration.  The dummy
+    // implementation keeps networking and the setup UI available until a
+    // physical device is selected.
+    type = DeviceType::dummy;
     address = 0xFF;
     name = MODEL;
     load.setDefaultConfig();
