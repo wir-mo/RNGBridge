@@ -12,6 +12,13 @@ const char* PVOutput::HOST PROGMEM = "pvoutput.org";
 
 void PVOutput::sendData()
 {
+    if (!WiFi.isConnected())
+    {
+        RNG_DEBUGLN(F("[PVO] No WiFi, skipping power data"));
+        notify(F("No WiFi, could not send power data"));
+        return;
+    }
+
     // Send power data
     struct tm time = _time.getTmTime();
     const bool success = sendPowerData(
@@ -71,6 +78,13 @@ void PVOutput::updateData(const Renogy::Data& data)
 
 void PVOutput::start()
 {
+    if (!WiFi.isConnected())
+    {
+        _started = false;
+        notify(F("Waiting for WiFi"));
+        return;
+    }
+
     RNG_DEBUGLN(F("[PVO] Starting"));
     notify(F("Starting"));
     // Try to get the status interval which can't be 0
@@ -109,11 +123,13 @@ void PVOutput::loop()
     }
     else
     {
-        if (_secondsPassed)
+        // Don't retry every second, a failing request can block for several seconds
+        ++_secondsPassed;
+        if (WiFi.isConnected() && _secondsPassed >= START_RETRY_INTERVAL)
         {
             _secondsPassed = 0;
+            start();
         }
-        start();
     }
 }
 

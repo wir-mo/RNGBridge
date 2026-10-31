@@ -15,6 +15,7 @@ void Networking::initWifi()
     else if (WiFi.status() == WL_CONNECTED)
     {
         RNG_DEBUGLN(F("[Networking] Wifi auto connected"));
+        WiFi.setAutoReconnect(true);
         isInitialized = true;
     }
 
@@ -126,7 +127,7 @@ void Networking::getStatusJsonString(JsonObject& output)
     wifi_client["dns"] = WiFi.dnsIP().toString();
 
     auto&& wifi_ap = networking["wifi_ap"].to<JsonObject>();
-    wifi_ap["status"] = client_enabled ? "disabled" : "enabled";
+    wifi_ap["status"] = (client_enabled && !fallbackAp) ? "disabled" : "enabled";
     wifi_ap["ip"] = WiFi.softAPIP().toString();
 }
 
@@ -328,6 +329,8 @@ void Networking::update()
         }
     }
 
+    updateClient();
+
     if (WiFi.isConnected())
     {
         RNGBridge::rssi = RNGBridge::rssi * 0.7f + WiFi.RSSI() * 0.3f;
@@ -381,9 +384,14 @@ bool Networking::handleClientFailsafe()
         delay(250);
         if (millis() - start > 15000)
         {
-            RNG_DEBUGLN(F("\n[Networking] Failed, enabling AP"));
+            RNG_DEBUGLN(F("\n[Networking] Failed, enabling AP and retrying client in background"));
 
-            startAccessPoint(false);
+            // Keep the client enabled so it can connect once the network comes up (e.g. router still booting).
+            // Reconnects are done periodically by updateClient, as constant scanning disturbs the AP.
+            WiFi.setAutoReconnect(false);
+            startAccessPoint(false, true);
+            fallbackAp = true;
+            lastReconnect = millis();
             return false;
         }
     }
@@ -411,6 +419,7 @@ void Networking::startClient()
 
     WiFi.persistent(true);
     WiFi.mode(WIFI_STA);
+    WiFi.setAutoReconnect(true);
     WiFi.begin(wifi.clientSsid, wifi.clientPassword);
     RNG_DEBUG(F("[Networking] Connecting to WiFi .."));
 
@@ -420,13 +429,12 @@ void Networking::startClient()
         RNG_DEBUGLN(WiFi.localIP());
 
         WiFi.setAutoConnect(false);
-        WiFi.setAutoReconnect(true);
 
         RNGBridge::rssi = WiFi.RSSI();
     }
 }
 
-void Networking::startAccessPoint(bool persistent)
+void Networking::startAccessPoint(bool persistent, bool keepClient)
 {
     const NetworkConfig& wifi = config.getNetworkConfig();
 
@@ -434,7 +442,7 @@ void Networking::startAccessPoint(bool persistent)
 
     WiFi.persistent(persistent);
 
-    WiFi.mode(WIFI_AP);
+    WiFi.mode(keepClient ? WIFI_AP_STA : WIFI_AP);
     WiFi.softAPConfig(AP_IP, AP_IP, AP_NETMASK);
 
     if (wifi.apPassword.length() == 0)
@@ -452,4 +460,58 @@ void Networking::startAccessPoint(bool persistent)
     RNG_DEBUGLN(F("[Networking] Starting DNS server"));
     dnsServer.setErrorReplyCode(DNSReplyCode::NoError);
     dnsServer.start(53, "*", WiFi.softAPIP());
+}
+
+void Networking::updateClient()
+{
+    if (!config.getNetworkConfig().clientEnabled)
+    {
+        return;
+    }
+
+    const uint32_t now = millis();
+
+    if (WiFi.isConnected())
+    {
+        lastReconnect = now;
+
+        if (fallbackAp)
+        {
+            RNG_DEBUG(F("[Networking] Client connected, closing fallback AP: "));
+            RNG_DEBUGLN(WiFi.localIP());
+
+            fallbackAp = false;
+            dnsServer.stop();
+            WiFi.softAPdisconnect(true);
+            WiFi.setAutoReconnect(true);
+            RNGBridge::rssi = WiFi.RSSI();
+        }
+        return;
+    }
+
+    if (fallbackAp)
+    {
+        // Don't disturb the AP while someone is connected to it (e.g. to change the config)
+        if (WiFi.softAPgetStationNum() > 0)
+        {
+            lastReconnect = now;
+            return;
+        }
+
+        if (now - lastReconnect >= FALLBACK_RECONNECT_INTERVAL)
+        {
+            RNG_DEBUGLN(F("[Networking] Retrying client connection"));
+            lastReconnect = now;
+            WiFi.reconnect();
+        }
+        return;
+    }
+
+    // Auto reconnect should handle short drops, but can get stuck after longer outages
+    if (now - lastReconnect >= RECONNECT_INTERVAL)
+    {
+        RNG_DEBUGLN(F("[Networking] Client still disconnected, forcing reconnect"));
+        lastReconnect = now;
+        WiFi.reconnect();
+    }
 }

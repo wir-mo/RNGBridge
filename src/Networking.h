@@ -109,7 +109,15 @@ private:
     /// @brief Configure wifi for client mode
     void startClient();
     /// @brief Configure wifi for access point mode
-    void startAccessPoint(bool persistent = true);
+    ///
+    /// @param persistent Store the mode in flash
+    /// @param keepClient Keep the station interface enabled (AP+STA) so the client can still connect later
+    void startAccessPoint(bool persistent = true, bool keepClient = false);
+
+    /// @brief Monitor the client connection, retry connecting and close the fallback AP once connected
+    ///
+    /// Should be called once every second
+    void updateClient();
 
     /// @brief Initialize server and rest endpoints
     ///
@@ -125,8 +133,10 @@ private:
     bool isInitialized = false;
     bool restartESP = false; /// Restart ESP after config change
     RebootHandler _rebootHandler; /// Handler for restarting ESP and gracefully shutting down stuff
-    // uint16_t reconnectBackoff = 1;
-    // uint32_t lastReconnect = 0;
+    bool fallbackAp = false; /// AP was opened because client could not connect at startup
+    uint32_t lastReconnect = 0; /// Last time in ms the client was connected or a reconnect was attempted
+    constexpr static const uint32_t RECONNECT_INTERVAL = 60000; /// Interval in ms between manual reconnects
+    constexpr static const uint32_t FALLBACK_RECONNECT_INTERVAL = 30000; /// Same, but while fallback AP is open
 
     Config& config;
 }; // namespace Networking

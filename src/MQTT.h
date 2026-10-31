@@ -2,6 +2,7 @@
 
 #include <functional>
 
+#include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 
 #include "Config.h"
@@ -109,4 +110,8 @@ private:
     WiFiClient espClient;
     PubSubClient mqtt;
     uint32_t lastUpdate = 0; /// last time in seconds we updated
+    uint32_t lastConnectAttempt = 0; /// last time in ms a connection attempt was made
+    constexpr static const uint32_t MIN_RECONNECT_DELAY = 5000; /// Minimum delay in ms between connection attempts
+    constexpr static const uint32_t MAX_RECONNECT_DELAY = 60000; /// Maximum delay in ms between connection attempts
+    uint32_t reconnectDelay = MIN_RECONNECT_DELAY; /// Current delay in ms between connection attempts
 }; // class MQTT
