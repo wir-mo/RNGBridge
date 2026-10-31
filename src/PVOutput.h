@@ -172,6 +172,7 @@ private:
     int _updateInterval = 0.0; /// Internal interval for PVOutput updates in seconds
 
     bool _started = false; /// Did we start
+    constexpr static const uint16_t START_RETRY_INTERVAL = 30; /// Interval in s between start attempts
 
     uint16_t _secondsPassed = 0; /// amount of seconds passed
 

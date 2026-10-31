@@ -7,12 +7,22 @@
 
 void Mqtt::connect()
 {
+    if (!WiFi.isConnected())
+    {
+        notify(F("Waiting for WiFi"));
+        return;
+    }
+
+    lastConnectAttempt = millis();
+
     // Set last will and connect
     const bool connected = mqtt.connect(mqttConfig.id.c_str(), mqttConfig.user.c_str(), mqttConfig.password.c_str(),
         (mqttConfig.topic + "/lwt").c_str(), 2, true, DISCONNECTED);
 
     if (connected)
     {
+        reconnectDelay = MIN_RECONNECT_DELAY;
+
         // Publish connected message
         publish((mqttConfig.topic + "/lwt").c_str(), CONNECTED, true);
 
@@ -85,6 +95,9 @@ void Mqtt::connect()
     }
     else
     {
+        // Back off so an unreachable broker doesn't block the main loop every second
+        reconnectDelay = std::min(reconnectDelay * 2, MAX_RECONNECT_DELAY);
+
         // Update status
         notify(F("Could not connect"));
     }
@@ -101,11 +114,14 @@ void Mqtt::loop()
     mqtt.loop();
     if (!mqtt.connected())
     {
-        if (_value.startsWith("C"))
+        if (_value == CONNECTED)
         {
             notify(FPSTR(DISCONNECTED));
         }
-        connect();
+        if (WiFi.isConnected() && millis() - lastConnectAttempt >= reconnectDelay)
+        {
+            connect();
+        }
     }
     else
     {
